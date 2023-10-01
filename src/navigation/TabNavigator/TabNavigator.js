@@ -40,7 +40,7 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Events"
+        name="EventScreen"
         component={EventScreen}
         options={{
           tabBarLabel: 'Events',

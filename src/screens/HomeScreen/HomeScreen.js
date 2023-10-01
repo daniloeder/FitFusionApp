@@ -10,7 +10,7 @@ const HomeScreen = ({ navigation }) => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/events/');
+      const response = await fetch('http://192.168.0.118:8000/api/events/');
       const data = await response.json();
       setEvents(data);
     } catch (error) {

@@ -23,7 +23,7 @@ const EventScreen = ({ route }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/events/${eventId}`);
+      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`);
       const data = await response.json();
       setEvent(data);
       setParticipants(data.participants || []); // Assuming the event object has a participants array
