@@ -22,7 +22,7 @@ const ProfileScreen = () => {
   const fetchProfile = async () => {
     try {
       // Assume user_id is 1, replace it as needed
-      const response = await fetch(`http://localhost:8000/api/users/1/`);
+      const response = await fetch(`http://192.168.0.118:8000/api/users/1/`);
       const data = await response.json();
       setProfile(data);
     } catch (error) {

@@ -15,6 +15,7 @@ const EventScreen = ({ route }) => {
   const navigation = useNavigation();
   
   // Assuming you are passing eventId through route params.
+  console.log(route.params)
   const { eventId } = route.params;
 
   useEffect(() => {

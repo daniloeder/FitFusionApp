@@ -20,7 +20,7 @@ const NotificationScreen = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/notifications/notifications/`);
+      const response = await fetch(`http://192.168.0.118:8000/api/notifications/`);
       const data = await response.json();
       setNotifications(data);
     } catch (error) {
