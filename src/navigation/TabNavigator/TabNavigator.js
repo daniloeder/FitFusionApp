@@ -5,6 +5,7 @@ import { Image } from 'react-native';
 import HomeScreen from '../../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
 import EventScreen from '../../screens/EventScreen/EventScreen';
+import Map from '../../screens/Map/Map';
 import ChatScreen from '../../screens/ChatScreen/ChatScreen';
 import NotificationScreen from '../../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../../screens/SettingsScreen/SettingsScreen';
@@ -45,6 +46,14 @@ const TabNavigator = () => {
         options={{
           tabBarLabel: 'Events',
           //... any other specific options for EventScreen
+        }}
+      />
+      <Tab.Screen
+        name="Map"
+        component={Map}
+        options={{
+          tabBarLabel: 'Map',
+          //... any other specific options for Map
         }}
       />
       <Tab.Screen
