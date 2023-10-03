@@ -3,9 +3,13 @@ import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { StyleSheet, View, Image, Text, TextInput, Button, Pressable } from 'react-native';
 
+import Icons from '../../components/Icons/Icons';
+
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBEHyoRxuXwxFyccaKsw-CuTtvRv_dU1Ow';
 const MAX_ZOOM_LATITUDE_DELTA = 0.045;
 const PATTERN_ZOOM_LATITUDE_DELTA = 0.01;
+
+import Run from './../../../assets/icons/run.svg';
 
 const Map = () => {
     const [userLocation, setUserLocation] = useState(null);
@@ -103,7 +107,7 @@ const Map = () => {
                     const [latitude, longitude] = place.coordinates.split(',').map(Number);
                     return (
                         <Marker key={place.id} coordinate={{ latitude, longitude }}>
-                            <Image source={require('./../../../assets/icons/gym.png')} style={{ width: 30, height: 30 }} />
+                            <Icons name="Gym" size={40} />
                             <Callout tooltip={true} style={styles.calloutContainer}>
                                 <View style={styles.calloutView}>
                                     <Text style={styles.calloutTitle}>{place.name}</Text>
@@ -118,7 +122,7 @@ const Map = () => {
                     const [latitude, longitude] = event.coordinates.split(',').map(Number);
                     return (
                         <Marker key={event.id} coordinate={{ latitude, longitude }}>
-                            <Image source={require('./../../../assets/icons/run.png')} style={{ width: 30, height: 30 }} />
+                            <Icons name="Run" size={40} />
                             <Callout tooltip={true} style={styles.calloutContainer}>
                                 <View style={styles.calloutView}>
                                     <Text style={styles.calloutTitle}>{event.title}</Text>

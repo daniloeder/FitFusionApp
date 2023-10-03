@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Image } from 'react-native';
+import Icons from '../../components/Icons/Icons';
 
 import HomeScreen from '../../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
@@ -29,7 +29,9 @@ const TabNavigator = () => {
         component={HomeScreen}
         options={{
           tabBarLabel: 'Home',
-          //... any other specific options for HomeScreen
+          tabBarIcon: () => (
+            <Icons name="Home" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -37,7 +39,9 @@ const TabNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Profile',
-          //... any other specific options for ProfileScreen
+          tabBarIcon: () => (
+            <Icons name="Profile" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -45,7 +49,9 @@ const TabNavigator = () => {
         component={EventScreen}
         options={{
           tabBarLabel: 'Events',
-          //... any other specific options for EventScreen
+          tabBarIcon: () => (
+            <Icons name="Events" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -53,7 +59,9 @@ const TabNavigator = () => {
         component={Map}
         options={{
           tabBarLabel: 'Map',
-          //... any other specific options for Map
+          tabBarIcon: () => (
+            <Icons name="Map" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -61,7 +69,9 @@ const TabNavigator = () => {
         component={ChatScreen}
         options={{
           tabBarLabel: 'Chat',
-          //... any other specific options for ChatScreen
+          tabBarIcon: () => (
+            <Icons name="Chat" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -69,7 +79,9 @@ const TabNavigator = () => {
         component={NotificationScreen}
         options={{
           tabBarLabel: 'Notifications',
-          //... any other specific options for NotificationScreen
+          tabBarIcon: () => (
+            <Icons name="Notifications" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -77,7 +89,9 @@ const TabNavigator = () => {
         component={SearchScreen}
         options={{
           tabBarLabel: 'Search',
-          //... any other specific options for SearchScreen
+          tabBarIcon: () => (
+            <Icons name="Search" size={30} />
+          ),
         }}
       />
       <Tab.Screen
@@ -85,7 +99,9 @@ const TabNavigator = () => {
         component={SettingsScreen}
         options={{
           tabBarLabel: 'Settings',
-          //... any other specific options for SettingsScreen
+          tabBarIcon: () => (
+            <Icons name="Settings" size={30} />
+          ),
         }}
       />
     </Tab.Navigator>
