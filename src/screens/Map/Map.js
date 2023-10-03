@@ -1,139 +1,164 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { StyleSheet, TextInput, View, Button, Text, Alert } from 'react-native';
+import { StyleSheet, View, Image, Text, TextInput, Button } from 'react-native';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBEHyoRxuXwxFyccaKsw-CuTtvRv_dU1Ow';
-
-const defaultPoints = [
-  {
-    id: 1,
-    name: 'Brasília',
-    coordinate: {
-      latitude: -15.793889,
-      longitude: -47.882778,
-    },
-  },
-  {
-    id: 2,
-    name: 'Belo Horizonte',
-    coordinate: {
-      latitude: -19.916667,
-      longitude: -43.933333,
-    },
-  },
-  {
-    id: 3,
-    name: 'Indaiabira',
-    coordinate: {
-      latitude: -15.496956,
-      longitude: -42.612137,
-    },
-  },
-];
+const MAX_ZOOM_LATITUDE_DELTA = 0.045;
+const PATTERN_ZOOM_LATITUDE_DELTA = 0.01;
 
 const Map = () => {
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationInput, setLocationInput] = useState('');
-  const [error, setError] = useState('');
-  const mapRef = useRef();
+    const [userLocation, setUserLocation] = useState(null);
+    const [places, setPlaces] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [locationInput, setLocationInput] = useState('');
+    const [error, setError] = useState('');
+    const mapRef = useRef();
 
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission to access location was denied');
-        return;
-      }
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.error('Permission to access location was denied');
+                return;
+            }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setUserLocation({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
-    })();
-  }, []);
+            let location = await Location.getCurrentPositionAsync({});
+            setUserLocation({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+                latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+                longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+            });
 
-  const onGoPress = async () => {
-    setError(''); // Reset error message
-    try {
-      const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${locationInput}&key=${GOOGLE_MAPS_API_KEY}`);
-      const data = await response.json();
+            try {
+                const placesResponse = await fetch('http://192.168.0.118:8000/api/places/');
+                if (!placesResponse.ok) {
+                    throw new Error('Network response was not ok' + placesResponse.statusText);
+                }
+                const placesData = await placesResponse.json();
+                setPlaces(placesData);
 
-      if (data.status !== 'OK') {
-        setError('Location not found');
-        return;
-      }
+                const eventsResponse = await fetch('http://192.168.0.118:8000/api/events/');
+                if (!eventsResponse.ok) {
+                    throw new Error('Network response was not ok' + eventsResponse.statusText);
+                }
+                const eventsData = await eventsResponse.json();
+                setEvents(eventsData);
+            } catch (error) {
+                console.error('There was a problem with the fetch operation: ', error);
+            }
+        })();
+    }, []);
 
-      const { lat, lng } = data.results[0].geometry.location;
+    const handleRegionChange = (newRegion) => {
+        if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
+            mapRef.current.animateToRegion({
+                ...newRegion,
+                latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
+                longitudeDelta: MAX_ZOOM_LATITUDE_DELTA * (newRegion.longitudeDelta / newRegion.latitudeDelta),
+            });
+        }
+    };
 
-      mapRef.current.animateToRegion({
-        latitude: lat,
-        longitude: lng,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
+    const onGoPress = async () => {
+        setError('');
+        try {
+            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${locationInput}&key=${GOOGLE_MAPS_API_KEY}`);
+            const data = await response.json();
 
-    } catch (e) {
-      console.error(e);
-      setError('Error occurred while finding location');
+            if (data.status !== 'OK') {
+                setError('Location not found');
+                return;
+            }
+
+            const { lat, lng } = data.results[0].geometry.location;
+
+            mapRef.current.animateToRegion({
+                latitude: lat,
+                longitude: lng,
+                latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+                longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+            });
+
+        } catch (e) {
+            console.error(e);
+            setError('Error occurred while finding location');
+        }
+    };
+
+    if (!userLocation) {
+        return null;
     }
-  };
 
-  return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        initialRegion={userLocation}
-      >
-        {defaultPoints.map((point) => (
-          <Marker key={point.id} coordinate={point.coordinate}>
-            <Callout>
-              <Text>{point.name}</Text>
-            </Callout>
-          </Marker>
-        ))}
-      </MapView>
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Location"
-          value={locationInput}
-          onChangeText={setLocationInput}
-        />
-        <Button title="Go" onPress={onGoPress} />
-      </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-    </View>
-  );
+    return (
+        <View style={styles.container}>
+            <MapView
+                ref={mapRef}
+                style={styles.map}
+                initialRegion={userLocation}
+                onRegionChangeComplete={handleRegionChange}
+            >
+                {places.map((place) => {
+                    const [latitude, longitude] = place.coordinates.split(',').map(Number);
+                    return (
+                        <Marker key={place.id} coordinate={{ latitude, longitude }}>
+                            <Image source={require('./../../../assets/icons/gym.png')} style={{ width: 30, height: 30 }} />
+                            <Callout>
+                                <Text>{place.name}</Text>
+                            </Callout>
+                        </Marker>
+                    );
+                })}
+                {events.map((event) => {
+                    const [latitude, longitude] = event.coordinates.split(',').map(Number);
+                    return (
+                        <Marker key={event.id} coordinate={{ latitude, longitude }}>
+                            <Image source={require('./../../../assets/icons/run.png')} style={{ width: 30, height: 30 }} />
+                            <Callout>
+                                <Text>{event.title}</Text>
+                            </Callout>
+                        </Marker>
+                    );
+                })}
+            </MapView>
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Type a location"
+                    onChangeText={setLocationInput}
+                    value={locationInput}
+                />
+                <Button title="Go" onPress={onGoPress} />
+                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </View>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-  inputContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    right: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  input: {
-    flex: 1,
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-  },
+    container: {
+        flex: 1,
+    },
+    map: {
+        flex: 1,
+    },
+    inputContainer: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        right: 10,
+        flexDirection: 'row',
+    },
+    input: {
+        flex: 1,
+        padding: 10,
+        backgroundColor: 'white',
+    },
+    errorText: {
+        color: 'red',
+        textAlign: 'center',
+    },
 });
 
 export default Map;
-
