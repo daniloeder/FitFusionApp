@@ -51,7 +51,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f4f4f4',
+    backgroundColor: {
+      linearGradient: {
+        colors: ["#000", "#FF0000", "#006400"],
+        start: { x: 0, y: 0 },
+        end: { x: 1, y: 1 },
+      },
+    },
   },
   title: {
     fontSize: 24,
@@ -69,7 +75,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 8,
     marginBottom: 10,
-  }
+  },
 });
 
 export default HomeScreen;
