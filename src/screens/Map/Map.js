@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { StyleSheet, View, Image, Text, TextInput, Button } from 'react-native';
+import { StyleSheet, View, Image, Text, TextInput, Button, Pressable } from 'react-native';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBEHyoRxuXwxFyccaKsw-CuTtvRv_dU1Ow';
 const MAX_ZOOM_LATITUDE_DELTA = 0.045;
@@ -104,8 +104,12 @@ const Map = () => {
                     return (
                         <Marker key={place.id} coordinate={{ latitude, longitude }}>
                             <Image source={require('./../../../assets/icons/gym.png')} style={{ width: 30, height: 30 }} />
-                            <Callout>
-                                <Text>{place.name}</Text>
+                            <Callout tooltip={true} style={styles.calloutContainer}>
+                                <View style={styles.calloutView}>
+                                    <Text style={styles.calloutTitle}>{place.name}</Text>
+                                    <Text style={styles.calloutSubtitle}>Location: {place.location}</Text>
+                                    {/* Add any other details you want to show for a place */}
+                                </View>
                             </Callout>
                         </Marker>
                     );
@@ -115,8 +119,14 @@ const Map = () => {
                     return (
                         <Marker key={event.id} coordinate={{ latitude, longitude }}>
                             <Image source={require('./../../../assets/icons/run.png')} style={{ width: 30, height: 30 }} />
-                            <Callout>
-                                <Text>{event.title}</Text>
+                            <Callout tooltip={true} style={styles.calloutContainer}>
+                                <View style={styles.calloutView}>
+                                    <Text style={styles.calloutTitle}>{event.title}</Text>
+                                    <Text style={styles.calloutSubtitle}>Location: {event.location}</Text>
+                                    <Text style={styles.calloutSubtitle}>Date & Time: {event.date_time}</Text>
+                                    <Text style={styles.calloutSubtitle}>Sport Type: {event.sport_type}</Text>
+                                    {/* Add any other details you want to show for an event */}
+                                </View>
                             </Callout>
                         </Marker>
                     );
@@ -129,7 +139,9 @@ const Map = () => {
                     onChangeText={setLocationInput}
                     value={locationInput}
                 />
-                <Button title="Go" onPress={onGoPress} />
+                <Pressable style={styles.inputGo} onPress={onGoPress}>
+                    <Text style={{color:'#FFF'}}>Go</Text>
+                </Pressable>
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
         </View>
@@ -148,16 +160,56 @@ const styles = StyleSheet.create({
         top: 10,
         left: 10,
         right: 10,
+        borderRadius: 10,
         flexDirection: 'row',
     },
     input: {
         flex: 1,
         padding: 10,
+        right: 5,
+        borderRadius: 10,
         backgroundColor: 'white',
+    },
+    inputGo: {
+        width: 50,
+        height: 50,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 25,
+        backgroundColor: '#0c8ce9'
     },
     errorText: {
         color: 'red',
         textAlign: 'center',
+    },
+
+
+
+    calloutContainer: {
+        flexDirection: 'column',
+        alignSelf: 'flex-start',
+    },
+    calloutView: {
+        width: 200,
+        padding: 10,
+        borderRadius: 10,
+        backgroundColor: 'white',
+        borderColor: '#ccc',
+        borderWidth: 1,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 2,
+        elevation: 2, // for Android
+    },
+    calloutTitle: {
+        color: '#333',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    calloutSubtitle: {
+        color: '#666',
+        fontSize: 14,
     },
 });
 
