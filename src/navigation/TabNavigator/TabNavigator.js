@@ -38,12 +38,12 @@ const GradientBackground = () => {
       <Defs>
         <LinearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor="#1A202C" stopOpacity="1" />
-          <Stop offset="0.1" stopColor="red" stopOpacity="1" />
-          <Stop offset="0.1" stopColor="red" stopOpacity="1" />
-          <Stop offset="1" stopColor="#F4A460" stopOpacity="1" />
+          <Stop offset="0.5" stopColor="#991B1B" stopOpacity="1" />
+          <Stop offset="0.5" stopColor="#991B1B" stopOpacity="1" />
+          <Stop offset="1" stopColor="#991B1B" stopOpacity="1" />
         </LinearGradient>
       </Defs>
-      <Rect x="0" y="0" width="100%" height={width * 0.17} fill="url(#navGrad)" />
+      <Rect x="0" y="0" width="100%" height={width * 0.2} fill="url(#navGrad)" />
     </Svg>
   );
 };
@@ -80,14 +80,14 @@ const TabNavigator = () => {
         headerBackground: () => (showGradient ? <GradientHeader /> : null),
         tabBarBackground: () => <GradientBackground />,
         tabBarActiveTintColor: '#FFF',
-        tabBarInactiveTintColor: 'black',
+        tabBarInactiveTintColor: '#000',
         tabBarLabelStyle: {
           marginBottom: 6,
         },
         tabBarStyle: [
           {
-            paddingTop: width * 0.03,
-            height: width * 0.15,
+            paddingTop: width * 0.08,
+            height: width * 0.2,
             borderTopWidth: 0,
             elevation: 0,
             shadowOpacity: 0,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Dimensions } from 'react-native';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, FlatList } from 'react-native';
+import GradientBackground from './../../components/GradientBackground/GradientBackground';
 
 const width = Dimensions.get('window').width;
 
@@ -22,54 +22,99 @@ const HomeScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.gradientContainer}>
 
-      <Svg style={[StyleSheet.absoluteFill, {width:width}]}>
-        <Defs>
-          <LinearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#991B1B" stopOpacity="1" />
-            <Stop offset="1" stopColor="#1A202C" stopOpacity="1" />
-          </LinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#grad)" />
-      </Svg>
+      <GradientBackground startColor="#991B1B" endColor="#1A202C" />
 
-      <Text style={styles.title}>Fit Fusion</Text>
-      <Text style={styles.subtitle}>Upcoming Events</Text>
-      <FlatList
-        data={events}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.eventItem}>
+
+      <ScrollView style={styles.container}
+        showsVerticalScrollIndicator={false} 
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+      >
+
+        <Text style={styles.title}>Welcome to Fit Fusion</Text>
+
+        <Text style={styles.subtitle}>Upcoming Events:</Text>
+
+        {events.map((item) => (
+          <View key={item.id.toString()} style={styles.eventItem}>
             <Text style={styles.eventTitle}>{item.title}</Text>
-            <Text style={styles.eventDate}>{item.date_time}</Text>
-            <Pressable 
-              style={styles.button} 
-              onPress={() => navigation.navigate('EventScreen', { eventId: item.id })}
+            <Text style={styles.eventDate}>{item.date}</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                // Handle event click here
+                console.log('Event clicked:', item.id);
+              }}
             >
               <Text style={styles.buttonText}>View Event</Text>
             </Pressable>
           </View>
-        )}
-      />
-      <Pressable 
-        style={({ pressed }) => [
-          styles.profileButton,
-          { backgroundColor: pressed ? '#991B1B' : '#B83030' },
-        ]}
-        onPress={() => navigation.navigate('Profile')} 
-      >
-        <Text style={styles.profileButtonText}>Profile</Text>
-      </Pressable>
+        ))}
+        {events.map((item) => (
+          <View key={item.id.toString()} style={styles.eventItem}>
+            <Text style={styles.eventTitle}>{item.title}</Text>
+            <Text style={styles.eventDate}>{item.date}</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                // Handle event click here
+                console.log('Event clicked:', item.id);
+              }}
+            >
+              <Text style={styles.buttonText}>View Event</Text>
+            </Pressable>
+          </View>
+        ))}
+        {events.map((item) => (
+          <View key={item.id.toString()} style={styles.eventItem}>
+            <Text style={styles.eventTitle}>{item.title}</Text>
+            <Text style={styles.eventDate}>{item.date}</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                // Handle event click here
+                console.log('Event clicked:', item.id);
+              }}
+            >
+              <Text style={styles.buttonText}>View Event</Text>
+            </Pressable>
+          </View>
+        ))}
+
+        <Pressable
+          style={styles.profileButton}
+          onPress={() => {
+            // Handle profile button click
+            console.log('Profile button clicked');
+          }}
+        >
+          <Text style={styles.profileButtonText}>View Profile</Text>
+        </Pressable>
+
+      </ScrollView>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
+  gradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
     padding: width * 0.04,
-    backgroundColor: '#aaa',
   },
   title: {
     fontSize: width * 0.085,
@@ -119,6 +164,7 @@ const styles = StyleSheet.create({
   },
   profileButton: {
     marginTop: width * 0.025,
+    marginBottom: width * 0.2,
     backgroundColor: '#B83030',
     paddingVertical: width * 0.03,
     paddingHorizontal: width * 0.05,

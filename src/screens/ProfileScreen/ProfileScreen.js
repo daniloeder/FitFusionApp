@@ -9,6 +9,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Dimensions } from 'react-native';
+import GradientBackground from './../../components/GradientBackground/GradientBackground'; // Make sure this path is correct
+
+const width = Dimensions.get('window').width;
 
 const ProfileScreen = () => {
   const [profile, setProfile] = useState({});
@@ -21,7 +25,6 @@ const ProfileScreen = () => {
 
   const fetchProfile = async () => {
     try {
-      // Assume user_id is 1, replace it as needed
       const response = await fetch(`http://192.168.0.118:8000/api/users/1/`);
       const data = await response.json();
       setProfile(data);
@@ -37,91 +40,110 @@ const ProfileScreen = () => {
     // navigation.navigate('EditProfile', { userId: profile.id });
   };
 
-  if (isLoading) return <ActivityIndicator size="large" color="#0000ff" />;
+  if (isLoading) return <ActivityIndicator size="large" color="#991B1B" />;
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.profileHeader}>
-        <Image
-          style={styles.avatar}
-          source={{ uri: profile.avatarUrl || 'https://via.placeholder.com/150' }}
-        />
-        <Text style={styles.username}>{profile.username}</Text>
-        <Text style={styles.email}>{profile.email}</Text>
-      </View>
-      <View style={styles.profileBody}>
-        <Text style={styles.sectionTitle}>Favorite Sports</Text>
-        {/* List user’s favorite sports here */}
-        {/* Replace with actual data */}
-        <Text style={styles.sportItem}>Soccer</Text>
-        <Text style={styles.sportItem}>Basketball</Text>
+    <View style={styles.gradientContainer}>
 
-        <Text style={styles.sectionTitle}>Events Participated</Text>
-        {/* List events participated by the user here */}
-        {/* Replace with actual data */}
-        <Text style={styles.eventItem}>Community Soccer Match</Text>
-        <Text style={styles.eventItem}>Local Basketball Tournament</Text>
-      </View>
-      <TouchableOpacity style={styles.editButton} onPress={onEditProfile}>
-        <Text style={styles.editButtonText}>Edit Profile</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      <GradientBackground startColor="#991B1B" endColor="#1A202C" />
+
+      <ScrollView style={styles.container}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+      >
+        <View style={styles.profileHeader}>
+          <Image
+            style={styles.avatar}
+            source={{ uri: profile.avatarUrl || 'https://via.placeholder.com/150' }}
+          />
+          <Text style={styles.username}>{profile.username}</Text>
+          <Text style={styles.email}>{profile.email}</Text>
+        </View>
+        <View style={styles.profileBody}>
+          <Text style={styles.sectionTitle}>Favorite Sports</Text>
+          <Text style={styles.sportItem}>Soccer</Text>
+          <Text style={styles.sportItem}>Basketball</Text>
+          <Text style={styles.sectionTitle}>Events Participated</Text>
+          <Text style={styles.eventItem}>Community Soccer Match</Text>
+          <Text style={styles.eventItem}>Local Basketball Tournament</Text>
+        </View>
+        <TouchableOpacity style={styles.editButton} onPress={onEditProfile}>
+          <Text style={styles.editButtonText}>Edit Profile</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+    </View>
   );
 };
 
+
 const styles = StyleSheet.create({
+
+  gradientContainer: {
+    flex: 1,
+  },
+  gradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
   },
   profileHeader: {
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    padding: width * 0.04,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
+    marginBottom: width * 0.025,
   },
   username: {
-    fontSize: 18,
+    fontSize: width * 0.06,
     fontWeight: '600',
-    marginTop: 10,
+    color: '#E2E8F0',
   },
   email: {
-    fontSize: 16,
-    color: 'grey',
-    marginTop: 5,
+    fontSize: width * 0.045,
+    color: '#CBD5E0',
+    marginBottom: width * 0.04,
   },
   profileBody: {
-    padding: 20,
+    padding: width * 0.04,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: width * 0.05,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: width * 0.025,
+    color: '#E2E8F0',
   },
   sportItem: {
-    fontSize: 15,
-    marginBottom: 5,
+    fontSize: width * 0.04,
+    marginBottom: width * 0.02,
+    color: '#E2E8F0',
   },
   eventItem: {
-    fontSize: 15,
-    marginBottom: 5,
+    fontSize: width * 0.04,
+    marginBottom: width * 0.02,
+    color: '#E2E8F0',
   },
   editButton: {
-    margin: 20,
-    padding: 10,
-    backgroundColor: '#007bff',
-    borderRadius: 5,
+    margin: width * 0.04,
+    padding: width * 0.03,
+    backgroundColor: '#B83030',
+    borderRadius: width * 0.0125,
+    alignItems: 'center',
   },
   editButtonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
+    color: '#E2E8F0',
+    fontSize: width * 0.045,
   },
 });
 
