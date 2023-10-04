@@ -82,6 +82,21 @@ const HomeScreen = ({ navigation }) => {
             </Pressable>
           </View>
         ))}
+        {events.map((item) => (
+          <View key={item.id.toString()} style={styles.eventItem}>
+            <Text style={styles.eventTitle}>{item.title}</Text>
+            <Text style={styles.eventDate}>{item.date}</Text>
+            <Pressable
+              style={styles.button}
+              onPress={() => {
+                // Handle event click here
+                console.log('Event clicked:', item.id);
+              }}
+            >
+              <Text style={styles.buttonText}>View Event</Text>
+            </Pressable>
+          </View>
+        ))}
 
         <Pressable
           style={styles.profileButton}

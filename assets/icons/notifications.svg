@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg width="16px" height="20px" viewBox="0 0 16 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 52.5 (67469) - http://www.bohemiancoding.com/sketch -->
-    <title>notifications</title>
-    <desc>Created with Sketch.</desc>
-    <g id="Icons" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="Rounded" transform="translate(-444.000000, -4100.000000)">
-            <g id="Social" transform="translate(100.000000, 4044.000000)">
-                <g id="-Round-/-Social-/-notifications" transform="translate(340.000000, 54.000000)">
-                    <g>
-                        <polygon id="Path" points="0 0 24 0 24 24 0 24"></polygon>
-                        <path d="M12,22 C13.1,22 14,21.1 14,20 L10,20 C10,21.1 10.89,22 12,22 Z M18,16 L18,11 C18,7.93 16.36,5.36 13.5,4.68 L13.5,4 C13.5,3.17 12.83,2.5 12,2.5 C11.17,2.5 10.5,3.17 10.5,4 L10.5,4.68 C7.63,5.36 6,7.92 6,11 L6,16 L4.71,17.29 C4.08,17.92 4.52,19 5.41,19 L18.58,19 C19.47,19 19.92,17.92 19.29,17.29 L18,16 Z" id="🔹-Icon-Color" fill="#1D1D1D"></path>
-                    </g>
-                </g>
-            </g>
-        </g>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <g fill="#1C274C">
+        <path d="m 13 6.5 c 0 2.761719 -2.238281 5 -5 5 s -5 -2.238281 -5 -5 s 2.238281 -5 5 -5 s 5 2.238281 5 5 z m 0 0"/>
+        <path d="m 3 6.5 h 10 v 6 h -10 z m 0 0"/>
+        <path d="m 2.5 13 h 11 c 0.550781 0 1 -0.449219 1 -1 s -0.449219 -1 -1 -1 h -11 c -0.550781 0 -1 0.449219 -1 1 s 0.449219 1 1 1 z m 0 0"/>
+        <path d="m 10 14 c 0 0.714844 -0.382812 1.375 -1 1.730469 c -0.617188 0.359375 -1.382812 0.359375 -2 0 c -0.617188 -0.355469 -1 -1.015625 -1 -1.730469"/>
+        <path d="m 9.5 1.5 c 0 0.828125 -0.671875 1.5 -1.5 1.5 s -1.5 -0.671875 -1.5 -1.5 s 0.671875 -1.5 1.5 -1.5 s 1.5 0.671875 1.5 1.5 z m 0 0"/>
     </g>
 </svg>
