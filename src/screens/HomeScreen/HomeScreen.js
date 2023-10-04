@@ -24,7 +24,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.gradientContainer}>
 
-      <GradientBackground startColor="#991B1B" endColor="#1A202C" />
+      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
 
       <ScrollView style={styles.container}

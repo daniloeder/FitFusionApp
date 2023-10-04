@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
+import GradientBackground from './../../components/GradientBackground/GradientBackground';
 
 const ChatScreen = ({ route }) => {
   const [messages, setMessages] = useState([]);
@@ -53,72 +54,95 @@ const ChatScreen = ({ route }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <FlatList
-        data={messages}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.messageBox}>
-            <Text style={styles.messageText}>{item.text}</Text>
-          </View>
-        )}
-        inverted
-      />
+    <View style={styles.gradientContainer}>
+      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
       
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          value={input}
-          onChangeText={setInput}
-          placeholder="Type a message"
+      <View style={styles.container}>
+        <FlatList
+          data={messages}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <View style={styles.messageBox}>
+              <Text style={styles.messageText}>{item.text}</Text>
+            </View>
+          )}
+          inverted
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <Text style={styles.sendText}>Send</Text>
-        </TouchableOpacity>
+        
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            value={input}
+            onChangeText={setInput}
+            placeholder="Type a message"
+            placeholderTextColor="#A0AEC0"
+          />
+          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+            <Text style={styles.sendText}>Send</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f9f9f9',
+    padding: 10,
   },
   messageBox: {
-    backgroundColor: '#e1ffc7',
+    backgroundColor: '#2D3748',
+    opacity: 0.8,
     padding: 10,
-    margin: 10,
+    marginVertical: 5,
     borderRadius: 5,
+    alignSelf: 'flex-start',
   },
   messageText: {
     fontSize: 16,
+    color: '#A0AEC0',
   },
   inputContainer: {
     flexDirection: 'row',
     padding: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#2D3748',
+    opacity: 0.8,
+    borderTopColor: '#4A5568',
     borderTopWidth: 1,
-    borderTopColor: '#ccc',
   },
   input: {
     flex: 1,
     height: 40,
-    borderColor: '#ccc',
+    backgroundColor: '#4A5568',
+    borderColor: '#4A5568',
     borderWidth: 1,
     borderRadius: 5,
     padding: 10,
+    color: '#A0AEC0',
   },
   sendButton: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#3182CE',
     borderRadius: 5,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginLeft: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   sendText: {
-    color: '#fff',
+    color: '#FFF',
     fontSize: 16,
+    textAlign: 'center',
   },
 });
 

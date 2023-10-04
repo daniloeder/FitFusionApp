@@ -8,14 +8,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import GradientBackground from './../../components/GradientBackground/GradientBackground';
 
 const EventScreen = ({ route }) => {
   const [event, setEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const navigation = useNavigation();
-  
-  // Assuming you are passing eventId through route params.
-  console.log(route.params)
+
   const { eventId } = route.params;
 
   useEffect(() => {
@@ -48,86 +47,117 @@ const EventScreen = ({ route }) => {
   if (!event) return <Text>Loading...</Text>;
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>{event.title}</Text>
-      <Text style={styles.location}>{event.location}</Text>
-      <Text style={styles.dateTime}>{event.date_time}</Text>
-      <Text style={styles.sportType}>{event.sport_type}</Text>
-      
-      <TouchableOpacity style={styles.button} onPress={onJoinEvent}>
-        <Text style={styles.buttonText}>Join Event</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={styles.button} onPress={onLeaveEvent}>
-        <Text style={styles.buttonText}>Leave Event</Text>
-      </TouchableOpacity>
-      
-      <Text style={styles.participantTitle}>Participants</Text>
-      
-      <FlatList
-        data={participants}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => onNavigateToProfile(item.id)}>
-            <View style={styles.participant}>
-              <Text style={styles.participantName}>{item.username}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
-    </ScrollView>
+    <View style={styles.gradientContainer}>
+      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+
+      <ScrollView style={styles.container}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+      >
+        <Text style={styles.title}>{event.title}</Text>
+        <Text style={styles.location}>{event.location}</Text>
+        <Text style={styles.dateTime}>{event.date_time}</Text>
+        <Text style={styles.sportType}>{event.sport_type}</Text>
+
+        <TouchableOpacity style={styles.button} onPress={onJoinEvent}>
+          <Text style={styles.buttonText}>Join Event</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.button} onPress={onLeaveEvent}>
+          <Text style={styles.buttonText}>Leave Event</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.participantTitle}>Participants</Text>
+
+        {
+          participants.map((participant) => (
+            <TouchableOpacity key={participant.id} onPress={() => onNavigateToProfile(participant.id)}>
+              <View style={styles.participant}>
+                <Text style={styles.participantName}>{participant.username}</Text>
+              </View>
+            </TouchableOpacity>
+          ))
+        }
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+  gradientContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     padding: 15,
-    backgroundColor: '#f9f9f9',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#FFF',
     marginBottom: 10,
   },
   location: {
-    fontSize: 18,
-    marginBottom: 5,
-  },
-  dateTime: {
-    fontSize: 16,
-    color: 'grey',
+    fontSize: 22,
+    color: '#FFF',
     marginBottom: 10,
   },
+  dateTime: {
+    fontSize: 18,
+    color: '#A0AEC0',
+    marginBottom: 15,
+  },
   sportType: {
-    fontSize: 16,
-    color: 'blue',
+    fontSize: 18,
+    color: '#3182CE',
     marginBottom: 20,
   },
   button: {
-    backgroundColor: '#28a745',
+    backgroundColor: '#2D3748',
+    opacity: 0.8,
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 5,
     marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   buttonText: {
-    color: '#fff',
+    color: '#FFF',
     fontSize: 16,
+    textAlign: 'center',
   },
   participantTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#FFF',
     marginBottom: 10,
   },
   participant: {
-    backgroundColor: '#fff',
+    backgroundColor: '#2D3748',
+    opacity: 0.8,
     padding: 10,
-    borderBottomColor: '#eee',
-    borderBottomWidth: 1,
+    marginBottom: 5,
+    borderRadius: 5,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+    elevation: 2,
   },
   participantName: {
     fontSize: 16,
+    color: '#A0AEC0',
   },
 });
 
