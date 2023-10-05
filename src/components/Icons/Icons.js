@@ -12,7 +12,10 @@ import Notifications from './../../../assets/icons/notifications.svg';
 import Search from './../../../assets/icons/search.svg';
 import Settings from './../../../assets/icons/settings.svg';
 
-
+import Map2 from './../../../assets/icons/map2.svg';
+import Watch from './../../../assets/icons/watch.svg';
+import Date from './../../../assets/icons/date.svg';
+import Sport from './../../../assets/icons/sport.svg';
 
 const Icons = ({
   name,
@@ -36,6 +39,12 @@ const Icons = ({
     Notifications: Notifications,
     Search: Search,
     Settings: Settings,
+
+    Map2: Map2,
+    Watch: Watch,
+    Date: Date,
+    Sport: Sport
+    
   }[name];
 
   return (
