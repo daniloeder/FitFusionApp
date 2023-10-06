@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, SafeAreaView } from 'react-native';
 import moment from 'moment';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
 import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
+import SportsPicker from '../../components/SportPicker/SportPicker';
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
@@ -51,12 +52,24 @@ const DatePicker = ({ date, setDate, setTime }) => {
 };
 
 const CreateEventScreen = () => {
+
+    const [selectedSports, setSelectedSports] = useState([]);
+    const [visibleInputArea, setVisibleInputArea] = useState(false);
+
+    const sportsOptions = [
+        { label: "Soccer", value: "soccer" },
+        { label: "Basketball", value: "basketball" },
+        { label: "Tennis", value: "tennis" },
+        { label: "Baseball", value: "baseball" },
+        // ... add more sports as needed
+    ];
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
     const [date, setDate] = useState('2023-10-01');
     const [time, setTime] = useState('15:00:00');
-    const [sportType, setSportType] = useState('');
+    const [sportsType, setsportsType] = useState([]);
     const [coordinates, setCoordinates] = useState('');
     const [creator, setCreator] = useState(1);
 
@@ -69,7 +82,7 @@ const CreateEventScreen = () => {
                 headers: {
                     'Content-Type': 'application/json',
                     // Add your authorization token here
-                    'Authorization': 'Bearer '
+                    'Authorization': 'Bearer 9ce5a2d2d16a46d2ce0340ae6b9745f59af8e204'
                 },
                 body: JSON.stringify({
                     title,
@@ -77,7 +90,7 @@ const CreateEventScreen = () => {
                     location,
                     date,
                     time,
-                    sport_type: sportType,
+                    sport_type: sportsType.map(sport => sport.value).join(','),
                     coordinates,
                     creator: creator
                     // You can add more fields as needed
@@ -119,7 +132,7 @@ const CreateEventScreen = () => {
 
                 <Text style={styles.inputTitles}>Description</Text>
                 <TextInput
-                    style={[styles.input, {height: width*0.3}]}
+                    style={[styles.input, { height: width * 0.3 }]}
                     value={description}
                     onChangeText={setDescription}
                     placeholder="Description"
@@ -128,12 +141,10 @@ const CreateEventScreen = () => {
                 <Text style={styles.inputTitles}>Date and Time of Event</Text>
                 <DatePicker date={date} setDate={setDate} setTime={setTime} />
 
-                <Text style={styles.inputTitles}>Sport Type</Text>
-                <TextInput
-                    style={styles.input}
-                    value={sportType}
-                    onChangeText={setSportType}
-                    placeholder="Sport Type"
+                <Text style={styles.inputTitles}>Sports Type</Text>
+
+                <SportsPicker
+                    sports={sportsType} setSports={setsportsType}
                 />
 
                 <Text style={styles.inputTitles}>Location</Text>
