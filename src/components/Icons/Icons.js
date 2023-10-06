@@ -17,6 +17,8 @@ import Watch from './../../../assets/icons/watch.svg';
 import Date from './../../../assets/icons/date.svg';
 import Sport from './../../../assets/icons/sport.svg';
 
+import Calendar from './../../../assets/icons/calendar.svg';
+
 const Icons = ({
   name,
   size = 15,
@@ -43,7 +45,9 @@ const Icons = ({
     Map2: Map2,
     Watch: Watch,
     Date: Date,
-    Sport: Sport
+    Sport: Sport,
+
+    Calendar: Calendar,
     
   }[name];
 

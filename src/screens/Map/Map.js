@@ -4,12 +4,12 @@ import * as Location from 'expo-location';
 import { StyleSheet, View, Image, Text, TextInput, Button, Pressable } from 'react-native';
 
 import Icons from '../../components/Icons/Icons';
+import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
+
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyBEHyoRxuXwxFyccaKsw-CuTtvRv_dU1Ow';
 const MAX_ZOOM_LATITUDE_DELTA = 0.045;
 const PATTERN_ZOOM_LATITUDE_DELTA = 0.01;
-
-import Run from './../../../assets/icons/run.svg';
 
 const Map = () => {
     const [userLocation, setUserLocation] = useState(null);
@@ -137,6 +137,7 @@ const Map = () => {
                 })}
             </MapView>
             <View style={styles.inputContainer}>
+                {/*}
                 <TextInput
                     style={styles.input}
                     placeholder="Type a location"
@@ -146,6 +147,9 @@ const Map = () => {
                 <Pressable style={styles.inputGo} onPress={onGoPress}>
                     <Text style={{color:'#FFF'}}>Go</Text>
                 </Pressable>
+            {*/}
+                <GoogleAutocompletePicker />
+
                 {error ? <Text style={styles.errorText}>{error}</Text> : null}
             </View>
         </View>

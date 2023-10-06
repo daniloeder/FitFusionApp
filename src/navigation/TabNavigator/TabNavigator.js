@@ -8,6 +8,7 @@ import Icons from '../../components/Icons/Icons';
 import HomeScreen from '../../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
 import EventScreen from '../../screens/EventScreen/EventScreen';
+import CreateEventScreen from '../../screens/CreateEventScreen/CreateEventScreen';
 import Map from '../../screens/Map/Map';
 import ChatScreen from '../../screens/ChatScreen/ChatScreen';
 import NotificationScreen from '../../screens/NotificationScreen/NotificationScreen';
@@ -122,7 +123,7 @@ const TabNavigator = () => {
         />
         <Tab.Screen
           name="EventScreen"
-          component={EventScreen}
+          component={CreateEventScreen}
           options={{
             tabBarLabel: 'Events',
             tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
