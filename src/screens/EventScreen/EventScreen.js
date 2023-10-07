@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Dimensions
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import Icons from '../../components/Icons/Icons';
 
 const width = Dimensions.get('window').width;
@@ -18,9 +11,10 @@ const EventScreen = ({ route }) => {
   const [event, setEvent] = useState(null);
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
+  const [isVideoModalVisible, setVideoModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  const eventId = 2;
+  const eventId = 51;
 
   useEffect(() => {
     fetchEvent();
@@ -31,7 +25,6 @@ const EventScreen = ({ route }) => {
       const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`);
       const data = await response.json();
       setEvent(data);
-      console.log(data)
       setParticipants(data.participants || []);
     } catch (error) {
       console.error('Error fetching event:', error);
@@ -52,12 +45,43 @@ const EventScreen = ({ route }) => {
     navigation.navigate('ProfileScreen', { userId });
   };
 
+
+  const toggleVideoModal = () => {
+    setVideoModalVisible(!isVideoModalVisible);
+  };
+
   if (!event) return <Text>Loading...</Text>;
 
   return (
     <View style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
+      {event.videos.length ?
+        <Modal
+          animationType="slide"
+          transparent={false}
+          visible={isVideoModalVisible}
+          onRequestClose={toggleVideoModal}
+          style={{
+            width: '100%',
+            height: 200,
+            backgroundColor: '#000'
+          }}
+        >
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', backgroundColor: '#000' }}>
+            <TouchableOpacity activeOpacity={1}
+              style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+            >
+              <ShowMedia
+                media={event.videos[0].video}
+                isVideo={true}
+                style={{ width: width, height: width * (9 / 16) }}
+              />
+            </TouchableOpacity>
+          </View>
+        </Modal>
+        : ''
+      }
       <ScrollView style={styles.container}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
@@ -69,12 +93,7 @@ const EventScreen = ({ route }) => {
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
           <Icons name="Map2" size={width * 0.07} style={[styles.infoIcons, { marginTop: -width * 0.02 }]} />
-          <Text style={[styles.location, { fontSize: width * 0.05 }]}>{event.address}</Text>
-        </View>
-
-        <View style={styles.infoBlock}>
-          <Icons name="Map2" size={width * 0.04} style={[styles.infoIcons, { marginLeft: width * 0.1, marginTop: -width * 0.02 }]} />
-          <Text style={[styles.location, { fontSize: width * 0.04 }]}>{event.city}</Text>
+          <Text style={[styles.location, { fontSize: width * 0.05 }]}>{event.location}</Text>
         </View>
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
@@ -132,7 +151,6 @@ const EventScreen = ({ route }) => {
             <Text style={styles.seeMoreText}>See More</Text>
           </TouchableOpacity>
         </View>
-
         {
           participants.map((participant) => (
             <TouchableOpacity key={participant.id} onPress={() => onNavigateToProfile(participant.id)}>
@@ -142,6 +160,38 @@ const EventScreen = ({ route }) => {
             </TouchableOpacity>
           ))
         }
+
+
+        <Text style={styles.participantTitle}>Media</Text>
+        {event.photos.length ?
+          <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Images</Text>
+          : ''
+        }
+        {event.photos.map((photo, index) =>
+          <ShowMedia key={index} media={photo} video={false} />
+        )}
+
+        {event.videos.length ?
+          <>
+            <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Videos</Text>
+            <Pressable onPress={toggleVideoModal}
+              style={{
+                width: width * 0.2,
+                height: width * 0.2,
+                backgroundColor: '#FFF',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Icons name="PlayVideo" size={width * 0.2} style={{backgroundColor:'#DDD'}} />
+            </Pressable>
+          </>
+          : ''
+        }
+
+        <View style={{ marginBottom: 500 }}>
+
+        </View>
       </ScrollView>
     </View>
   );

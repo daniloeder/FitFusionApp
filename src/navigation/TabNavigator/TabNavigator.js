@@ -123,7 +123,7 @@ const TabNavigator = () => {
         />
         <Tab.Screen
           name="EventScreen"
-          component={CreateEventScreen}
+          component={EventScreen}
           options={{
             tabBarLabel: 'Events',
             tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
