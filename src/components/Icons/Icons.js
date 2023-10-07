@@ -18,6 +18,9 @@ import Date from './../../../assets/icons/date.svg';
 import Sport from './../../../assets/icons/sport.svg';
 
 import Calendar from './../../../assets/icons/calendar.svg';
+import CloseX from './../../../assets/icons/closeX.svg';
+import AddImage from './../../../assets/icons/addImage.svg';
+import AddVideo from './../../../assets/icons/addVideo.svg';
 
 const Icons = ({
   name,
@@ -48,6 +51,9 @@ const Icons = ({
     Sport: Sport,
 
     Calendar: Calendar,
+    CloseX: CloseX,
+    AddImage: AddImage,
+    AddVideo: AddVideo,
     
   }[name];
 

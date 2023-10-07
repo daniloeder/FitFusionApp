@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, Image } from 'react-native';
 import moment from 'moment';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
 import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
 import SportsPicker from '../../components/SportPicker/SportPicker';
-
-LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
-
+import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 const width = Dimensions.get('window').width;
 
-const DatePicker = ({ date, setDate, setTime }) => {
+LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
+const DatePicker = ({ date, setDate, setTime }) => {
     const [selectedDate, setSelectedDate] = useState(date);
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
@@ -28,42 +27,23 @@ const DatePicker = ({ date, setDate, setTime }) => {
     }, [selectedDate]);
 
     return (
-        <Pressable
-            onPress={() => setDatePickerVisibility(true)}
-            style={[styles.dataPikerContainer, selectedDate ? { borderColor: '#21347B' } : {}]}
-        >
+        <Pressable onPress={() => setDatePickerVisibility(true)} style={[styles.dataPikerContainer, selectedDate ? { borderColor: '#21347B' } : {}]}>
             <Icons name="Calendar" size={width * 0.08} style={{ padding: width * 0.028, marginTop: width * 0.01 }} />
             <Text style={{ color: '#656565', fontSize: width * 0.04, marginLeft: width * 0.02 }}>
                 {selectedDate ? moment(selectedDate).format("DD/MM/YYYY HH:mm") : "Click to select the date and time"}
             </Text>
-
             <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="datetime"
                 isDarkModeEnabled={Appearance.getColorScheme() === 'dark'}
                 onConfirm={handleConfirm}
-                onCancel={() => {
-                    setDatePickerVisibility(false);
-                }}
+                onCancel={() => setDatePickerVisibility(false)}
             />
-
         </Pressable>
     );
 };
 
 const CreateEventScreen = () => {
-
-    const [selectedSports, setSelectedSports] = useState([]);
-    const [visibleInputArea, setVisibleInputArea] = useState(false);
-
-    const sportsOptions = [
-        { label: "Soccer", value: "soccer" },
-        { label: "Basketball", value: "basketball" },
-        { label: "Tennis", value: "tennis" },
-        { label: "Baseball", value: "baseball" },
-        // ... add more sports as needed
-    ];
-
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
@@ -73,54 +53,107 @@ const CreateEventScreen = () => {
     const [coordinates, setCoordinates] = useState('');
     const [creator, setCreator] = useState(1);
 
-    // Other fields can be added in a similar fashion
+    const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
+    const [selectedVideo, setSelectedVideo] = useState(null);
 
-    const createEvent = async () => {
+    const updateSelectedImage = (file, index) => {
+        let tempImages = [...selectedImages];
+        tempImages[index] = file;
+        setSelectedImages(tempImages);
+    }
+
+    const logAndAppend = (formData, key, value) => {
+        formData.append(key, value);
+    }; const updateEvent = async (eventId) => {
         try {
-            const response = await fetch('http://192.168.0.118:8000/api/events/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    // Add your authorization token here
-                    'Authorization': 'Bearer 9ce5a2d2d16a46d2ce0340ae6b9745f59af8e204'
-                },
-                body: JSON.stringify({
-                    title,
-                    description,
-                    location,
-                    date,
-                    time,
-                    sport_type: sportsType.map(sport => sport.value).join(','),
-                    coordinates,
-                    creator: creator
-                    // You can add more fields as needed
-                })
+            const formData = new FormData();
 
+            selectedImages.filter(item => item !== null).forEach((img, index) => {
+                const imageType = img.mimeType.split("/")[1];
+                const imgData = {
+                    uri: img.uri,
+                    type: img.mimeType,
+                    name: `photo_${index}.${imageType}`,
+                };
+                formData.append('photos[]', imgData);
             });
 
-            if (!response.ok) {
-                const data = await response.json();
-                console.error('Error creating event:', data);
-                return;
+            if (selectedVideo) {
+                const videoType = selectedVideo.mimeType.split("/")[1];
+                const videoData = {
+                    uri: selectedVideo.uri,
+                    type: selectedVideo.mimeType,
+                    name: `video.${videoType}`,
+                };
+                formData.append('videos[]', videoData);
             }
 
-            // Successfully created event
-            console.log('Event created successfully!');
+            const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Bearer ',
+                },
+                body: formData
+            });
 
+            if (response.ok) {
+                const responseData = await response.json();
+                console.log("Success response:", responseData);
+                // Additional logic for successful response
+            } else {
+                const errorData = await response.json();
+                console.error("Server error response:", errorData);
+                // Additional logic for error response
+            }
         } catch (error) {
             console.error('Error:', error);
+            // Handle error appropriately, maybe show an alert or notification to the user
         }
     };
+
+
+    const createEvent = async () => {
+        const eventFormData = new FormData();
+
+        logAndAppend(eventFormData, 'title', title);
+        logAndAppend(eventFormData, 'description', description);
+        logAndAppend(eventFormData, 'location', location);
+        logAndAppend(eventFormData, 'date', date);
+        logAndAppend(eventFormData, 'time', time);
+        logAndAppend(eventFormData, 'sport_type', sportsType.map(sport => sport.value).join(','));
+        logAndAppend(eventFormData, 'coordinates', coordinates);
+        logAndAppend(eventFormData, 'creator', creator);
+
+        try {
+            const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer '
+                },
+                body: eventFormData
+            });
+
+            if (eventResponse.ok) {
+                const eventData = await eventResponse.json();
+                if (eventData.id) {
+                    // Upload media if event creation was successful and we have an event id
+                    await updateEvent(eventData.id);
+                }
+            } else {
+                const data = await eventResponse.json();
+                console.error("Event creation response:", data);
+            }
+
+        } catch (error) {
+            console.error('Event creation error:', error);
+        }
+    };
+
 
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-            <ScrollView style={styles.container}
-                showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-                overScrollMode="never"
-                keyboardShouldPersistTaps='always'
-            >
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} overScrollMode="never" keyboardShouldPersistTaps='always'>
 
                 <Text style={styles.inputTitles}>Title</Text>
                 <TextInput
@@ -150,11 +183,28 @@ const CreateEventScreen = () => {
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
 
+                <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
+                <View style={{ flexDirection: 'row' }}>
+                    {selectedImages.map((image, index) =>
+                        <UploadPicker key={index} type="image" limit={1} setFile={updateSelectedImage} index={index} />
+                    )}
+                </View>
+
+                {/* Display selected images */}
+                <View style={styles.selectedImagesContainer}>
+                    <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+                    </ScrollView>
+                </View>
+
+
+                <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
+                <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
+
                 <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { }}>
                     <Text style={styles.buttonText}>Preview Event</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => { }}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={createEvent}>
                     <Text style={styles.buttonText}>Create Event</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -203,6 +253,17 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#F8F8F8',
+    },
+
+
+    // Media picker
+
+    selectedImagesContainer: {
+        flexDirection: 'row',
+        marginTop: 10,
+    },
+    imageWrapper: {
+        marginRight: 10,
     },
 });
 
