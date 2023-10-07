@@ -1,0 +1,3 @@
+export const GOOGLE_PLACES_API_KEY = process.env.REACT_APP_GOOGLE_PLACES_API_KEY;
+export const API_AUTHORIZATION = process.env.REACT_APP_API_AUTHORIZATION;
+

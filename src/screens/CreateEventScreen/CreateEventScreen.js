@@ -7,6 +7,7 @@ import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicke
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { API_AUTHORIZATION } from './../../../config';
 
 const width = Dimensions.get('window').width;
 
@@ -91,7 +92,7 @@ const CreateEventScreen = () => {
             const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': 'Bearer ',
+                    'Authorization': `Bearer ${API_AUTHORIZATION}`,
                 },
                 body: formData
             });
@@ -128,7 +129,7 @@ const CreateEventScreen = () => {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': 'Bearer '
+                    'Authorization': `Bearer ${API_AUTHORIZATION}`
                 },
                 body: eventFormData
             });
