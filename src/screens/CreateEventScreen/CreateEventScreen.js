@@ -66,7 +66,9 @@ const CreateEventScreen = () => {
 
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
-    }; const updateEvent = async (eventId) => {
+    };
+    
+    const updateEvent = async (eventId) => {
         try {
             const formData = new FormData();
 
@@ -93,14 +95,13 @@ const CreateEventScreen = () => {
             const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Bearer ${API_AUTHORIZATION}`,
+                    'Authorization': `Token ${API_AUTHORIZATION}`,
                 },
                 body: formData
             });
 
             if (response.ok) {
                 const responseData = await response.json();
-                console.log("Success response:", responseData);
                 // Additional logic for successful response
             } else {
                 const errorData = await response.json();
@@ -130,7 +131,7 @@ const CreateEventScreen = () => {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${API_AUTHORIZATION}`
+                    'Authorization': `Token ${API_AUTHORIZATION}`
                 },
                 body: eventFormData
             });
