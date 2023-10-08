@@ -44,7 +44,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
     const [events, setEvents] = useState([]);
     const mapRef = useRef();
 
-    const [isLocalEnabled, setIsLocalEnabled] = useState(true);
+    const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
     const [isEventEnabled, setIsEventEnabled] = useState(true);
 
     useEffect(() => {
@@ -122,7 +122,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
                 scrollEnabled={SCROLL_ENABLED}
                 zoomEnabled={ZOOM_ENABLED}
             >
-                {places.map((place) => {
+                {isPlacesEnabled && places.map((place) => {
                     const [latitude, longitude] = place.coordinates.split(',').map(Number);
                     return (
                         <Marker key={place.id} coordinate={{ latitude, longitude }}>
@@ -137,7 +137,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
                         </Marker>
                     );
                 })}
-                {events.map((event) => {
+                {isEventEnabled && events.map((event) => {
                     const [latitude, longitude] = event.coordinates.split(',').map(Number);
                     return (
                         <Marker key={event.id} coordinate={{ latitude, longitude }}>
@@ -170,7 +170,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
                     bottom: width * 0.05,
                 }}
             >
-                <OnOffButton icon="Gym" isLocalEnabled={isLocalEnabled} setIsLocalEnabled={setIsLocalEnabled} />
+                <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
                 <OnOffButton icon="Run" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
             </View>
         </View>
