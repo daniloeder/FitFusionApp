@@ -5,9 +5,9 @@ import { StyleSheet, View, Image, Text, TextInput, Button, Pressable } from 'rea
 
 import Icons from '../../components/Icons/Icons';
 import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
+import { API_AUTHORIZATION } from '@env';
 
 
-const GOOGLE_MAPS_API_KEY = 'AIzaSyBEHyoRxuXwxFyccaKsw-CuTtvRv_dU1Ow';
 const MAX_ZOOM_LATITUDE_DELTA = 0.045;
 const PATTERN_ZOOM_LATITUDE_DELTA = 0.01;
 
@@ -36,14 +36,25 @@ const Map = () => {
             });
 
             try {
-                const placesResponse = await fetch('http://192.168.0.118:8000/api/places/');
+                const placesResponse = await fetch('http://192.168.0.118:8000/api/places/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Token ${API_AUTHORIZATION}`
+                    }
+                });
                 if (!placesResponse.ok) {
                     throw new Error('Network response was not ok' + placesResponse.statusText);
                 }
                 const placesData = await placesResponse.json();
                 setPlaces(placesData);
 
-                const eventsResponse = await fetch('http://192.168.0.118:8000/api/events/');
+                const eventsResponse = await fetch('http://192.168.0.118:8000/api/events/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Token ${API_AUTHORIZATION}`
+                    }
+                });
+
                 if (!eventsResponse.ok) {
                     throw new Error('Network response was not ok' + eventsResponse.statusText);
                 }
