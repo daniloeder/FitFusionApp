@@ -4,6 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import Icons from '../../components/Icons/Icons';
+import { API_AUTHORIZATION } from '@env';
+
 
 const width = Dimensions.get('window').width;
 
@@ -22,7 +24,13 @@ const EventScreen = ({ route }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`);
+      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${API_AUTHORIZATION}`,
+        }
+      });
+  
       const data = await response.json();
       setEvent(data);
       setParticipants(data.participants || []);
@@ -56,7 +64,7 @@ const EventScreen = ({ route }) => {
     <View style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-      {event.videos.length ?
+      {event.videos && event.videos.length ?
         <Modal
           animationType="slide"
           transparent={false}
@@ -163,15 +171,15 @@ const EventScreen = ({ route }) => {
 
 
         <Text style={styles.participantTitle}>Media</Text>
-        {event.photos.length ?
+        {event.photos && event.photos.length ?
           <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Images</Text>
           : ''
         }
-        {event.photos.map((photo, index) =>
+        {event.photos && event.photos.map((photo, index) =>
           <ShowMedia key={index} media={photo} video={false} />
         )}
 
-        {event.videos.length ?
+        {event.videos && event.videos.length ?
           <>
             <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Videos</Text>
             <Pressable onPress={toggleVideoModal}
