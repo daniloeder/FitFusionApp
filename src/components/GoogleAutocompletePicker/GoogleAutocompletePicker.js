@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import { GOOGLE_PLACES_API_KEY } from './../../../config';
+import { GOOGLE_PLACES_API_KEY } from '@env';
 
 const GoogleAutocompletePicker = ({ setLocation, setCoordinates, language = "en" }) => {
   const handleSelectPlace = (data, details = null) => {

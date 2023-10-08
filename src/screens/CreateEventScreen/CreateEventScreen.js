@@ -7,7 +7,8 @@ import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicke
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { API_AUTHORIZATION } from './../../../config';
+import { API_AUTHORIZATION } from '@env';
+
 
 const width = Dimensions.get('window').width;
 
