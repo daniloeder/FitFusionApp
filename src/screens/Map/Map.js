@@ -1,23 +1,51 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { StyleSheet, View, Image, Text, TextInput, Button, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, Switch } from 'react-native';
 
 import Icons from '../../components/Icons/Icons';
-import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
+import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
 import { API_AUTHORIZATION } from '@env';
 
+const width = Dimensions.get('window').width;
 
-const MAX_ZOOM_LATITUDE_DELTA = 0.045;
-const PATTERN_ZOOM_LATITUDE_DELTA = 0.01;
+const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
+    return (
+        <View
+            onPress={() => {
 
-const Map = () => {
+            }}
+            style={{
+                width: width * 0.22,
+                height: width * 0.1,
+                backgroundColor: '#EEE',
+                borderRadius: width * 0.04,
+                marginBottom: width * 0.01,
+                flexDirection: 'row',
+                alignItems: 'center'
+            }}
+        >
+            <Icons name={icon} size={width * 0.08} style={{marginLeft: 4}} />
+            <Switch
+                value={isLocalEnabled}
+                onValueChange={() => setIsLocalEnabled(!isLocalEnabled)}
+                thumbColor={isLocalEnabled ? "#007bff" : "#ccc"}
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                style={{ transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }] }}
+            />
+        </View>
+    )
+}
+
+const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DELTA = 0.01, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) => {
+
     const [userLocation, setUserLocation] = useState(null);
     const [places, setPlaces] = useState([]);
     const [events, setEvents] = useState([]);
-    const [locationInput, setLocationInput] = useState('');
-    const [error, setError] = useState('');
     const mapRef = useRef();
+
+    const [isLocalEnabled, setIsLocalEnabled] = useState(true);
+    const [isEventEnabled, setIsEventEnabled] = useState(true);
 
     useEffect(() => {
         (async () => {
@@ -67,6 +95,8 @@ const Map = () => {
     }, []);
 
     const handleRegionChange = (newRegion) => {
+        console.log("Current Coordinates:", newRegion.latitude, newRegion.longitude);
+
         if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
             mapRef.current.animateToRegion({
                 ...newRegion,
@@ -76,32 +106,8 @@ const Map = () => {
         }
     };
 
-    const onGoPress = async () => {
-        setError('');
-        try {
-            const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${locationInput}&key=${GOOGLE_MAPS_API_KEY}`);
-            const data = await response.json();
 
-            if (data.status !== 'OK') {
-                setError('Location not found');
-                return;
-            }
-
-            const { lat, lng } = data.results[0].geometry.location;
-
-            mapRef.current.animateToRegion({
-                latitude: lat,
-                longitude: lng,
-                latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-                longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-            });
-
-        } catch (e) {
-            console.error(e);
-            setError('Error occurred while finding location');
-        }
-    };
-
+    console.log(userLocation)
     if (!userLocation) {
         return null;
     }
@@ -113,6 +119,8 @@ const Map = () => {
                 style={styles.map}
                 initialRegion={userLocation}
                 onRegionChangeComplete={handleRegionChange}
+                scrollEnabled={SCROLL_ENABLED}
+                zoomEnabled={ZOOM_ENABLED}
             >
                 {places.map((place) => {
                     const [latitude, longitude] = place.coordinates.split(',').map(Number);
@@ -140,7 +148,6 @@ const Map = () => {
                                     <Text style={styles.calloutSubtitle}>Location: {event.location}</Text>
                                     <Text style={styles.calloutSubtitle}>Date & Time: {event.date_time}</Text>
                                     <Text style={styles.calloutSubtitle}>Sport Type: {event.sport_type}</Text>
-                                    {/* Add any other details you want to show for an event */}
                                 </View>
                             </Callout>
                         </Marker>
@@ -148,20 +155,23 @@ const Map = () => {
                 })}
             </MapView>
             <View style={styles.inputContainer}>
-                {/*}
-                <TextInput
-                    style={styles.input}
-                    placeholder="Type a location"
-                    onChangeText={setLocationInput}
-                    value={locationInput}
-                />
-                <Pressable style={styles.inputGo} onPress={onGoPress}>
-                    <Text style={{color:'#FFF'}}>Go</Text>
-                </Pressable>
-            {*/}
                 <GoogleAutocompletePicker />
-
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            </View>
+            <View
+                style={{
+                    width: width * 0.25,
+                    padding: 5,
+                    paddingBottom: 2,
+                    borderRadius: width * 0.01,
+                    backgroundColor: '#CCC',
+                    opacity: 0.9,
+                    position: 'absolute',
+                    right: width * 0.02,
+                    bottom: width * 0.05,
+                }}
+            >
+                <OnOffButton icon="Gym" isLocalEnabled={isLocalEnabled} setIsLocalEnabled={setIsLocalEnabled} />
+                <OnOffButton icon="Run" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
             </View>
         </View>
     );
