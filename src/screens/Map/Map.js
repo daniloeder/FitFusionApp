@@ -29,6 +29,7 @@ function calculateDistance(coord1, coord2) {
 
   return distance;
 }
+
 function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
@@ -36,9 +37,7 @@ function deg2rad(deg) {
 const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
   return (
     <View
-      onPress={() => {
-
-      }}
+      onPress={() => {}}
       style={{
         width: width * 0.22,
         height: width * 0.1,
@@ -71,6 +70,7 @@ const CircleOverlay = ({ centerCoordinates, radius }) => {
     />
   );
 };
+
 const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   return (
     <>
@@ -86,9 +86,8 @@ const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   );
 };
 
-
-const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DELTA = 0.01 * 8, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) => {
-  const MAX_DISTANCE_METERS = 2000;
+function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.008, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
+  const MAX_DISTANCE_METERS = 500;
 
   const [userLocation, setUserLocation] = useState(null);
   const [places, setPlaces] = useState([]);
@@ -98,9 +97,67 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
   const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
   const [isEventEnabled, setIsEventEnabled] = useState(true);
 
-  const [globalCoordinates, setGlobalCoordinates] = useState({ lat: -15.480229647965352, lng: -42.19854198396206 });
-  const [coodinatesList, setCoordinatesList] = useState([{ lat: -15.480229647965352, lng: -42.19854198396206 }]);
-
+  const [currentPosition, setCurrentPosition] = useState({ lat: 0, lng: 0 });
+  const [coodinatesList, setCoordinatesList] = useState([{ lat: 0, lng: 0 }]);
+  
+  const updatePlaces = async () => {
+    try {
+      const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.lat}&lng=${currentPosition.lng}&distance=${MAX_DISTANCE_METERS*2}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${API_AUTHORIZATION}`
+        }
+      });
+  
+      if (!placesResponse.ok) {
+        throw new Error('Network response was not ok' + placesResponse.statusText);
+      }
+      const placesData = await placesResponse.json();
+  
+      // Update places by ensuring that each place has a unique key
+      setPlaces((prevPlaces) => {
+        const newPlaces = [...prevPlaces];
+        placesData.forEach((place) => {
+          if (!newPlaces.some((existingPlace) => existingPlace.id === place.id)) {
+            newPlaces.push(place);
+          }
+        });
+        return newPlaces;
+      });
+    } catch (error) {
+      console.error('There was a problem with fetching places: ', error);
+    }
+  };
+  
+  const updateEvents = async () => {
+    try {
+      const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.lat}&lng=${currentPosition.lng}&distance=${MAX_DISTANCE_METERS*2}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${API_AUTHORIZATION}`
+        }
+      });
+  
+      if (!eventsResponse.ok) {
+        throw new Error('Network response was not ok' + eventsResponse.statusText);
+      }
+      const eventsData = await eventsResponse.json();
+  
+      // Update events by ensuring that each event has a unique key
+      setEvents((prevEvents) => {
+        const newEvents = [...prevEvents];
+        eventsData.forEach((event) => {
+          if (!newEvents.some((existingEvent) => existingEvent.id === event.id)) {
+            newEvents.push(event);
+          }
+        });
+        return newEvents;
+      });
+    } catch (error) {
+      console.error('There was a problem with fetching events: ', error);
+    }
+  };
+  
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -108,7 +165,6 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
         console.error('Permission to access location was denied');
         return;
       }
-
       let location = await Location.getCurrentPositionAsync({});
       setUserLocation({
         latitude: location.coords.latitude,
@@ -116,42 +172,22 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
         latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
         longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
       });
+      setCoordinatesList([{ lat: location.coords.latitude, lng: location.coords.longitude }]);
 
-      try {
-        const placesResponse = await fetch('http://192.168.0.118:8000/api/places/', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Token ${API_AUTHORIZATION}`
-          }
-        });
-        console.log(placesResponse)
-        if (!placesResponse.ok) {
-          throw new Error('Network response was not ok' + placesResponse.statusText);
-        }
-        const placesData = await placesResponse.json();
-        setPlaces(placesData);
+      // Set currentPosition with the user's coordinates
+      const userCoordinates = { lat: location.coords.latitude, lng: location.coords.longitude };
+      setCurrentPosition(userCoordinates); // Set user coordinates as the initial value
 
-        const eventsResponse = await fetch('http://192.168.0.118:8000/api/events/', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Token ${API_AUTHORIZATION}`
-          }
-        });
-
-        console.log(eventsResponse)
-        if (!eventsResponse.ok) {
-            throw new Error('Network response was not ok' + eventsResponse.statusText);
-        }
-        const eventsData = await eventsResponse.json();
-        setEvents(eventsData);
-      } catch (error) {
-        console.error('There was a problem with the fetch operation: ', error);
-      }
     })();
-  }, []);
+  }, []); // Run once when the component mounts
+
+  useEffect(() => {
+      updatePlaces();
+      updateEvents();
+  }, [currentPosition]);
 
   const handleRegionChange = (newRegion) => {
-    setGlobalCoordinates({ lat: newRegion.latitude, lng: newRegion.longitude })
+    setCurrentPosition({ lat: newRegion.latitude, lng: newRegion.longitude })
 
     // Check if there's any existing coordinate that is closer than MAX_DISTANCE_METERS
     const isTooClose = coodinatesList.some((coordinate) => {
@@ -162,7 +198,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
       return distance < MAX_DISTANCE_METERS;
     });
 
-    if (!isTooClose) {
+    if (!isTooClose || coodinatesList.length === 0) {
       setCoordinatesList([...coodinatesList, { lat: newRegion.latitude, lng: newRegion.longitude }]);
     }
 
@@ -196,15 +232,14 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
         scrollEnabled={SCROLL_ENABLED}
         zoomEnabled={ZOOM_ENABLED}
       >
-
-        <Marker coordinate={{ latitude: globalCoordinates.lat, longitude: globalCoordinates.lng }}>
+        <Marker coordinate={{ latitude: currentPosition.lat, longitude: currentPosition.lng }}>
         </Marker>
         {isPlacesEnabled && places.map((place) => {
           const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Gym" size={40} />
+              <Icons name="Gym" size={40/3} />
               <Callout tooltip={true} style={styles.calloutContainer}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
@@ -220,7 +255,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={event.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Run" size={40} />
+              <Icons name="Run" size={40/3} />
               <Callout tooltip={true} style={styles.calloutContainer}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{event.title}</Text>
@@ -233,7 +268,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
           );
         })}
 
-        {coodinatesList.map((coordinates, index) =>
+        {false && coodinatesList.map((coordinates, index) =>
           <DoubleCircleOverlay key={index}
             centerCoordinates={{ latitude: coordinates.lat, longitude: coordinates.lng }}
             radius={MAX_DISTANCE_METERS}
@@ -261,7 +296,7 @@ const Map = ({ MAX_ZOOM_LATITUDE_DELTA = 0.045 * 1000, PATTERN_ZOOM_LATITUDE_DEL
       </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -297,9 +332,6 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
   },
-
-
-
   calloutContainer: {
     flexDirection: 'column',
     alignSelf: 'flex-start',
