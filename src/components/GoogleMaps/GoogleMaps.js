@@ -5,8 +5,8 @@ import { GOOGLE_PLACES_API_KEY } from '@env';
 
 const GoogleAutocompletePicker = ({ setLocation, setCoordinates, language = "en" }) => {
   const handleSelectPlace = (data, details = null) => {
-    setLocation(details.formatted_address);
-    setCoordinates(`${details.geometry.location.lat},${details.geometry.location.lng}`);
+    {setLocation && setLocation(details.formatted_address)}
+    {setCoordinates && setCoordinates({ latitude: details.geometry.location.lat, longitude: details.geometry.location.lng })}
   };
 
   return (

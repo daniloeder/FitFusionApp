@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { StyleSheet, View, Text, Dimensions, Switch } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, Switch, Pressable } from 'react-native';
 
 import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
@@ -97,12 +97,14 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
   const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
   const [isEventEnabled, setIsEventEnabled] = useState(true);
 
-  const [currentPosition, setCurrentPosition] = useState({ lat: 0, lng: 0 });
+  const [currentPosition, setCurrentPosition] = useState(null);
   const [coodinatesList, setCoordinatesList] = useState([{ lat: 0, lng: 0 }]);
+
+  const [pickerCoordinates, setPickerCoordinates] = useState(null);
   
   const updatePlaces = async () => {
     try {
-      const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.lat}&lng=${currentPosition.lng}&distance=${MAX_DISTANCE_METERS*2}`, {
+      const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS*2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${API_AUTHORIZATION}`
@@ -113,6 +115,9 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
         throw new Error('Network response was not ok' + placesResponse.statusText);
       }
       const placesData = await placesResponse.json();
+      if(placesData.length === 0){
+        return
+      }
   
       // Update places by ensuring that each place has a unique key
       setPlaces((prevPlaces) => {
@@ -131,7 +136,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
   
   const updateEvents = async () => {
     try {
-      const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.lat}&lng=${currentPosition.lng}&distance=${MAX_DISTANCE_METERS*2}`, {
+      const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS*2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${API_AUTHORIZATION}`
@@ -142,6 +147,9 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
         throw new Error('Network response was not ok' + eventsResponse.statusText);
       }
       const eventsData = await eventsResponse.json();
+      if(eventsData.length === 0){
+        return
+      }
   
       // Update events by ensuring that each event has a unique key
       setEvents((prevEvents) => {
@@ -174,20 +182,42 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
       });
       setCoordinatesList([{ lat: location.coords.latitude, lng: location.coords.longitude }]);
 
-      // Set currentPosition with the user's coordinates
-      const userCoordinates = { lat: location.coords.latitude, lng: location.coords.longitude };
-      setCurrentPosition(userCoordinates); // Set user coordinates as the initial value
+      setCurrentPosition({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+        longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+      });
 
     })();
-  }, []); // Run once when the component mounts
+  }, []);
 
   useEffect(() => {
+    if (currentPosition) {
       updatePlaces();
       updateEvents();
+    }
   }, [currentPosition]);
 
+  useEffect(() => {
+    if(pickerCoordinates) {
+      const newRegion = {
+        "latitude": pickerCoordinates.latitude,
+        "latitudeDelta": PATTERN_ZOOM_LATITUDE_DELTA,
+        "longitude": pickerCoordinates.longitude,
+        "longitudeDelta": PATTERN_ZOOM_LATITUDE_DELTA,
+      }
+      mapRef.current.animateToRegion({
+        ...newRegion,
+        latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
+        longitudeDelta: MAX_ZOOM_LATITUDE_DELTA * (newRegion.longitudeDelta / newRegion.latitudeDelta),
+      });
+    }
+  }, [pickerCoordinates]);
+
   const handleRegionChange = (newRegion) => {
-    setCurrentPosition({ lat: newRegion.latitude, lng: newRegion.longitude })
+    setCurrentPosition(newRegion)
+    //pickerCoordinates = null;
 
     // Check if there's any existing coordinate that is closer than MAX_DISTANCE_METERS
     const isTooClose = coodinatesList.some((coordinate) => {
@@ -218,7 +248,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
     }
   };
 
-  if (!userLocation) {
+  if (!userLocation || !currentPosition) {
     return null;
   }
 
@@ -232,14 +262,13 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
         scrollEnabled={SCROLL_ENABLED}
         zoomEnabled={ZOOM_ENABLED}
       >
-        <Marker coordinate={{ latitude: currentPosition.lat, longitude: currentPosition.lng }}>
-        </Marker>
+        <Marker coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}></Marker>
         {isPlacesEnabled && places.map((place) => {
           const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Gym" size={40/3} />
+              <Icons name="Gym" size={width*0.08} />
               <Callout tooltip={true} style={styles.calloutContainer}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
@@ -255,7 +284,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={event.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Run" size={40/3} />
+              <Icons name="Events" size={width*0.08} />
               <Callout tooltip={true} style={styles.calloutContainer}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{event.title}</Text>
@@ -276,7 +305,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
         )}
       </MapView>
       <View style={styles.inputContainer}>
-        <GoogleAutocompletePicker />
+        <GoogleAutocompletePicker setCoordinates={setPickerCoordinates} />
       </View>
       <View
         style={{
@@ -292,7 +321,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
         }}
       >
         <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
-        <OnOffButton icon="Run" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
+        <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
       </View>
     </View>
   );
