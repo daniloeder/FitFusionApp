@@ -16,6 +16,8 @@ import Map2 from './../../../assets/icons/map2.svg';
 import Watch from './../../../assets/icons/watch.svg';
 import Date from './../../../assets/icons/date.svg';
 import Sport from './../../../assets/icons/sport.svg';
+import Profile2 from './../../../assets/icons/profile2.svg';
+import Description from './../../../assets/icons/description.svg';
 
 import Calendar from './../../../assets/icons/calendar.svg';
 import CloseX from './../../../assets/icons/closeX.svg';
@@ -51,6 +53,8 @@ const Icons = ({
     Watch: Watch,
     Date: Date,
     Sport: Sport,
+    Profile2: Profile2,
+    Description: Description,
 
     Calendar: Calendar,
     CloseX: CloseX,

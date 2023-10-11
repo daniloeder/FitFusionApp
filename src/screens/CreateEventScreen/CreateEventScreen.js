@@ -147,7 +147,7 @@ const CreateEventScreen = ({ navigation }) => {
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 if (eventData.id) {
-                    //await updateEvent(eventData.id);
+                    await updateEvent(eventData.id);
                 }
             } else {
                 // Log raw text response for better debugging.

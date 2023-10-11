@@ -19,7 +19,7 @@ const ShowImage = ({ media }) => {
     ];
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: width*0.4, }}>
             <TouchableOpacity
                 onPress={() => setModalVisible(true)}
                 style={{
@@ -27,8 +27,8 @@ const ShowImage = ({ media }) => {
                     height: width * 0.4,
                     marginRight: width * 0.05,
                     marginBottom: width * 0.05,
-                    borderWidth: 1,
-                    borderColor: 'black',
+                    borderWidth: 3,
+                    borderColor: '#CCC',
                 }}
             >
                 <Image source={{ uri: media.photo }} style={{ flex: 1 }} resizeMode="cover" />

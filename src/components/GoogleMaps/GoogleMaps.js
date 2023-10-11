@@ -52,7 +52,7 @@ const ShowOnMap = ({ coordinates }) => {
         }}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={{ fontSize: width * 0.035, fontWeight: 'bold', color: '#000', marginRight: '2%' }}>Check on Maps</Text>
+        <Text style={{ fontSize: width * 0.035, fontWeight: 'bold', color: '#000', marginRight: '2%' }}>Check on Map</Text>
         <Icons name="Map" size={width * 0.04} />
       </Pressable>
 
