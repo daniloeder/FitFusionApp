@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
-import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
+import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import { API_AUTHORIZATION } from '@env';
@@ -170,6 +170,7 @@ const CreatePlaceScreen = ({ navigation }) => {
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
+                {coordinates? <ShowOnMap coordinates={coordinates} /> : ''}
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>

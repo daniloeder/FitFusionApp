@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimens
 import moment from 'moment';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
-import GoogleAutocompletePicker from './../../components/GoogleAutocompletePicker/GoogleAutocompletePicker';
+import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -45,7 +45,7 @@ const DatePicker = ({ date, setDate, setTime }) => {
     );
 };
 
-const CreateEventScreen = () => {
+const CreateEventScreen = ({ navigation }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
@@ -53,7 +53,6 @@ const CreateEventScreen = () => {
     const [time, setTime] = useState('15:00:00');
     const [sportsType, setsportsType] = useState([]);
     const [coordinates, setCoordinates] = useState('');
-    const [creator, setCreator] = useState(1);
 
     const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
     const [selectedVideo, setSelectedVideo] = useState(null);
@@ -67,7 +66,7 @@ const CreateEventScreen = () => {
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
     };
-    
+
     const updateEvent = async (eventId) => {
         try {
             const formData = new FormData();
@@ -116,6 +115,10 @@ const CreateEventScreen = () => {
 
 
     const createEvent = async () => {
+        if (!coordinates || coordinates === "") {
+            Alert.alert("Error", "Coordinates are required!");
+            return;
+        }
         const eventFormData = new FormData();
 
         logAndAppend(eventFormData, 'title', title);
@@ -124,14 +127,19 @@ const CreateEventScreen = () => {
         logAndAppend(eventFormData, 'date', date);
         logAndAppend(eventFormData, 'time', time);
         logAndAppend(eventFormData, 'sport_type', sportsType.map(sport => sport.value).join(','));
-        logAndAppend(eventFormData, 'coordinates', coordinates);
-        logAndAppend(eventFormData, 'creator', creator);
 
+        // Serialize the coordinates object to a JSON string
+        const coordinatesString = JSON.stringify({
+            type: "Point",
+            coordinates: [coordinates.longitude, coordinates.latitude]
+        });
+        logAndAppend(eventFormData, 'coordinates', coordinatesString);
         try {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${API_AUTHORIZATION}`
+                    'Authorization': `Token ${API_AUTHORIZATION}`,
+                    'Content-Type': 'multipart/form-data' // adding the content type header
                 },
                 body: eventFormData
             });
@@ -139,12 +147,20 @@ const CreateEventScreen = () => {
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 if (eventData.id) {
-                    // Upload media if event creation was successful and we have an event id
-                    await updateEvent(eventData.id);
+                    //await updateEvent(eventData.id);
                 }
             } else {
-                const data = await eventResponse.json();
-                console.error("Event creation response:", data);
+                // Log raw text response for better debugging.
+                const rawText = await eventResponse.text();
+                console.error("Raw server response:", rawText);
+
+                // Try parsing the response as JSON.
+                try {
+                    const data = JSON.parse(rawText);
+                    console.error("Parsed server response:", data);
+                } catch (e) {
+                    console.error("Failed to parse the server response as JSON");
+                }
             }
 
         } catch (error) {
@@ -185,6 +201,7 @@ const CreateEventScreen = () => {
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
+                {coordinates? <ShowOnMap coordinates={coordinates} /> : ''}
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>
@@ -203,7 +220,11 @@ const CreateEventScreen = () => {
                 <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
                 <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { }}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => {
+                    //navigation.navigate('EventScreen', { param1: 'Some data', param2: 'Some more data' });
+                    console.log(location)
+                    console.log(coordinates)
+                }}>
                     <Text style={styles.buttonText}>Preview Event</Text>
                 </TouchableOpacity>
 
@@ -271,3 +292,5 @@ const styles = StyleSheet.create({
 });
 
 export default CreateEventScreen;
+
+
