@@ -1,55 +1,18 @@
 import React, { useState } from 'react';
 import { View, Pressable, Text, StyleSheet, Dimensions, ScrollView, TouchableWithoutFeedback, Modal } from 'react-native';
 import Checkbox from 'expo-checkbox';
+import { SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
-
-// Internalized sports options list
-const sportsOptions = [
-    { value: 'soccer', label: 'Soccer' },
-    { value: 'basketball', label: 'Basketball' },
-    { value: 'tennis', label: 'Tennis' },
-    { value: 'baseball', label: 'Baseball' },
-    { value: 'football', label: 'American Football' },
-    { value: 'golf', label: 'Golf' },
-    { value: 'cricket', label: 'Cricket' },
-    { value: 'rugby', label: 'Rugby' },
-    { value: 'volleyball', label: 'Volleyball' },
-    { value: 'table_tennis', label: 'Table Tennis' },
-    { value: 'badminton', label: 'Badminton' },
-    { value: 'ice_hockey', label: 'Ice Hockey' },
-    { value: 'field_hockey', label: 'Field Hockey' },
-    { value: 'swimming', label: 'Swimming' },
-    { value: 'track_and_field', label: 'Track and Field' },
-    { value: 'boxing', label: 'Boxing' },
-    { value: 'gymnastics', label: 'Gymnastics' },
-    { value: 'martial_arts', label: 'Martial Arts' },
-    { value: 'cycling', label: 'Cycling' },
-    { value: 'equestrian', label: 'Equestrian' },
-    { value: 'fencing', label: 'Fencing' },
-    { value: 'bowling', label: 'Bowling' },
-    { value: 'archery', label: 'Archery' },
-    { value: 'sailing', label: 'Sailing' },
-    { value: 'canoeing', label: 'Canoeing/Kayaking' },
-    { value: 'wrestling', label: 'Wrestling' },
-    { value: 'snowboarding', label: 'Snowboarding' },
-    { value: 'skiing', label: 'Skiing' },
-    { value: 'surfing', label: 'Surfing' },
-    { value: 'skateboarding', label: 'Skateboarding' },
-    { value: 'rock_climbing', label: 'Rock Climbing' },
-    { value: 'mountain_biking', label: 'Mountain Biking' },
-    { value: 'roller_skating', label: 'Roller Skating' }
-    // You can continue to add more sports as needed
-];
-
-const SportsPicker = ({ sports, setSports }) => {
+const SportsPicker = ({ sports, setSports, lang='en' }) => {
     const [visibleInputArea, setVisibleInputArea] = useState(false);
+    const sportsOptions = SportsTypes(lang);
 
     function addRemoveItem(selectedOption) {
-        const sportExists = sports.some(sport => sport.value === selectedOption.value);
+        const sportExists = sports.some(sport => sport.id === selectedOption.id);
         
         if (sportExists) {
-            const newSports = sports.filter(sport => sport.value !== selectedOption.value);
+            const newSports = sports.filter(sport => sport.id !== selectedOption.id);
             setSports(newSports);
         } else if (sports.length < 3) {
             setSports([...sports, selectedOption]);
@@ -59,7 +22,9 @@ const SportsPicker = ({ sports, setSports }) => {
     return (
         <View style={styles.container}>
             <Pressable onPress={() => setVisibleInputArea(!visibleInputArea)} style={styles.searchInputBox}>
-                <Text style={{color:'#999'}}>{sports.length ? sports.map(sport => sport.label).join(", ") : "Select Sports"}</Text>
+                <Text style={{color:'#999'}}>
+                    {sports.length ? sports.map(sport => sport.name).join(", ") : "Select Sports"}
+                </Text>
             </Pressable>
 
             {visibleInputArea && (
@@ -69,17 +34,17 @@ const SportsPicker = ({ sports, setSports }) => {
                             <View style={styles.selectContainer}>
                                 <ScrollView style={styles.selectBox}>
                                     {
-                                        sportsOptions.map(option => (
+                                        Object.values(sportsOptions).map(sport => (
                                             <Pressable
-                                                key={option.value}
+                                                key={sport.id}
                                                 style={styles.selectItem}
-                                                onPress={() => addRemoveItem(option)}
+                                                onPress={() => addRemoveItem(sport)}
                                             >
-                                                <Text style={styles.itemText}>{option.label}</Text>
+                                                <Text style={styles.itemText}>{sport.name}</Text>
                                                 <Checkbox
                                                     style={styles.selectItemCheckBox}
-                                                    value={sports.some(sport => sport.value === option.value)}
-                                                    onValueChange={() => addRemoveItem(option)}
+                                                    value={sports.some(s => s.id === sport.id)}
+                                                    onValueChange={() => addRemoveItem(sport)}
                                                 />
                                             </Pressable>
                                         ))

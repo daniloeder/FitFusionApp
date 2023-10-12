@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, Alert } from 'react-native';
 import moment from 'moment';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
@@ -8,7 +8,7 @@ import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { API_AUTHORIZATION } from '@env';
-
+import { SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
@@ -126,7 +126,9 @@ const CreateEventScreen = ({ navigation }) => {
         logAndAppend(eventFormData, 'location', location);
         logAndAppend(eventFormData, 'date', date);
         logAndAppend(eventFormData, 'time', time);
-        logAndAppend(eventFormData, 'sport_type', sportsType.map(sport => sport.value).join(','));
+        sportsType.map(sport => sport.id.type).forEach(sportType => {
+            logAndAppend(eventFormData, 'sport_types', String(sportType));
+        });
 
         // Serialize the coordinates object to a JSON string
         const coordinatesString = JSON.stringify({
@@ -201,7 +203,7 @@ const CreateEventScreen = ({ navigation }) => {
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
-                {coordinates? <ShowOnMap coordinates={coordinates} /> : ''}
+                {coordinates ? <ShowOnMap coordinates={coordinates} /> : ''}
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>
@@ -222,8 +224,6 @@ const CreateEventScreen = ({ navigation }) => {
 
                 <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => {
                     //navigation.navigate('EventScreen', { param1: 'Some data', param2: 'Some more data' });
-                    console.log(location)
-                    console.log(coordinates)
                 }}>
                     <Text style={styles.buttonText}>Preview Event</Text>
                 </TouchableOpacity>

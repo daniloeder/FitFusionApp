@@ -6,8 +6,7 @@ import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons';
 import { API_AUTHORIZATION } from '@env';
-import SportsTypes from '../../utils/sports';
-
+import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
@@ -19,7 +18,7 @@ const EventScreen = ({ route }) => {
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  const eventId = 449;
+  const eventId = 482;
 
   useEffect(() => {
     fetchEvent();
@@ -122,7 +121,7 @@ const EventScreen = ({ route }) => {
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
           <Icons name="Sport" size={width * 0.06} style={[styles.infoIcons, { marginTop: -width * 0.04 }]} />
           <Text style={styles.sportType}>
-            {event.sport_type.split(',').map((sport) => SportsTypes('en').find((item) => item.value === sport)?.label || sport).join(', ')}
+            {event.sport_types.length ? SportsNames(event.sport_types).join(', ') : ''}.
           </Text>
         </View>
 
@@ -213,6 +212,7 @@ const EventScreen = ({ route }) => {
             flex: 1,
             flexDirection: 'row',
             flexWrap: "wrap",
+            justifyContent: "space-evenly",
           }}
         >
           {event.photos && event.photos.map((photo, index) =>
