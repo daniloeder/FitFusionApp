@@ -1,13 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const width = Dimensions.get('window').width;
 
 const HomeScreen = ({ navigation }) => {
   const [events, setEvents] = useState([]);
+  const [userKey, setUserKey] = useState(null);
+
+  const storeAuthToken = async () => {
+    try {
+      const storedKey = await AsyncStorage.getItem('userKey');
+      if (storedKey) {
+        setUserKey(storedKey);
+        console.log(storedKey)
+      }
+    } catch (e) {
+      console.error("Error fetching userKey:", e);
+    }
+  }
 
   useEffect(() => {
+    storeAuthToken();
     fetchEvents();
   }, []);
 
@@ -28,7 +43,7 @@ const HomeScreen = ({ navigation }) => {
 
 
       <ScrollView style={styles.container}
-        showsVerticalScrollIndicator={false} 
+        showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
       >

@@ -1,49 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Pressable, Appearance, LogBox, Alert } from 'react-native';
-import moment from 'moment';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, LogBox, Alert } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DatePicker from '../../components/Forms/DatePicker';
 import { API_AUTHORIZATION } from '@env';
 import { SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
-
-const DatePicker = ({ date, setDate, setTime }) => {
-    const [selectedDate, setSelectedDate] = useState(date);
-    const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-
-    const handleConfirm = (date) => {
-        setSelectedDate(date);
-        setDatePickerVisibility(false);
-    };
-
-    useEffect(() => {
-        setDate(moment(selectedDate).format("YYYY-MM-DD"));
-        setTime(moment(selectedDate).format("HH:mm"));
-    }, [selectedDate]);
-
-    return (
-        <Pressable onPress={() => setDatePickerVisibility(true)} style={[styles.dataPikerContainer, selectedDate ? { borderColor: '#21347B' } : {}]}>
-            <Icons name="Calendar" size={width * 0.08} style={{ padding: width * 0.028, marginTop: width * 0.01 }} />
-            <Text style={{ color: '#656565', fontSize: width * 0.04, marginLeft: width * 0.02 }}>
-                {selectedDate ? moment(selectedDate).format("DD/MM/YYYY HH:mm") : "Click to select the date and time"}
-            </Text>
-            <DateTimePickerModal
-                isVisible={isDatePickerVisible}
-                mode="datetime"
-                isDarkModeEnabled={Appearance.getColorScheme() === 'dark'}
-                onConfirm={handleConfirm}
-                onCancel={() => setDatePickerVisibility(false)}
-            />
-        </Pressable>
-    );
-};
 
 const CreateEventScreen = ({ navigation }) => {
     const [title, setTitle] = useState('');
@@ -193,7 +160,7 @@ const CreateEventScreen = ({ navigation }) => {
                 />
 
                 <Text style={styles.inputTitles}>Date and Time of Event</Text>
-                <DatePicker date={date} setDate={setDate} setTime={setTime} />
+                <DatePicker date={date} setDate={setDate} setTime={setTime} dateType="YYYY/MM/DD" customStyle={styles.dataPikerContainer} />
 
                 <Text style={styles.inputTitles}>Sports Type</Text>
 

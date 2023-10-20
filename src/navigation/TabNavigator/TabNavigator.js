@@ -5,6 +5,12 @@ import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 import Icons from '../../components/Icons/Icons';
 
+
+import LoginScreen from '../../screens/Auth/LoginScreen';
+import RegisterScreen from '../../screens/Auth/RegisterScreen';
+import ForgotPasswordScreen from '../../screens/Auth/ChangePasswordScreen';
+import GoogleAuthScreen from '../../screens/Auth/GoogleAuthScreen';
+
 import HomeScreen from '../../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
 import EventScreen from '../../screens/EventScreen/EventScreen';
@@ -74,7 +80,7 @@ const TabNavigator = () => {
     <>
       <StatusBar translucent={true} backgroundColor="transparent" barStyle="light-content" />
       <Tab.Navigator
-        initialRouteName="EventScreen"
+        initialRouteName="GoogleAuthScreen"
         screenOptions={{
           headerStyle: {
             height: width * 0.2,
@@ -106,7 +112,40 @@ const TabNavigator = () => {
         }}
       >
         <Tab.Screen
-          name="Home"
+          name="LoginScreen"
+          component={LoginScreen}
+          options={{
+            tabBarLabel: 'Login Screen',
+            tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
+          }}
+        />
+        <Tab.Screen
+          name="RegisterScreen"
+          component={RegisterScreen}
+          options={{
+            tabBarLabel: 'Register Screen',
+            tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
+          }}
+        />
+        <Tab.Screen
+          name="ForgotPasswordScreen"
+          component={ForgotPasswordScreen}
+          options={{
+            tabBarLabel: 'Forgot Password Screen',
+            tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
+          }}
+        />
+        <Tab.Screen
+          name="GoogleAuthScreen"
+          component={GoogleAuthScreen}
+          options={{
+            tabBarLabel: 'GoogleAuthScreen',
+            tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
+          }}
+        />
+
+        <Tab.Screen
+          name="HomeScreen"
           component={HomeScreen}
           options={{
             tabBarLabel: 'Home',
@@ -119,6 +158,14 @@ const TabNavigator = () => {
           options={{
             tabBarLabel: 'Profile',
             tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
+          }}
+        />
+        <Tab.Screen
+          name="CreateEventScreen"
+          component={CreateEventScreen}
+          options={{
+            tabBarLabel: 'Create Event Screen',
+            tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
           }}
         />
         <Tab.Screen
