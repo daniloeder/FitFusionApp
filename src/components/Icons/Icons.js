@@ -25,6 +25,8 @@ import AddImage from './../../../assets/icons/addImage.svg';
 import AddVideo from './../../../assets/icons/addVideo.svg';
 import LeftArrow from './../../../assets/icons/leftArrow.svg';
 import PlayVideo from './../../../assets/icons/playVideo.svg';
+import EyeSlash from './../../../assets/icons/eyeSlash.svg';
+import Eye from './../../../assets/icons/eye.svg';
 
 const Icons = ({
   name,
@@ -62,8 +64,15 @@ const Icons = ({
     AddVideo: AddVideo,
     LeftArrow: LeftArrow,
     PlayVideo: PlayVideo,
+    Eye: Eye,
+    EyeSlash: EyeSlash,
     
   }[name];
+
+  if (!Icon) {
+    console.warn(`Icon with name "${name}" not found`);
+    return null;
+  }
 
   return (
     <Icon
