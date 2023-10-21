@@ -9,7 +9,6 @@ import Icons from '../../components/Icons/Icons';
 import LoginScreen from '../../screens/Auth/LoginScreen';
 import RegisterScreen from '../../screens/Auth/RegisterScreen';
 import ForgotPasswordScreen from '../../screens/Auth/ChangePasswordScreen';
-import GoogleAuthScreen from '../../screens/Auth/GoogleAuthScreen';
 
 import HomeScreen from '../../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
@@ -80,7 +79,7 @@ const TabNavigator = () => {
     <>
       <StatusBar translucent={true} backgroundColor="transparent" barStyle="light-content" />
       <Tab.Navigator
-        initialRouteName="GoogleAuthScreen"
+        initialRouteName="RegisterScreen"
         screenOptions={{
           headerStyle: {
             height: width * 0.2,
@@ -132,14 +131,6 @@ const TabNavigator = () => {
           component={ForgotPasswordScreen}
           options={{
             tabBarLabel: 'Forgot Password Screen',
-            tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
-          }}
-        />
-        <Tab.Screen
-          name="GoogleAuthScreen"
-          component={GoogleAuthScreen}
-          options={{
-            tabBarLabel: 'GoogleAuthScreen',
             tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
           }}
         />

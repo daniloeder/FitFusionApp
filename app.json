@@ -2,6 +2,7 @@
   "expo": {
     "name": "FitFusionApp",
     "slug": "FitFusionApp",
+    "scheme": "FitFusionApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -18,17 +19,27 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "App needs access to your photos"
-      }
+      },
+      "bundleIdentifier": "com.daniloeder.FitFusionApp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ],
+      "package": "com.daniloeder.FitFusionApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "78aa1ceb-aaa8-4ace-8f79-d5cc2acd2af0"
+      }
     }
   }
 }

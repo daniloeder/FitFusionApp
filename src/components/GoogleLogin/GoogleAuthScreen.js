@@ -1,11 +1,10 @@
 import "react-native-gesture-handler";
 import * as React from "react";
 import * as WebBrowser from "expo-web-browser";
+import { makeRedirectUri } from "expo-auth-session";
 import * as Google from "expo-auth-session/providers/google";
-import { SafeAreaView, Text, TouchableOpacity, Button, View } from "react-native";
+import { SafeAreaView, Text, TouchableOpacity, Button, LogBox } from "react-native";
 import { GOOGLE_IOS_CLIENT_ID, GOOGLE_ANDROID_CLIENT_ID, GOOGLE_WEB_CLIENT_ID } from "@env";
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
 import { auth } from "./firebase-config";
 import {
   GoogleAuthProvider,
@@ -13,36 +12,41 @@ import {
   signInWithCredential,
   signOut
 } from "firebase/auth";
+LogBox.ignoreLogs(['The useProxy option is deprecated and will be removed in a future release, for more information check https://expo.fyi/auth-proxy-migration.']);
 
-const SignInScreen = ({ promptAsync }) => <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-  <TouchableOpacity style={{ backgroundColor: "#4285F4", width: "90%", padding: 10, borderRadius: 15, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 15, marginTop: 80, marginBottom: 150, }} onPress={() => promptAsync()}>
-    <Text style={{ fontWeight: "bold", color: "white", fontSize: 17 }}>
-      Sign In with Google
-    </Text>
-  </TouchableOpacity>
-</SafeAreaView>
-
+const GoogleSignInButton = ({ promptAsync }) => (
+  <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+    <TouchableOpacity
+      style={{ backgroundColor: "#4285F4", width: "90%", padding: 10, borderRadius: 15, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
+      onPress={() => promptAsync()}
+    >
+      <Text style={{ fontWeight: "bold", color: "white", fontSize: 17 }}>
+        Sign In with Google
+      </Text>
+    </TouchableOpacity>
+  </SafeAreaView>
+);
 
 WebBrowser.maybeCompleteAuthSession();
 
-export default function App() {
+export default function GoogleLogin() {
   const [userInfo, setUserInfo] = React.useState();
-  const [loading, setLoading] = React.useState(false);
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     clientId: GOOGLE_WEB_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      scheme: 'myapp', // Replace this with your app's custom scheme
+    }),
+    useProxy: false
   });
 
   const getLocalUser = async () => {
     try {
-      setLoading(true);
       const userData = userJSON ? JSON.parse(userJSON) : null;
       setUserInfo(userData);
     } catch (e) {
       console.log(e, "Error getting local user");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -67,14 +71,9 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  return userInfo ?
-    <View style={{ marginTop: 200 }}>
-      <Button
-        title="Sign Out"
-        onPress={async () => {
-          await signOut(auth);
-        }}
-      />
-    </View>
-    : <SignInScreen promptAsync={promptAsync} />;
+  if (!userInfo) {
+      return <GoogleSignInButton promptAsync={promptAsync} />;
+  } else {
+    return <Button title="Sign Out" onPress={()=>signOut(auth)} />;
+  }
 }

@@ -3,6 +3,7 @@ import { View, Alert, StyleSheet, Pressable, Text, Dimensions, Modal, ScrollView
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
+import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -54,6 +55,7 @@ function RegisterScreen({ navigation }) {
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
+                <GoogleLogin />
                 <Text style={styles.title}>Register</Text>
                 <CustomInput
                     placeholder="Email"

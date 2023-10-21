@@ -15,7 +15,6 @@ import NotificationScreen from '../../screens/NotificationScreen/NotificationScr
 import ProfileScreen from '../../screens/ProfileScreen/ProfileScreen';
 import SearchScreen from '../../screens/SearchScreen/SearchScreen';
 import SettingsScreen from '../../screens/SettingsScreen/SettingsScreen';
-import GoogleAuthScreen from '../../screens/Auth/GoogleAuthScreen';
 
 const Stack = createStackNavigator();
 
@@ -26,7 +25,6 @@ const AppNavigator = () => {
         <Stack.Screen name="LoginScreen" component={LoginScreen}/>
         <Stack.Screen name="RegisterScreen" component={RegisterScreen}/>
         <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen}/>
-        <Stack.Screen name="GoogleAuthScreen" component={GoogleAuthScreen}/>
 
         <Stack.Screen name="Home" component={HomeScreen}/>
         <Stack.Screen name="Chat" component={ChatScreen} />
