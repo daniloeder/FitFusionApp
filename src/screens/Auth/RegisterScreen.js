@@ -55,8 +55,8 @@ function RegisterScreen({ navigation }) {
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
-                <GoogleLogin />
                 <Text style={styles.title}>Register</Text>
+                <GoogleLogin name="Register In with Google" />
                 <CustomInput
                     placeholder="Email"
                     placeholderTextColor="#656565"

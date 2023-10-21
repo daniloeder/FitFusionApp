@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -62,6 +63,7 @@ function LoginScreen() {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
+                <GoogleLogin name="Log In with Google" />
                 <CustomInput
                     placeholder="Email or Username"
                     placeholderTextColor="#656565"
@@ -114,7 +116,6 @@ const styles = StyleSheet.create({
     title: {
         textAlign: 'center',
         fontSize: width * 0.07,
-        marginBottom: width * 0.1,
         fontWeight: 'bold',
         color: '#FFF',
     },

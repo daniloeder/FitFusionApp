@@ -27,6 +27,7 @@ import LeftArrow from './../../../assets/icons/leftArrow.svg';
 import PlayVideo from './../../../assets/icons/playVideo.svg';
 import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
+import Google from './../../../assets/icons/google.svg';
 
 const Icons = ({
   name,
@@ -66,6 +67,7 @@ const Icons = ({
     PlayVideo: PlayVideo,
     Eye: Eye,
     EyeSlash: EyeSlash,
+    Google: Google,
     
   }[name];
 
