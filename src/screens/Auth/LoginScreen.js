@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,7 +21,7 @@ function LoginScreen() {
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/auth/login/', {
+            const response = await fetch('http://192.168.0.118:8000/api/users/auth/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -29,10 +30,11 @@ function LoginScreen() {
             });
 
             const responseData = await response.json();
+            console.log(responseData, response.ok)
 
             if (response.ok) {
-                if (responseData.key) {
-                    await AsyncStorage.setItem('@userToken', responseData.key);
+                if (responseData.token) {
+                    await AsyncStorage.setItem('@userToken', responseData.token);
                     navigation.navigate('HomeScreen');
                     Alert.alert('Success', 'Logged in successfully!');
                 } else {

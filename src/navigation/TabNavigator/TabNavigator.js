@@ -79,7 +79,7 @@ const TabNavigator = () => {
     <>
       <StatusBar translucent={true} backgroundColor="transparent" barStyle="light-content" />
       <Tab.Navigator
-        initialRouteName="HomeScreen"
+        initialRouteName="LoginScreen"
         screenOptions={{
           headerStyle: {
             height: width * 0.2,

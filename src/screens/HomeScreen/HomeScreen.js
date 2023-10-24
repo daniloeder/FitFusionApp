@@ -30,7 +30,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   useEffect(() => {
-    const userToken = fetchUserToken();
+    userToken = fetchUserToken();
     if (!userToken) {
       navigation.navigate("LoginScreen");
       return;
