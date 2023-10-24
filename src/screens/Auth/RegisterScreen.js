@@ -21,7 +21,6 @@ function RegisterScreen({ navigation }) {
     const [password2, setPassword2] = useState('');
 
     const [isModalVisible, setModalVisible] = useState(false);
-    const [isSocialLogin, setIsSocialLogin] = useState(false);
     const [successRegistration, setSuccessRegistration] = useState(false);
 
     const storeAuthToken = async (token) => {
@@ -100,7 +99,7 @@ function RegisterScreen({ navigation }) {
 
     const handleRegister = async () => {
         try {
-            if (!socialData && (!email || (!password && !isSocialLogin) || !username)) {
+            if (!socialData && (!email || (!password && !socialToken) || !username)) {
                 Alert.alert('Input Error', 'Please fill out all fields.');
                 return;
             }
@@ -110,10 +109,10 @@ function RegisterScreen({ navigation }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(isSocialLogin ? {
+                body: JSON.stringify(socialToken ? {
                     social: true, token: socialToken, email: socialData.email, username: socialData.name
                 } : {
-                    social: false, email, password: !isSocialLogin ? password : "", username, date_of_birth: dateOfBirth, sex
+                    social: false, email, password: !socialToken ? password : "", username, date_of_birth: dateOfBirth, sex
                 })
             });
 
@@ -138,18 +137,18 @@ function RegisterScreen({ navigation }) {
     };
 
     useEffect(() => {
-        if (isSocialLogin) {
+        if (socialToken) {
             handleRegister();
         }
-    }, [isSocialLogin])
+    }, [socialToken])
 
     return (
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Register</Text>
-                {!isSocialLogin || !accessToken ? <>
-                    <GoogleLogin title="Register with Google" setGoogleToken={setSocialToken} setGoogleData={setSocialData} setIsSocialLogin={setIsSocialLogin} registration />
+                {!socialToken || !accessToken ? <>
+                    <GoogleLogin title="Register with Google" setGoogleToken={setSocialToken} setGoogleData={setSocialData} registration />
                     <CustomInput
                         placeholder="Email"
                         placeholderTextColor="#656565"
@@ -211,7 +210,7 @@ function RegisterScreen({ navigation }) {
                         </View>
                     </View>
                 </Modal>
-                {!isSocialLogin || !accessToken ? <>
+                {!socialToken || !accessToken ? <>
                     <CustomInput
                         secret
                         placeholder="Password"
@@ -231,16 +230,16 @@ function RegisterScreen({ navigation }) {
                     styles.registerButton,
                     pressed ? styles.buttonPressed : null
                 ]} onPress={() => {
-                    if (!isSocialLogin || !accessToken) {
+                    if (!socialToken || !accessToken) {
                         handleRegister();
                     } else {
                         handleUpdateProfile();
                     }
                 }}>
-                    <Text style={styles.registerButtonText}>{!isSocialLogin || !accessToken ? "Register" : "Complete Registration"}</Text>
+                    <Text style={styles.registerButtonText}>{!socialToken || !accessToken ? "Register" : "Complete Registration"}</Text>
                 </Pressable>
 
-                {!isSocialLogin || !accessToken ? <>
+                {!socialToken || !accessToken ? <>
                     <View style={styles.loginContainer}>
                         <Text style={styles.registerText}>Already have an account?</Text>
                         <Pressable style={({ pressed }) => [

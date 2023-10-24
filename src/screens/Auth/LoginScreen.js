@@ -13,10 +13,12 @@ function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const [socialToken, setSocialToken] = useState(null);
+
     const handleLogin = async () => {
         try {
             // Check if fields are not empty
-            if (!email || !password) {
+            if (!socialToken && (!email || !password)) {
                 Alert.alert('Input Error', 'Please enter both email and password.');
                 return;
             }
@@ -26,7 +28,11 @@ function LoginScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(email.includes('@') ? { email, password } : {username: email, password})
+                body: JSON.stringify(socialToken ?
+                    {email, token: socialToken}
+                    :
+                    email.includes('@') ? { email, password } : { username: email, password }
+                )
             });
 
             const responseData = await response.json();
@@ -58,13 +64,19 @@ function LoginScreen() {
         }
     };
 
+    useEffect(() => {
+        if (socialToken) {
+            handleLogin();
+        }
+    }, [socialToken])
+
 
     return (
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
-                <GoogleLogin title="Log In with Google" />
+                <GoogleLogin title="Log In with Google" setGoogleToken={setSocialToken} />
                 <CustomInput
                     placeholder="Email or Username"
                     placeholderTextColor="#656565"
