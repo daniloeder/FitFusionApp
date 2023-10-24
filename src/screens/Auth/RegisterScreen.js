@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Alert, StyleSheet, Pressable, Text, Dimensions, Modal, ScrollView } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import CustomInput from '../../components/Forms/CustomInput';
@@ -8,6 +8,7 @@ import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 const { width, height } = Dimensions.get('window');
 
 function RegisterScreen({ navigation }) {
+    const [accessToken, setAccessToken] = useState(null);
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [sex, setSex] = useState('');
@@ -15,27 +16,68 @@ function RegisterScreen({ navigation }) {
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
 
-    const [isModalVisible, setModalVisible] = useState(false);
 
-    const handleRegister = async () => {
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [isSocialLogin, setIsSocialLogin] = useState(false);
+    const [successRegistration, setSuccessRegistration] = useState(false);
+
+    const handleUpdateProfile = async () => {
         try {
-            if (!email || !password || !username || !dateOfBirth) {
+            if (!dateOfBirth || !sex) {
                 Alert.alert('Input Error', 'Please fill out all fields.');
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/auth/register/', {
+            const response = await fetch(`http://192.168.0.118:8000/api/users/update/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Token ' + accessToken
+                },
+                body: JSON.stringify({ date_of_birth: dateOfBirth, sex })
+            });
+            
+            const responseData = await response.json();
+            console.log(response.ok, responseData)
+            if (response.ok) {
+                Alert.alert('Success', 'Profile updated successfully!');
+            } else {
+                let errorMessage = '';
+                for (const key in responseData) {
+                    // Adding each error message to the errorMessage string.
+                    errorMessage += responseData[key].join('\n') + '\n';
+                }
+                Alert.alert('Update Error', errorMessage.trim());
+            }
+
+        } catch (error) {
+            console.error("There was an error:", error);
+            Alert.alert('Error', 'There was an error with the update process. Please try again.');
+        }
+    };
+
+
+    const handleRegister = async () => {
+        try {
+            if (!email || (!password && !isSocialLogin) || !username) {
+                Alert.alert('Input Error', 'Please fill out all fields.');
+                return;
+            }
+
+            const response = await fetch('http://192.168.0.118:8000/api/users/auth/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password, password2, username, date_of_birth: dateOfBirth, sex })
+                body: JSON.stringify({ social: isSocialLogin, email, password: !isSocialLogin ? password : "", username, date_of_birth: dateOfBirth, sex })
             });
 
             const responseData = await response.json();
             console.log(response.ok, responseData)
             if (response.ok) {
-                navigation.navigate("LoginScreen");
+                console.log("responseData", responseData);
+                setAccessToken(responseData.token);
+                setSuccessRegistration(true);
                 Alert.alert('Success', 'Registered successfully!\nYou can Log In now.');
             } else {
                 let errorMessage = '';
@@ -45,37 +87,45 @@ function RegisterScreen({ navigation }) {
                 }
                 Alert.alert('Registration Error', errorMessage.trim());
             }
+
         } catch (error) {
             console.error("There was an error:", error);
             Alert.alert('Error', 'There was an error with the registration process. Please try again.');
         }
     };
 
+    useEffect(() => {
+        if (isSocialLogin) {
+            handleRegister();
+        }
+    }, [isSocialLogin])
+
     return (
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Register</Text>
-                <GoogleLogin name="Register In with Google" />
-                <CustomInput
-                    placeholder="Email"
-                    placeholderTextColor="#656565"
-                    onChangeText={setEmail}
-                    value={email}
-                />
+                {!isSocialLogin || !accessToken ? <>
+                    <GoogleLogin title="Register with Google" setIsSocialLogin={setIsSocialLogin} setEmail={setEmail} setUsername={setUsername} registration />
+                    <CustomInput
+                        placeholder="Email"
+                        placeholderTextColor="#656565"
+                        onChangeText={setEmail}
+                        value={email}
+                    />
 
-                <CustomInput
-                    placeholder="Username"
-                    placeholderTextColor="#656565"
-                    onChangeText={setUsername}
-                    value={username}
-                />
+                    <CustomInput
+                        placeholder="Username"
+                        placeholderTextColor="#656565"
+                        onChangeText={setUsername}
+                        value={username}
+                    /></> : successRegistration ? <Text style={{ textAlign: 'center', margin: width * 0.05, fontWeight: 'bold', color: '#FFF', fontSize: width * 0.04 }}>{"Registered successfully!\nNow you need just complete these info!"}</Text> : ''}
 
                 <DatePicker setDate={setDateOfBirth} mode="date" dateType='DD/MM/YYYY' customStyle={styles.timePicker} />
 
                 <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
                     <Text style={styles.pickerTriggerText}>
-                        {sex ? `Selected: ${sex}` : 'Select Sex'}
+                        {sex ? `Selected: ${sex == "M" ? "Male" : sex == "F" ? "Female" : "Other"}` : 'Select Sex'}
                     </Text>
                 </Pressable>
                 <Modal
@@ -118,39 +168,48 @@ function RegisterScreen({ navigation }) {
                         </View>
                     </View>
                 </Modal>
-                <CustomInput
-                    secret
-                    placeholder="Password"
-                    placeholderTextColor="#656565"
-                    onChangeText={setPassword}
-                    value={password}
-                />
+                {!isSocialLogin || !accessToken ? <>
+                    <CustomInput
+                        secret
+                        placeholder="Password"
+                        placeholderTextColor="#656565"
+                        onChangeText={setPassword}
+                        value={password}
+                    />
 
-                <CustomInput
-                    secret
-                    placeholder="Confirm Password"
-                    placeholderTextColor="#656565"
-                    onChangeText={setPassword2}
-                    value={password2}
-                />
+                    <CustomInput
+                        secret
+                        placeholder="Confirm Password"
+                        placeholderTextColor="#656565"
+                        onChangeText={setPassword2}
+                        value={password2}
+                    /></> : ''}
                 <Pressable style={({ pressed }) => [
                     styles.registerButton,
                     pressed ? styles.buttonPressed : null
-                ]} onPress={handleRegister}>
-                    <Text style={styles.registerButtonText}>Register</Text>
+                ]} onPress={()=>{
+                    console.log("isSocialLogin", isSocialLogin)
+                    if(!isSocialLogin || !accessToken){
+                        handleRegister();
+                    } else {
+                        handleUpdateProfile();
+                    }
+                }}>
+                    <Text style={styles.registerButtonText}>{!isSocialLogin || !accessToken ? "Register" : "Complete Registration"}</Text>
                 </Pressable>
 
-                <View style={styles.loginContainer}>
-                    <Text style={styles.registerText}>Already have an account?</Text>
-                    <Pressable style={({ pressed }) => [
-                        styles.loginButton,
-                        pressed ? styles.buttonPressed : null
-                    ]} onPress={() => {
-                        navigation.navigate('LoginScreen');
-                    }}>
-                        <Text style={styles.loginButtonText}>Log in!</Text>
-                    </Pressable>
-                </View>
+                {!isSocialLogin || !accessToken ? <>
+                    <View style={styles.loginContainer}>
+                        <Text style={styles.registerText}>Already have an account?</Text>
+                        <Pressable style={({ pressed }) => [
+                            styles.loginButton,
+                            pressed ? styles.buttonPressed : null
+                        ]} onPress={() => {
+                            navigation.navigate('LoginScreen');
+                        }}>
+                            <Text style={styles.loginButtonText}>Log in!</Text>
+                        </Pressable>
+                    </View></> : ''}
 
             </View>
         </ScrollView>

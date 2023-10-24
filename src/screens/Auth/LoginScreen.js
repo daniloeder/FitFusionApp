@@ -63,7 +63,7 @@ function LoginScreen() {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
-                <GoogleLogin name="Log In with Google" />
+                <GoogleLogin title="Log In with Google" />
                 <CustomInput
                     placeholder="Email or Username"
                     placeholderTextColor="#656565"
