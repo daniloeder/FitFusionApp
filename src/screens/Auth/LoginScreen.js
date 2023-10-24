@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert, Dimensions, Pressable, ScrollView } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 
 const { width, height } = Dimensions.get('window');
@@ -33,7 +32,7 @@ function LoginScreen() {
 
             if (response.ok) {
                 if (responseData.key) {
-                    await AsyncStorage.setItem('userKey', responseData.key);
+                    await AsyncStorage.setItem('@userToken', responseData.key);
                     navigation.navigate('HomeScreen');
                     Alert.alert('Success', 'Logged in successfully!');
                 } else {

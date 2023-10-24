@@ -6,25 +6,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const width = Dimensions.get('window').width;
 
 const HomeScreen = ({ navigation }) => {
+
   const [events, setEvents] = useState([]);
-  const [userKey, setUserKey] = useState(null);
 
-  const storeAuthToken = async () => {
+  const fetchUserToken = async () => {
     try {
-      const storedKey = await AsyncStorage.getItem('userKey');
-      if (storedKey) {
-        setUserKey(storedKey);
-        console.log(storedKey)
-      }
+      const userToken = await AsyncStorage.getItem('@userToken');
+      return userToken;
     } catch (e) {
-      console.error("Error fetching userKey:", e);
+      console.error("Error fetching userToken:", e);
     }
+    return null;
   }
-
-  useEffect(() => {
-    storeAuthToken();
-    fetchEvents();
-  }, []);
 
   const fetchEvents = async () => {
     try {
@@ -35,6 +28,15 @@ const HomeScreen = ({ navigation }) => {
       console.error('Error fetching events:', error);
     }
   };
+
+  useEffect(() => {
+    const userToken = fetchUserToken();
+    if (!userToken) {
+      navigation.navigate("LoginScreen");
+      return;
+    }
+    fetchEvents();
+  }, []);
 
   return (
     <View style={styles.gradientContainer}>

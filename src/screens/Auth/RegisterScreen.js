@@ -4,22 +4,63 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 function RegisterScreen({ navigation }) {
+
     const [accessToken, setAccessToken] = useState(null);
+    const [socialToken, setSocialToken] = useState(null);
+    const [socialData, setSocialData] = useState(null);
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [sex, setSex] = useState('');
-    const [dateOfBirth, setDateOfBirth] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState(null);
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
-
 
     const [isModalVisible, setModalVisible] = useState(false);
     const [isSocialLogin, setIsSocialLogin] = useState(false);
     const [successRegistration, setSuccessRegistration] = useState(false);
+
+    const storeAuthToken = async (token) => {
+        try {
+            await AsyncStorage.setItem('@userToken', token);
+            console.log('Token stored successfully!');
+        } catch (e) {
+            console.error("Error fetching userToken:", e);
+        }
+    }
+
+    const ActivateAccount = async () => {
+        try {
+            const response = await fetch(`http://192.168.0.118:8000/api/users/activate/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Token ' + accessToken
+                },
+                body: JSON.stringify({ date_of_birth: dateOfBirth, sex })
+            });
+
+            if (response.ok) {
+                storeAuthToken(accessToken);
+                navigation.navigate("HomeScreen", { userToken: accessToken });
+            } else {
+                let errorMessage = '';
+                for (const key in responseData) {
+                    // Adding each error message to the errorMessage string.
+                    errorMessage += responseData[key].join('\n') + '\n';
+                }
+                Alert.alert('Activate account Error', errorMessage.trim());
+            }
+
+        } catch (error) {
+            console.error("There was an error:", error);
+            Alert.alert('Error', 'There was an error with the activation account process. Please try again.');
+        }
+    };
 
     const handleUpdateProfile = async () => {
         try {
@@ -36,11 +77,11 @@ function RegisterScreen({ navigation }) {
                 },
                 body: JSON.stringify({ date_of_birth: dateOfBirth, sex })
             });
-            
+
             const responseData = await response.json();
-            console.log(response.ok, responseData)
             if (response.ok) {
                 Alert.alert('Success', 'Profile updated successfully!');
+                ActivateAccount();
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {
@@ -59,7 +100,7 @@ function RegisterScreen({ navigation }) {
 
     const handleRegister = async () => {
         try {
-            if (!email || (!password && !isSocialLogin) || !username) {
+            if (!socialData && (!email || (!password && !isSocialLogin) || !username)) {
                 Alert.alert('Input Error', 'Please fill out all fields.');
                 return;
             }
@@ -69,13 +110,15 @@ function RegisterScreen({ navigation }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ social: isSocialLogin, email, password: !isSocialLogin ? password : "", username, date_of_birth: dateOfBirth, sex })
+                body: JSON.stringify(isSocialLogin ? {
+                    social: true, token: socialToken, email: socialData.email, username: socialData.name
+                } : {
+                    social: false, email, password: !isSocialLogin ? password : "", username, date_of_birth: dateOfBirth, sex
+                })
             });
 
             const responseData = await response.json();
-            console.log(response.ok, responseData)
             if (response.ok) {
-                console.log("responseData", responseData);
                 setAccessToken(responseData.token);
                 setSuccessRegistration(true);
                 Alert.alert('Success', 'Registered successfully!\nYou can Log In now.');
@@ -106,7 +149,7 @@ function RegisterScreen({ navigation }) {
             <View style={styles.container}>
                 <Text style={styles.title}>Register</Text>
                 {!isSocialLogin || !accessToken ? <>
-                    <GoogleLogin title="Register with Google" setIsSocialLogin={setIsSocialLogin} setEmail={setEmail} setUsername={setUsername} registration />
+                    <GoogleLogin title="Register with Google" setGoogleToken={setSocialToken} setGoogleData={setSocialData} setIsSocialLogin={setIsSocialLogin} registration />
                     <CustomInput
                         placeholder="Email"
                         placeholderTextColor="#656565"
@@ -187,9 +230,8 @@ function RegisterScreen({ navigation }) {
                 <Pressable style={({ pressed }) => [
                     styles.registerButton,
                     pressed ? styles.buttonPressed : null
-                ]} onPress={()=>{
-                    console.log("isSocialLogin", isSocialLogin)
-                    if(!isSocialLogin || !accessToken){
+                ]} onPress={() => {
+                    if (!isSocialLogin || !accessToken) {
                         handleRegister();
                     } else {
                         handleUpdateProfile();

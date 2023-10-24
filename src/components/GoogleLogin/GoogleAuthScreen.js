@@ -29,7 +29,7 @@ const GoogleSignInButton = ({ promptAsync, title = "Sign In with Google" }) => (
 
 WebBrowser.maybeCompleteAuthSession();
 
-export default function GoogleLogin({ title, setIsSocialLogin, setEmail, setUsername, registration = false }) {
+export default function GoogleLogin({ title, setGoogleToken, setGoogleData, setIsSocialLogin, registration = false }) {
   const [authToken, setAuthToken] = React.useState(null);
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
@@ -41,10 +41,10 @@ export default function GoogleLogin({ title, setIsSocialLogin, setEmail, setUser
   React.useEffect(() => {
     if (response?.type === "success") {
       const { id_token } = response.params;
+      setGoogleToken(id_token);
       const decodedToken = jwtDecode(id_token);
-      setEmail(decodedToken.email);
+      setGoogleData(decodedToken);
       if (registration) {
-        setUsername(decodedToken.name)
         setIsSocialLogin(true);
       }
     }
