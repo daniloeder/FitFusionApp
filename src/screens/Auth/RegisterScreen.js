@@ -120,7 +120,7 @@ function RegisterScreen({ navigation }) {
             if (response.ok) {
                 setAccessToken(responseData.token);
                 setSuccessRegistration(true);
-                Alert.alert('Success', 'Registered successfully!\nYou can Log In now.');
+                Alert.alert('Success', 'Registered successfully!');
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {

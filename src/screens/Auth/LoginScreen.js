@@ -31,7 +31,7 @@ function LoginScreen() {
                 body: JSON.stringify(socialToken ?
                     {email, token: socialToken}
                     :
-                    email.includes('@') ? { email, password } : { username: email, password }
+                    { username: email, password }
                 )
             });
 
@@ -50,7 +50,7 @@ function LoginScreen() {
                 let errorMessage;
                 
                 if(responseData.no_registered){
-                    errorMessage = 'This account is not registered. You need to register first.s';
+                    errorMessage = 'This account is not registered. You need to register first.';
                     navigation.navigate("RegisterScreen");
                 } else if (responseData.non_field_errors) {
                     errorMessage = responseData.non_field_errors.join('\n');
