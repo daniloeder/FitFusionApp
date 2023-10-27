@@ -11,7 +11,7 @@ LogBox.ignoreLogs(['The useProxy option is deprecated and will be removed in a f
 
 const GoogleSignInButton = ({ promptAsync, title = "Sign In with Google" }) => (
 
-  <SafeAreaView style={{ flex: 1, alignItems: "center", justifyContent: "center", marginVertical: 10 }}>
+  <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '15%' }}>
     <TouchableOpacity
       style={{ backgroundColor: "#4285F4", width: "100%", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center", justifyContent: "center", flexDirection: 'row' }}
       onPress={() => promptAsync()}
@@ -30,7 +30,9 @@ const GoogleSignInButton = ({ promptAsync, title = "Sign In with Google" }) => (
 WebBrowser.maybeCompleteAuthSession();
 
 export default function GoogleLogin({ title, setGoogleToken, setGoogleData, registration = false }) {
-  const [authToken, setAuthToken] = React.useState(null);
+  const [authToken, setAuthToken] = React.useState(() => {
+    return null;
+  });
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,

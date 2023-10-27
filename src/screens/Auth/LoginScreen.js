@@ -36,7 +36,6 @@ function LoginScreen() {
             });
 
             const responseData = await response.json();
-            console.log(responseData, response.ok)
 
             if (response.ok) {
                 if (responseData.token) {
@@ -49,8 +48,11 @@ function LoginScreen() {
                 }
             } else {
                 let errorMessage;
-
-                if (responseData.non_field_errors) {
+                
+                if(responseData.no_registered){
+                    errorMessage = 'This account is not registered. You need to register first.s';
+                    navigation.navigate("RegisterScreen");
+                } else if (responseData.non_field_errors) {
                     errorMessage = responseData.non_field_errors.join('\n');
                 } else {
                     errorMessage = responseData.error || responseData.detail || 'Server returned an unexpected response!';
@@ -124,7 +126,6 @@ const styles = StyleSheet.create({
         minHeight: height,
         padding: width * 0.05,
         justifyContent: 'center',
-
     },
     title: {
         textAlign: 'center',
@@ -139,7 +140,7 @@ const styles = StyleSheet.create({
         borderRadius: width * 0.0125,
         marginBottom: width * 0.08,
         backgroundColor: '#FFF',
-        color: '#333'  // Text color for the input
+        color: '#333',
     },
     button: {
         padding: width * 0.03,
