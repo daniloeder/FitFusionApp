@@ -29,36 +29,38 @@ function LoginScreen() {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(socialToken ?
-                    {email, token: socialToken}
+                    { email, token: socialToken }
                     :
                     { username: email, password }
                 )
             });
 
             const responseData = await response.json();
-
+            console.log(responseData, response.ok)
             if (response.ok) {
                 if (responseData.token) {
                     await AsyncStorage.setItem('@userToken', responseData.token);
-                    navigation.navigate('HomeScreen');
+                    //navigation.navigate('HomeScreen');
                     Alert.alert('Success', 'Logged in successfully!');
                 } else {
                     let errorMessage = responseData.error || responseData.detail || 'Login failed!';
                     Alert.alert('Login failed', errorMessage);
                 }
             } else {
-                let errorMessage;
-                
-                if(responseData.no_registered){
-                    errorMessage = 'This account is not registered. You need to register first.';
-                    navigation.navigate("RegisterScreen");
-                } else if (responseData.non_field_errors) {
-                    errorMessage = responseData.non_field_errors.join('\n');
-                } else {
-                    errorMessage = responseData.error || responseData.detail || 'Server returned an unexpected response!';
+                let errorMessage = '';
+
+                for (const key in responseData) {
+                    if (Array.isArray(responseData[key])) {
+                        errorMessage += responseData[key].join('\n') + '\n';
+                    } else {
+                        errorMessage += responseData[key] + '\n';
+                    }
+                    if (key == 'no_registered') {
+                        navigation.navigate("RegisterScreen");
+                    }
                 }
 
-                Alert.alert('Login failed', errorMessage);
+                Alert.alert('Login failed', errorMessage.trim());
             }
         } catch (error) {
             console.error("There was an error:", error);
