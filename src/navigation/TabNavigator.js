@@ -9,8 +9,13 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
-import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
+import EventScreen from '../screens/EventScreen/EventScreen';
+import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
+import Map from '../screens/Map/Map';
+import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import Notifications from '../screens/NotificationScreen/NotificationScreen';
+import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
+import SearchScreen from '../screens/SearchScreen/SearchScreen';
 
 const width = Dimensions.get('window').width;
 
@@ -54,7 +59,7 @@ const NavGradientBackground = () => {
 const TabNavigator = () => {
   const navigation = useNavigation();
   const [userToken, setUserToken] = useState(null);
-  
+
   useEffect(() => {
     fetchAuthToken()
       .then((token) => {
@@ -117,6 +122,47 @@ const TabNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Event"
+        component={EventScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="CreateEvent"
+        component={CreateEventScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Map"
+        component={Map}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Map" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Chat" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Search" size={width * 0.085} />,
         }}
       />
       <Tab.Screen
