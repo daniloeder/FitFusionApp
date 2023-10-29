@@ -26,7 +26,6 @@ function RegisterScreen({ navigation }) {
     const storeAuthToken = async (token) => {
         try {
             await AsyncStorage.setItem('@userToken', token);
-            console.log('Token stored successfully!');
         } catch (e) {
             console.error("Error fetching userToken:", e);
         }
@@ -45,7 +44,11 @@ function RegisterScreen({ navigation }) {
 
             if (response.ok) {
                 storeAuthToken(accessToken);
-                navigation.navigate("HomeScreen", { userToken: accessToken });
+                navigation.navigate('Tabs', { 
+                    screen: 'Home',
+                    params: { userToken: accessToken }
+                });
+                
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {

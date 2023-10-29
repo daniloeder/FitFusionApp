@@ -36,11 +36,13 @@ function LoginScreen() {
             });
 
             const responseData = await response.json();
-            console.log(responseData, response.ok)
             if (response.ok) {
                 if (responseData.token) {
                     await AsyncStorage.setItem('@userToken', responseData.token);
-                    //navigation.navigate('HomeScreen');
+                    navigation.navigate('Tabs', { 
+                        screen: 'Home',
+                        params: { userToken: responseData.token }
+                    });                    
                     Alert.alert('Success', 'Logged in successfully!');
                 } else {
                     let errorMessage = responseData.error || responseData.detail || 'Login failed!';

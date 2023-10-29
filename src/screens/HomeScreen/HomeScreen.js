@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const width = Dimensions.get('window').width;
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen = () => {
+
+  const navigation = useNavigation();
 
   const [events, setEvents] = useState([]);
 
@@ -31,11 +34,12 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     userToken = fetchUserToken();
+    navigation.navigate('Auth', { screen: 'LoginScreen' });
     if (!userToken) {
       navigation.navigate("LoginScreen");
       return;
     }
-    fetchEvents();
+    //fetchEvents();
   }, []);
 
   return (

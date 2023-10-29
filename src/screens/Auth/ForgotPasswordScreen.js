@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet, Alert, Dimensions, ScrollView, Pressable } from 'react-native';
-import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 
@@ -37,7 +37,7 @@ function ForgotPasswordScreen() {
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
-                <Text style={styles.title}>Change Password</Text>
+                <Text style={styles.title}>Forgot Password</Text>
                 <CustomInput
                     placeholder="Email"
                     placeholderTextColor="#656565"

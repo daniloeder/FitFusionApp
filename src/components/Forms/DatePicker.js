@@ -46,7 +46,7 @@ const DatePicker = ({ date, setDate, setTime, mode = "datetime", dateType="DD/MM
     };
 
     return (
-        <Pressable onPress={() => setDatePickerVisibility(true)} style={[styles.dataPickerContainer, selectedDate ? { borderColor: '#21347B' } : {}, customStyle]}>
+        <Pressable onPress={() => setDatePickerVisibility(true)} style={[selectedDate ? { borderColor: '#21347B' } : {}, customStyle]}>
             <Icons name="Calendar" size={width * 0.07} style={{ padding: width * 0.028, marginTop: width * 0.01 }} />
             <Text style={{ color: '#656565', fontSize: width * 0.04, marginLeft: width * 0.02 }}>
                 {getFormattedDisplayText()} - {dateType}

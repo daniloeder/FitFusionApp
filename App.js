@@ -1,12 +1,16 @@
 import React from 'react';
+import { StatusBar } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import TabNavigator from './src/navigation/TabNavigator/TabNavigator';
+import RootNavigator from './src/navigation/RootNavigator';
 
 const App = () => {
   return (
-    <NavigationContainer>
-      <TabNavigator />
-    </NavigationContainer>
+    <>
+      <StatusBar translucent={true} backgroundColor="transparent" barStyle="light-content" />
+      <NavigationContainer>
+        <RootNavigator />
+      </NavigationContainer>
+    </>
   );
 };
 
