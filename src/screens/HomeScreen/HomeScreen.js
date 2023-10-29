@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { fetchAuthToken } from '../../store/store';
 
 const width = Dimensions.get('window').width;
 
@@ -11,16 +11,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
 
   const [events, setEvents] = useState([]);
-
-  const fetchUserToken = async () => {
-    try {
-      const userToken = await AsyncStorage.getItem('@userToken');
-      return userToken;
-    } catch (e) {
-      console.error("Error fetching userToken:", e);
-    }
-    return null;
-  }
+  const [userToken, setUserToken] = useState(null);
 
   const fetchEvents = async () => {
     try {
@@ -33,76 +24,35 @@ const HomeScreen = () => {
   };
 
   useEffect(() => {
-    userToken = fetchUserToken();
-    navigation.navigate('Auth', { screen: 'LoginScreen' });
-    if (!userToken) {
-      navigation.navigate("LoginScreen");
-      return;
-    }
-    //fetchEvents();
-  }, []);
+    // Fetch user token from AsyncStorage using fetchAuthToken
+    fetchAuthToken()
+      .then((token) => {
+        setUserToken(token);
+        if (!token) {
+          navigation.navigate('Auth', { screen: "LoginScreen" });
+          return;
+        }
+        // Fetch events if user is authenticated
+        fetchEvents();
+      })
+      .catch((error) => {
+        console.error('Error fetching user token:', error);
+      });
+  }, [navigation]);
 
   return (
     <View style={styles.gradientContainer}>
 
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-
       <ScrollView style={styles.container}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
       >
-
         <Text style={styles.title}>Welcome to Fit Fusion</Text>
-
         <Text style={styles.subtitle}>Upcoming Events:</Text>
 
-        {events.map((item) => (
-          <View key={item.id.toString()} style={styles.eventItem}>
-            <Text style={styles.eventTitle}>{item.title}</Text>
-            <Text style={styles.eventDate}>{item.date}</Text>
-            <Pressable
-              style={styles.button}
-              onPress={() => {
-                // Handle event click here
-                console.log('Event clicked:', item.id);
-              }}
-            >
-              <Text style={styles.buttonText}>View Event</Text>
-            </Pressable>
-          </View>
-        ))}
-        {events.map((item) => (
-          <View key={item.id.toString()} style={styles.eventItem}>
-            <Text style={styles.eventTitle}>{item.title}</Text>
-            <Text style={styles.eventDate}>{item.date}</Text>
-            <Pressable
-              style={styles.button}
-              onPress={() => {
-                // Handle event click here
-                console.log('Event clicked:', item.id);
-              }}
-            >
-              <Text style={styles.buttonText}>View Event</Text>
-            </Pressable>
-          </View>
-        ))}
-        {events.map((item) => (
-          <View key={item.id.toString()} style={styles.eventItem}>
-            <Text style={styles.eventTitle}>{item.title}</Text>
-            <Text style={styles.eventDate}>{item.date}</Text>
-            <Pressable
-              style={styles.button}
-              onPress={() => {
-                // Handle event click here
-                console.log('Event clicked:', item.id);
-              }}
-            >
-              <Text style={styles.buttonText}>View Event</Text>
-            </Pressable>
-          </View>
-        ))}
         {events.map((item) => (
           <View key={item.id.toString()} style={styles.eventItem}>
             <Text style={styles.eventTitle}>{item.title}</Text>

@@ -4,7 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { storeAuthToken } from '../../store/store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,14 +23,6 @@ function RegisterScreen({ navigation }) {
     const [isModalVisible, setModalVisible] = useState(false);
     const [successRegistration, setSuccessRegistration] = useState(false);
 
-    const storeAuthToken = async (token) => {
-        try {
-            await AsyncStorage.setItem('@userToken', token);
-        } catch (e) {
-            console.error("Error fetching userToken:", e);
-        }
-    }
-
     const ActivateAccount = async () => {
         try {
             const response = await fetch(`http://192.168.0.118:8000/api/users/activate/`, {
@@ -43,12 +35,16 @@ function RegisterScreen({ navigation }) {
             });
 
             if (response.ok) {
-                storeAuthToken(accessToken);
-                navigation.navigate('Tabs', { 
-                    screen: 'Home',
-                    params: { userToken: accessToken }
-                });
-                
+                storeAuthToken(accessToken)
+                  .then(() => {
+                    navigation.navigate('Tabs', {
+                        screen: 'Home',
+                        params: { userToken: accessToken }
+                    });
+                  })
+                  .catch((error) => {
+                    console.error('Error storing token:', error);
+                  });
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {
@@ -98,7 +94,6 @@ function RegisterScreen({ navigation }) {
             Alert.alert('Error', 'There was an error with the update process. Please try again.');
         }
     };
-
 
     const handleRegister = async () => {
         try {

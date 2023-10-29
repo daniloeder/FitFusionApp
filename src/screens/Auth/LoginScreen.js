@@ -4,8 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { storeAuthToken, fetchAuthToken } from '../../store/store';
 const { width, height } = Dimensions.get('window');
 
 function LoginScreen() {
@@ -14,6 +13,13 @@ function LoginScreen() {
     const [password, setPassword] = useState('');
 
     const [socialToken, setSocialToken] = useState(null);
+
+    function GoToHome(token) {
+        navigation.navigate('Tabs', {
+            screen: 'Home',
+            params: { userToken: token }
+        });
+    }
 
     const handleLogin = async () => {
         try {
@@ -38,12 +44,14 @@ function LoginScreen() {
             const responseData = await response.json();
             if (response.ok) {
                 if (responseData.token) {
-                    await AsyncStorage.setItem('@userToken', responseData.token);
-                    navigation.navigate('Tabs', { 
-                        screen: 'Home',
-                        params: { userToken: responseData.token }
-                    });                    
-                    Alert.alert('Success', 'Logged in successfully!');
+                    storeAuthToken(responseData.token)
+                      .then(() => {
+                        GoToHome(responseData.token);
+                        Alert.alert('Success', 'Logged in successfully!');
+                      })
+                      .catch((error) => {
+                        console.error('Error storing token:', error);
+                      });
                 } else {
                     let errorMessage = responseData.error || responseData.detail || 'Login failed!';
                     Alert.alert('Login failed', errorMessage);
@@ -75,6 +83,19 @@ function LoginScreen() {
             handleLogin();
         }
     }, [socialToken])
+
+    useEffect(() => {
+        fetchAuthToken()
+          .then((userToken) => {
+            console.log('user token:', userToken);
+            if (userToken) {
+              //GoToHome(userToken);
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching user token:', error);
+          });
+    }, []);
 
 
     return (
@@ -112,6 +133,18 @@ function LoginScreen() {
                         pressed ? styles.buttonPressed : null
                     ]} onPress={() => {
                         navigation.navigate('RegisterScreen');
+                        storeAuthToken('123').then(() => {
+                            // Retrieve the token after it has been stored
+                            fetchAuthToken().then((token) => {
+                              if (token) {
+                                // Token retrieval successful, use it here
+                                console.log('Authentication token:', token);
+                              } else {
+                                // Token retrieval failed or token not found
+                                console.error('Authentication token not found');
+                              }
+                            });
+                          });
                     }}>
                         <Text style={styles.registerButtonText}>Register</Text>
                     </Pressable>
