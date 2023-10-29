@@ -59,7 +59,7 @@ const NavGradientBackground = () => {
 const TabNavigator = () => {
   const navigation = useNavigation();
   const [userToken, setUserToken] = useState(null);
-
+  
   useEffect(() => {
     fetchAuthToken()
       .then((token) => {
@@ -77,7 +77,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="HomeScreen"
+      initialRouteName="Home"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
