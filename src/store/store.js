@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export async function storeAuthToken(token, serviceName = 'userToken') {
   try {
     await SecureStore.setItemAsync(serviceName, token);
-    console.log('stored token', serviceName, token)
     return true;
   } catch (error) {
     console.error('Error storing token:', error);
@@ -21,6 +20,17 @@ export async function fetchAuthToken(serviceName = 'userToken') {
   } catch (error) {
     console.error('Error fetching token:', error);
     return null;
+  }
+}
+
+// Delete the token securely from Expo SecureStore
+export async function deleteAuthToken(serviceName = 'userToken') {
+  try {
+    await SecureStore.deleteItemAsync(serviceName);
+    return true;
+  } catch (error) {
+    console.error('Error deleting token:', error);
+    return false;
   }
 }
 

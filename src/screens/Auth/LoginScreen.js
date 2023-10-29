@@ -87,9 +87,8 @@ function LoginScreen() {
     useEffect(() => {
         fetchAuthToken()
           .then((userToken) => {
-            console.log('user token:', userToken);
             if (userToken) {
-              //GoToHome(userToken);
+              GoToHome(userToken);
             }
           })
           .catch((error) => {

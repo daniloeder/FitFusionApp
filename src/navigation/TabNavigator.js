@@ -1,17 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
+import { fetchAuthToken } from '../store/store';
+import { useNavigation } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import Notifications from '../screens/NotificationScreen/NotificationScreen';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
 const width = Dimensions.get('window').width;
 
 const Tab = createBottomTabNavigator();
-
+const Stack = createStackNavigator();
 const GradientHeader = () => (
   <Svg style={StyleSheet.absoluteFill}>
     <Defs>
@@ -47,68 +51,92 @@ const NavGradientBackground = () => {
   );
 };
 
-const TabNavigator = () => (
-<Tab.Navigator
-    initialRouteName="HomeScreen" // changed to HomeScreen
-    screenOptions={{
+const TabNavigator = () => {
+  const navigation = useNavigation();
+  const [userToken, setUserToken] = useState(null);
+  
+  useEffect(() => {
+    fetchAuthToken()
+      .then((token) => {
+        setUserToken(token);
+      })
+      .catch((error) => {
+        console.error('Error fetching user token:', error);
+      });
+
+    // Use the navigation actions only if userToken is not present
+    if (!userToken) {
+      navigation.navigate('Auth', { screen: 'LoginScreen' });
+    }
+  }, [userToken, navigation]);
+
+  return (
+    <Tab.Navigator
+      initialRouteName="HomeScreen"
+      screenOptions={{
         headerStyle: {
-            height: width * 0.2,
-            backgroundColor: 'transparent',
-            elevation: 0,
-            shadowOpacity: 0,
+          height: width * 0.2,
+          backgroundColor: 'transparent',
+          elevation: 0,
+          shadowOpacity: 0,
         },
         headerTintColor: '#FFF',
         headerTitleStyle: {
-            fontWeight: 'bold',
+          fontWeight: 'bold',
         },
         headerBackground: () => <GradientHeader />,
         tabBarBackground: () => <NavGradientBackground />,
         tabBarActiveTintColor: '#FFF',
         tabBarInactiveTintColor: '#000',
         tabBarLabelStyle: {
-            marginBottom: 3,
+          marginBottom: 3,
         },
         tabBarStyle: [
-            {
-                paddingTop: width * 0.05,
-                height: width * 0.15,
-                borderTopWidth: 0,
-                elevation: 0,
-                shadowOpacity: 0,
-            },
-            null
+          {
+            paddingTop: width * 0.05,
+            height: width * 0.15,
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+          },
+          null
         ]
-    }}
->
-    <Tab.Screen
-      name="Home"
-      component={HomeScreen}
-      options={{
-        tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
       }}
-    />
-    <Tab.Screen
-      name="Profile"
-      component={ProfileScreen}
-      options={{
-        tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
-      }}
-    />
-    <Tab.Screen
-      name="Notifications"
-      component={Notifications}
-      options={{
-        tabBarIcon: () => <Icons name="Notifications" size={width * 0.085} />,
-      }}
-    />
-    <Tab.Screen
-      name="Settings"
-      component={SettingsScreen}
-      options={{
-        tabBarIcon: () => <Icons name="Settings" size={width * 0.085} />,
-      }}
-    />
-  </Tab.Navigator>
-);
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        initialParams={{ userToken }}
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Notifications"
+        initialParams={{ userToken }}
+        component={Notifications}
+        options={{
+          tabBarIcon: () => <Icons name="Notifications" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        initialParams={{ userToken }}
+        component={SettingsScreen}
+        options={{
+          tabBarIcon: () => <Icons name="Settings" size={width * 0.085} />,
+        }}
+      />
+    </Tab.Navigator>
+  )
+};
 
 export default TabNavigator;

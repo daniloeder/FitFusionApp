@@ -10,11 +10,13 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Dimensions } from 'react-native';
-import GradientBackground from './../../components/GradientBackground/GradientBackground'; // Make sure this path is correct
+import GradientBackground from './../../components/GradientBackground/GradientBackground';
 
 const width = Dimensions.get('window').width;
 
-const ProfileScreen = () => {
+const ProfileScreen = ({ route }) => {
+  const { userToken } = route.params;
+
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation();

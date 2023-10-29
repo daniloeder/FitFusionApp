@@ -1,23 +1,19 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { deleteAuthToken } from './../../store/store';
 
 const SettingsScreen = () => {
+  const navigation = useNavigation();
   const [isNotificationEnabled, setNotificationEnabled] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  
+
   const handleLogout = () => {
-    // Implement logout functionality here
-    console.log('User Logged Out');
+    deleteAuthToken();
+    navigation.navigate('Auth', { screen: 'LoginScreen' });
   };
-  
+
   return (
     <View style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -41,12 +37,12 @@ const SettingsScreen = () => {
             trackColor={{ false: "#767577", true: "#81b0ff" }}
           />
         </View>
-      
-        <TouchableOpacity style={styles.settingRow} onPress={() => {/* Navigate to Language Selection Screen */}}>
+
+        <TouchableOpacity style={styles.settingRow} onPress={() => {/* Navigate to Language Selection Screen */ }}>
           <Text style={styles.settingText}>Language</Text>
           <Text style={styles.valueText}>{selectedLanguage}</Text>
         </TouchableOpacity>
-      
+
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>

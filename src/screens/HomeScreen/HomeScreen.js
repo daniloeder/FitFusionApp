@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { useNavigation } from '@react-navigation/native';
-import { fetchAuthToken } from '../../store/store';
 
 const width = Dimensions.get('window').width;
 
-const HomeScreen = () => {
+const HomeScreen = ({ route }) => {
 
-  const navigation = useNavigation();
+  const { userToken } = route.params;
 
   const [events, setEvents] = useState([]);
-  const [userToken, setUserToken] = useState(null);
 
   const fetchEvents = async () => {
     try {
@@ -22,23 +19,6 @@ const HomeScreen = () => {
       console.error('Error fetching events:', error);
     }
   };
-
-  useEffect(() => {
-    // Fetch user token from AsyncStorage using fetchAuthToken
-    fetchAuthToken()
-      .then((token) => {
-        setUserToken(token);
-        if (!token) {
-          navigation.navigate('Auth', { screen: "LoginScreen" });
-          return;
-        }
-        // Fetch events if user is authenticated
-        fetchEvents();
-      })
-      .catch((error) => {
-        console.error('Error fetching user token:', error);
-      });
-  }, [navigation]);
 
   return (
     <View style={styles.gradientContainer}>
