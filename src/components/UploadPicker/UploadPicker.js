@@ -27,13 +27,12 @@ const UploadPicker = ({ type = "any", limit = 1, setFile, index }) => {
             };
 
             const docResult = await DocumentPicker.getDocumentAsync(options);
+            console.log(docResult, index);
 
-
-            if (docResult) {
-                setSelectedFile(docResult.assets[0]);
-                setFile(docResult.assets[0], index);
+            if (docResult.type === 'success') {
+                setSelectedFile(docResult);
+                setFile(docResult, index);
             }
-
         } catch (err) {
             console.warn(err);
         }
@@ -46,8 +45,8 @@ const UploadPicker = ({ type = "any", limit = 1, setFile, index }) => {
                     {selectedFile && selectedFile.uri ? (
                         <Image source={{ uri: selectedFile.uri }} style={styles.thumbnail} />
                     ) :
-                        type==="image"? <Icons name="AddImage" size={width * 0.12} style={styles.centerIcon} /> :
-                        type==="video"? <Icons name="AddVideo" size={width * 0.12} style={styles.centerIcon} /> : ''
+                        type === "image" ? <Icons name="AddImage" size={width * 0.12} style={styles.centerIcon} /> :
+                            type === "video" ? <Icons name="AddVideo" size={width * 0.12} style={styles.centerIcon} /> : ''
                     }
                 </TouchableOpacity>
 

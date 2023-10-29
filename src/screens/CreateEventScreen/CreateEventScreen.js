@@ -93,9 +93,10 @@ const CreateEventScreen = ({ navigation }) => {
         logAndAppend(eventFormData, 'location', location);
         logAndAppend(eventFormData, 'date', date);
         logAndAppend(eventFormData, 'time', time);
-        sportsType.map(sport => sport.id.type).forEach(sportType => {
-            logAndAppend(eventFormData, 'sport_types', String(sportType));
+        sportsType.map(sport => sport.id).forEach(sportId => {
+            logAndAppend(eventFormData, 'sport_types', String(sportId));
         });
+        
 
         // Serialize the coordinates object to a JSON string
         const coordinatesString = JSON.stringify({

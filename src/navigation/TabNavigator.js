@@ -71,13 +71,13 @@ const TabNavigator = () => {
 
     // Use the navigation actions only if userToken is not present
     if (!userToken) {
-      navigation.navigate('Auth', { screen: 'LoginScreen' });
+      //navigation.navigate('Auth', { screen: 'LoginScreen' });
     }
   }, [userToken, navigation]);
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName="CreateEvent"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,

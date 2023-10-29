@@ -18,7 +18,7 @@ const EventScreen = ({ route }) => {
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  const eventId = 482;
+  const eventId = 5;
 
   useEffect(() => {
     fetchEvent();
