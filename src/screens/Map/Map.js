@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, View, Text, Dimensions, Switch, Pressable } from 'react-native';
 
 import Icons from '../../components/Icons/Icons';
@@ -37,7 +38,7 @@ function deg2rad(deg) {
 const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
   return (
     <View
-      onPress={() => {}}
+      onPress={() => { }}
       style={{
         width: width * 0.22,
         height: width * 0.1,
@@ -86,7 +87,8 @@ const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   );
 };
 
-function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.008, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
+function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.008, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
+  const navigation = useNavigation();
   const MAX_DISTANCE_METERS = 500;
 
   const [userLocation, setUserLocation] = useState(null);
@@ -101,24 +103,24 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
   const [coodinatesList, setCoordinatesList] = useState([{ lat: 0, lng: 0 }]);
 
   const [pickerCoordinates, setPickerCoordinates] = useState(null);
-  
+
   const updatePlaces = async () => {
     try {
-      const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS*2}`, {
+      const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${API_AUTHORIZATION}`
         }
       });
-  
+
       if (!placesResponse.ok) {
         throw new Error('Network response was not ok' + placesResponse.statusText);
       }
       const placesData = await placesResponse.json();
-      if(placesData.length === 0){
+      if (placesData.length === 0) {
         return
       }
-  
+
       // Update places by ensuring that each place has a unique key
       setPlaces((prevPlaces) => {
         const newPlaces = [...prevPlaces];
@@ -133,24 +135,24 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
       console.error('There was a problem with fetching places: ', error);
     }
   };
-  
+
   const updateEvents = async () => {
     try {
-      const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS*2}`, {
+      const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 200}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${API_AUTHORIZATION}`
         }
       });
-  
+
       if (!eventsResponse.ok) {
         throw new Error('Network response was not ok' + eventsResponse.statusText);
       }
       const eventsData = await eventsResponse.json();
-      if(eventsData.length === 0){
+      if (eventsData.length === 0) {
         return
       }
-  
+
       // Update events by ensuring that each event has a unique key
       setEvents((prevEvents) => {
         const newEvents = [...prevEvents];
@@ -165,7 +167,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
       console.error('There was a problem with fetching events: ', error);
     }
   };
-  
+
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -200,7 +202,7 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
   }, [currentPosition]);
 
   useEffect(() => {
-    if(pickerCoordinates) {
+    if (pickerCoordinates) {
       const newRegion = {
         "latitude": pickerCoordinates.latitude,
         "latitudeDelta": PATTERN_ZOOM_LATITUDE_DELTA,
@@ -264,11 +266,11 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
       >
         <Marker coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}></Marker>
         {isPlacesEnabled && places.map((place) => {
-          const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
+          const coordinatesArray = place.display_coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Gym" size={width*0.08} />
+              <Icons name="Gym" size={width * 0.08} />
               <Callout tooltip={true} style={styles.calloutContainer}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
@@ -280,12 +282,14 @@ function Map({ MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.
           );
         })}
         {isEventEnabled && events.map((event) => {
-          const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
+          const coordinatesArray = event.display_coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={event.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Events" size={width*0.08} />
-              <Callout tooltip={true} style={styles.calloutContainer}>
+              <Icons name="Events" size={width * 0.08} />
+              <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
+                navigation.navigate('Event', { eventId: event.id })
+              }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{event.title}</Text>
                   <Text style={styles.calloutSubtitle}>Location: {event.location}</Text>

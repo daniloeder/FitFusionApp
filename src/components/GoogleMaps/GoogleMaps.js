@@ -74,6 +74,7 @@ const ShowOnMap = ({ coordinates }) => {
             zoomEnabled={true}
             scrollEnabled={true}
           >
+            <Marker coordinate={{ latitude: coordinates.latitude, longitude: coordinates.longitude }}></Marker>
           </MapView>
 
           <Button

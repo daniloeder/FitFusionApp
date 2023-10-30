@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
@@ -18,10 +18,14 @@ const EventScreen = ({ route }) => {
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  const eventId = 5;
+  const eventId = route.params.eventId;
 
   useEffect(() => {
-    fetchEvent();
+    if(eventId){
+      fetchEvent();
+    } else {
+      Alert.alert('Event error.');
+    }
   }, [eventId]);
 
   const fetchEvent = async () => {
@@ -34,6 +38,10 @@ const EventScreen = ({ route }) => {
       });
 
       const data = await response.json();
+      if (data.detail === "Not found."){
+        Alert.alert('Event not found.');
+        return;
+      }
       setEvent(data);
       setParticipants(data.participants || []);
     } catch (error) {
@@ -55,12 +63,11 @@ const EventScreen = ({ route }) => {
     navigation.navigate('ProfileScreen', { userId });
   };
 
-
   const toggleVideoModal = () => {
     setVideoModalVisible(!isVideoModalVisible);
   };
 
-  if (!event) return <Text>Loading...</Text>;
+  if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = event.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
   return (
