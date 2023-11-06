@@ -28,6 +28,7 @@ import PlayVideo from './../../../assets/icons/playVideo.svg';
 import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
 import Google from './../../../assets/icons/google.svg';
+import Edit from './../../../assets/icons/edit.svg';
 
 const Icons = ({
   name,
@@ -68,6 +69,7 @@ const Icons = ({
     Eye: Eye,
     EyeSlash: EyeSlash,
     Google: Google,
+    Edit: Edit,
     
   }[name];
 

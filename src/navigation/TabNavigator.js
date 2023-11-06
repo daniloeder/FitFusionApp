@@ -68,16 +68,15 @@ const TabNavigator = () => {
       .catch((error) => {
         console.error('Error fetching user token:', error);
       });
-
-    // Use the navigation actions only if userToken is not present
-    if (!userToken) {
-      //navigation.navigate('Auth', { screen: 'LoginScreen' });
-    }
   }, [userToken, navigation]);
+
+  if (!userToken) {
+    return;
+  }
 
   return (
     <Tab.Navigator
-      initialRouteName="CreateEvent"
+      initialRouteName="Profile"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
