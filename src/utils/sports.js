@@ -41,7 +41,7 @@ const SportsTypes = (lang) => {
     return sportsLabels[lang];
 };
 
-const SportsNames = (numbers, lang = 'en') => {
+const SportsNames = (numbers, index = false, lang = 'en') => {
     const sportsLabels = {
         en: {
             soccer: { id: 1, name: 'Soccer' },
@@ -81,16 +81,16 @@ const SportsNames = (numbers, lang = 'en') => {
         // Add more languages here as needed
     };
 
-    // Use the `numbers` array to look up sport names
-    const sportNames = numbers.map((number) => {
+    // Use the `numbers` array to look up sport names or objects
+    const sportNamesOrObjects = numbers.map((number) => {
         // Find the sport object with the matching ID
-        const sport = Object.values(sportsLabels[lang]).find((s) => s.id === number);
+        const sport = sportsLabels[lang][Object.keys(sportsLabels[lang]).find((key) => sportsLabels[lang][key].id === number)];
 
-        // Return the sport name if found, or an empty string if not found
-        return sport ? sport.name : '';
+        // Return the sport name or object based on the `index` parameter
+        return index ? sport : (sport ? sport.name : '');
     });
 
-    return sportNames;
+    return sportNamesOrObjects;
 };
 
 

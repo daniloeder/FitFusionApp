@@ -18,6 +18,8 @@ import DatePicker from '../../components/Forms/DatePicker';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
+import SportsPicker from '../../components/SportPicker/SportPicker';
+import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
@@ -31,13 +33,16 @@ const ProfileScreen = ({ route }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [currentImage, setCurrentImage] = useState(null);
 
-  const [editProfile, setEditProfile] = useState(true); // Set to true to enable editing
+  const [editProfile, setEditProfile] = useState(false); // Set to true to enable editing
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [sex, setSex] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
-  const [username, setUsername] = useState(''); // Add a state variable for editing username
+  const [username, setUsername] = useState('');
+
+  const [bio, setBio] = useState('');
+  const [favoriteSports, setFavoriteSports] = useState([]);
 
   const fetchProfile = async () => {
     try {
@@ -48,11 +53,17 @@ const ProfileScreen = ({ route }) => {
         },
       });
       const data = await response.json();
-      setProfile(data);
+      if (response.ok) {
+        setProfile(data);
+        setUsername(data.username);
+        setSex(data.sex);
+        setBio(data.bio || '');
+        setDateOfBirth(data.date_of_birth);
+        setFavoriteSports(data.favorite_sports);
+      }
       if (data.profile_image && data.profile_image.image) {
         setCurrentImage(data.profile_image.image);
       }
-      setUsername(data.username); // Set the initial value for the username
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -72,21 +83,40 @@ const ProfileScreen = ({ route }) => {
 
   // Add a function to update the user's profile information
   const updateProfile = async () => {
+    const requestBody = {};
+    if (dateOfBirth) {
+      requestBody.date_of_birth = dateOfBirth;
+    }
+    if (sex) {
+      requestBody.sex = sex;
+    }
+    if (password) {
+      requestBody.password = password;
+    }
+    if (username) {
+      requestBody.username = username;
+    }
+    if (bio) {
+      requestBody.bio = bio;
+    }
+    if (favoriteSports.length > 0) {
+      requestBody.favorite_sports = favoriteSports.map(sport => sport.id || sport);
+    }
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/users/update/`, {
+      const response = await fetch('http://192.168.0.118:8000/api/users/update/', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Token ' + userToken
+          Authorization: `Token ${userToken}`,
         },
-        body: JSON.stringify({ date_of_birth: dateOfBirth })
+        body: JSON.stringify(requestBody),
       });
 
       const responseData = await response.json();
-      console.log(responseData)
       if (response.ok) {
         Alert.alert('Success', 'Profile updated successfully!');
-        ActivateAccount();
+        fetchProfile();
+        setEditProfile(false);
       } else {
         let errorMessage = '';
         for (const key in responseData) {
@@ -179,18 +209,21 @@ const ProfileScreen = ({ route }) => {
             style={styles.avatar}
             source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
           />
-          <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
-            <Icons name="Edit" />
-          </TouchableOpacity>
-          {selectedImages.length > 0 && (
-            <TouchableOpacity style={styles.setProfileImageButton} onPress={onSetProfileImage}>
-              <Text style={styles.setProfileImageButtonText}>Set Profile Image</Text>
-            </TouchableOpacity>
-          )}
           {editProfile ? (
             <>
-              <DatePicker setDate={setDateOfBirth} mode="date" dateType="DD/MM/YYYY" customStyle={styles.timePicker} />
+              <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
+                <Icons name="Edit" />
+              </TouchableOpacity>
+              {selectedImages.length > 0 && (
+                <TouchableOpacity style={styles.setProfileImageButton} onPress={onSetProfileImage}>
+                  <Text style={styles.setProfileImageButtonText}>Set Profile Image</Text>
+                </TouchableOpacity>
+              )}
 
+              <Text style={styles.inputTitles}>Date of birth</Text>
+              <DatePicker date={dateOfBirth} setDate={setDateOfBirth} mode="date" dateType="DD/MM/YYYY" customStyle={styles.timePicker} />
+
+              <Text style={styles.inputTitles}>Gender</Text>
               <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
                 <Text style={styles.pickerTriggerText}>
                   {sex
@@ -238,28 +271,49 @@ const ProfileScreen = ({ route }) => {
                   </View>
                 </View>
               </Modal>
-              <Text style={styles.sectionTitle}>Edit Username</Text>
+
+              <Text style={styles.inputTitles}>Username</Text>
               <CustomInput
                 placeholder="Username"
                 placeholderTextColor="#656565"
                 onChangeText={setUsername}
                 value={username}
               />
-              <Text style={styles.sectionTitle}>Change Password</Text>
+
+              {/* New input fields for bio and favorite sports */}
+
+              <Text style={styles.sectionTitle}>Bio</Text>
+              <Text style={styles.inputTitles}>Bio Description</Text>
               <CustomInput
-                placeholder="New Password"
+                placeholder="Bio"
                 placeholderTextColor="#656565"
-                onChangeText={setPassword}
-                value={password}
-                secureTextEntry={true}
+                onChangeText={setBio}
+                value={bio}
               />
-              <CustomInput
-                placeholder="Confirm Password"
-                placeholderTextColor="#656565"
-                onChangeText={setPassword2}
-                value={password2}
-                secureTextEntry={true}
-              />
+
+              <Text style={styles.inputTitles}>Favorite Sports</Text>
+              <SportsPicker sports={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSports={setFavoriteSports} />
+
+              {!profile.social ?
+                <>
+                  <Text style={styles.sectionTitle}>Change Password</Text>
+                  <CustomInput
+                    placeholder="New Password"
+                    placeholderTextColor="#656565"
+                    onChangeText={setPassword}
+                    value={password}
+                    secureTextEntry={true}
+                  />
+                  <CustomInput
+                    placeholder="Confirm Password"
+                    placeholderTextColor="#656565"
+                    onChangeText={setPassword2}
+                    value={password2}
+                    secureTextEntry={true}
+                  />
+                </> : ''
+              }
+
             </>
           ) : (
             <>
@@ -274,37 +328,43 @@ const ProfileScreen = ({ route }) => {
 
                 <View style={styles.infoItem}>
                   <Text style={styles.infoTitle}>Sex</Text>
-                  <Text style={styles.infoData}>{profile.sex}</Text>
+                  <Text style={styles.infoData}>{profile.sex == 'M' ? "Male" : profile.sex == 'F' ? "Female" : "Other"}</Text>
                 </View>
 
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Favorite Sports</Text>
-                  <View style={styles.favoriteSports}>
-                    {/* Replace the below line with the actual data */}
-                    {true &&
-                      ['Soccer', 'Volleyball'].map((sport, index) => (
-                        <Text key={index} style={styles.sportItem}>
-                          {sport}
-                        </Text>
-                      ))}
-                  </View>
+              </View>
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoTitle}>Favorite Sports</Text>
+                <View style={styles.favoriteSports}>
+                  {SportsNames(profile.favorite_sports).map((sport, index) => (
+                    <Text key={index} style={styles.sportItem}>{sport}</Text>
+                  ))}
                 </View>
               </View>
-              {profile.bio ? (
-                <>
-                  <Text style={styles.sectionTitle}>Bio</Text>
-                  <Text style={styles.bio}>{profile.bio}</Text>
-                </>
-              ) : (
-                ''
-              )}
+
+              <View style={styles.infoItem}>
+                <Text style={styles.infoTitle}>Bio</Text>
+                <Text style={styles.bio}>{profile.bio}</Text>
+              </View>
             </>
           )}
         </View>
 
-        <TouchableOpacity style={styles.editButton} onPress={editProfile ? updateProfile : () => setEditProfile(true)}>
-          <Text style={styles.editButtonText}>{editProfile ? 'Save Profile' : 'Edit Profile'}</Text>
-        </TouchableOpacity>
+        {editProfile ?
+          <>
+            <TouchableOpacity style={styles.editButton} onPress={updateProfile}>
+              <Text style={styles.editButtonText}>Save Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => setEditProfile(false)}>
+              <Text style={styles.editButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </>
+          :
+          <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => setEditProfile(true)}>
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
+        }
+
       </ScrollView>
     </View>
   );
@@ -361,6 +421,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: width * 0.025,
     color: '#E2E8F0',
+  },
+  inputTitles: {
+    color: '#FFF',
   },
   favoriteSports: {
     flexDirection: 'row',
