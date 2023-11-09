@@ -62,7 +62,7 @@ const ProfileScreen = ({ route }) => {
         setFavoriteSports(data.favorite_sports);
       }
       if (data.profile_image && data.profile_image.image) {
-        setCurrentImage(data.profile_image.image);
+        setCurrentImage('http://192.168.0.118:8000/' + data.profile_image.image);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -193,6 +193,7 @@ const ProfileScreen = ({ route }) => {
   };
 
   if (isLoading) return <ActivityIndicator size="large" color="#991B1B" />;
+  console.log(profile.favorite_sports)
 
   return (
     <View style={styles.container}>
@@ -333,14 +334,16 @@ const ProfileScreen = ({ route }) => {
 
               </View>
 
-              <View style={styles.infoItem}>
-                <Text style={styles.infoTitle}>Favorite Sports</Text>
-                <View style={styles.favoriteSports}>
-                  {SportsNames(profile.favorite_sports).map((sport, index) => (
-                    <Text key={index} style={styles.sportItem}>{sport}</Text>
-                  ))}
-                </View>
-              </View>
+              {profile.favorite_sports.length ?
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoTitle}>Favorite Sports</Text>
+                  <View style={styles.favoriteSports}>
+                    {SportsNames(profile.favorite_sports).map((sport, index) => (
+                      <Text key={index} style={styles.sportItem}>{sport}</Text>
+                    ))}
+                  </View>
+                </View> : ''
+              }
 
               <View style={styles.infoItem}>
                 <Text style={styles.infoTitle}>Bio</Text>
