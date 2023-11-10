@@ -20,7 +20,8 @@ const EventScreen = ({ route }) => {
 
   const [userImages, setUserImages] = useState([]);
 
-  const eventId = route.params.eventId;
+  const eventId = 10//route.params.eventId;
+  console.log()
 
   useEffect(() => {
     if (eventId) {
@@ -30,9 +31,9 @@ const EventScreen = ({ route }) => {
     }
   }, [eventId]);
 
-  const fetchUserProfileImages = async (users) => {
+  const fetchUserProfileImages = async (participants) => {
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${users.join()}`);
+      const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
       const data = await response.json();
       setUserImages(data);
     } catch (error) {
@@ -56,7 +57,7 @@ const EventScreen = ({ route }) => {
       setEvent(data);
       setJoined(data.joined);
       setParticipants(data.participants || []);
-      fetchUserProfileImages(data.users);
+      fetchUserProfileImages(data.participants);
     } catch (error) {
       console.error('Error fetching event:', error);
     }
