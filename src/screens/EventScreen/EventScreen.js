@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons';
-import { API_AUTHORIZATION } from '@env';
 import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
 const EventScreen = ({ route }) => {
+  const { userToken } = route.params;
   const [event, setEvent] = useState(null);
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
@@ -18,45 +18,71 @@ const EventScreen = ({ route }) => {
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
   const navigation = useNavigation();
 
+  const [userImages, setUserImages] = useState([]);
+
   const eventId = route.params.eventId;
 
   useEffect(() => {
-    if(eventId){
+    if (eventId) {
       fetchEvent();
     } else {
       Alert.alert('Event error.');
     }
   }, [eventId]);
 
+  const fetchUserProfileImages = async (users) => {
+    try {
+      const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${users.join()}`);
+      const data = await response.json();
+      setUserImages(data);
+    } catch (error) {
+      console.error('Error fetching user profile images:', error);
+    }
+  };
+
   const fetchEvent = async () => {
     try {
       const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${API_AUTHORIZATION}`,
+          'Authorization': `Token ${userToken}`,
         }
       });
-
       const data = await response.json();
-      if (data.detail === "Not found."){
+      if (data.detail === "Not found.") {
         Alert.alert('Event not found.');
         return;
       }
       setEvent(data);
+      setJoined(data.joined);
       setParticipants(data.participants || []);
+      fetchUserProfileImages(data.users);
     } catch (error) {
       console.error('Error fetching event:', error);
     }
   };
 
-  const onJoinEvent = async () => {
-    setJoined(true);
-    // Implementation to join event goes here.
-  };
+  const onJoinLeaveEvent = async () => {
+    try {
+      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
 
-  const onLeaveEvent = async () => {
-    setJoined(false);
-    // Implementation to leave event goes here.
+      if (response.status === 200) {
+        setJoined(!joined);
+      } else if (response.status === 400) {
+        setJoined(!joined);
+      } else {
+        console.error('Failed to join the event.');
+      }
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
   };
 
   const onNavigateToProfile = (userId) => {
@@ -139,7 +165,7 @@ const EventScreen = ({ route }) => {
 
         {joined ?
           <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onLeaveEvent}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
               <Text style={styles.buttonText}>Leave Event</Text>
             </TouchableOpacity>
             <View>
@@ -150,7 +176,7 @@ const EventScreen = ({ route }) => {
           </>
           :
           <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinEvent}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeaveEvent}>
               <Text style={styles.buttonText}>Join Event</Text>
             </TouchableOpacity>
             <View>
@@ -167,14 +193,22 @@ const EventScreen = ({ route }) => {
             setParticipantsModalVisible(participants.length > 0);
           }}
         >
-          {[...Array(5)].map((_, index) => (
+          {userImages.map((image, index) =>
             <View key={index}
-              style={[styles.image, { zIndex: 5 - index }, index == 0 ? { marginLeft: 0 } : {}]}
+              style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
             >
-              <Icons name="Profile2" size={width * 0.05} />
+              {image.success ?
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${image.profile_image}` }}
+                  style={{ width: '100%', height: '100%', borderRadius: 100 }}
+                  onError={(error) => console.error('Image Error:', error)}
+                />
+                :
+                <Icons name="Profile2" size={width * 0.05} />
+              }
             </View>
-          ))}
-          <Text style={styles.moreText}>+135</Text>
+          )}
+          {event.users_amount > 5 ? (<Text style={styles.moreText}>+{event.users_amount - 5}</Text>) : ''}
           {participants.length > 0 ?
             <View style={styles.seeMoreButton}>
               <Text style={styles.seeAllText}>See All</Text>
@@ -262,12 +296,12 @@ const styles = StyleSheet.create({
     padding: width * 0.04,
   },
   infoBlock: {
+    width: width*0.82,
     flexDirection: 'row',
     alignItems: 'center',
-
   },
   title: {
-    fontSize: width * 0.07,
+    fontSize: width * 0.06,
     fontWeight: 'bold',
     color: '#FFF',
     marginBottom: width * 0.025,
@@ -364,7 +398,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#AAA',
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: -width * 0.063,
+    marginLeft: -width * 0.055,
   },
   moreText: {
     color: '#FFF',

@@ -6,7 +6,6 @@ import { StyleSheet, View, Text, Dimensions, Switch, Pressable } from 'react-nat
 
 import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
-import { API_AUTHORIZATION } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -88,6 +87,7 @@ const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
 };
 
 function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.008, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
+  const { userToken } = route.params;
   const navigation = useNavigation();
   const MAX_DISTANCE_METERS = 500;
 
@@ -109,7 +109,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       const placesResponse = await fetch(`http://192.168.0.118:8000/api/places/nearby-places/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${API_AUTHORIZATION}`
+          'Authorization': `Token ${userToken}`
         }
       });
 
@@ -141,7 +141,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       const eventsResponse = await fetch(`http://192.168.0.118:8000/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 200}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Token ${API_AUTHORIZATION}`
+          'Authorization': `Token ${userToken}`
         }
       });
 
@@ -149,6 +149,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         throw new Error('Network response was not ok' + eventsResponse.statusText);
       }
       const eventsData = await eventsResponse.json();
+      console.log()
       if (eventsData.length === 0) {
         return
       }

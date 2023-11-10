@@ -115,6 +115,7 @@ function RegisterScreen({ navigation }) {
             });
 
             const responseData = await response.json();
+            console.log(responseData)
             if (response.ok) {
                 setAccessToken(responseData.token);
                 setSuccessRegistration(true);
