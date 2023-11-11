@@ -226,7 +226,7 @@ const EventScreen = ({ route, navigation }) => {
               }
             </View>
           )}
-          {event.users_amount > 5 ? (<Text style={styles.moreText}>+{event.users_amount - 5}</Text>) : ''}
+          {event.participants_amount > 5 ? (<Text style={styles.moreText}>+{event.participants_amount - 5}</Text>) : ''}
           {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
           {participants.length > 0 ?
             <View style={styles.seeMoreButton}>
