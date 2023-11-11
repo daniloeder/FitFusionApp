@@ -9,35 +9,47 @@ import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
-const EventScreen = ({ route }) => {
-  const { userToken } = route.params;
+const EventScreen = ({ route, navigation }) => {
+  const userToken = route.params.userToken;
   const [event, setEvent] = useState(null);
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
-  const navigation = useNavigation();
 
   const [userImages, setUserImages] = useState([]);
 
-  const eventId = 10//route.params.eventId;
-  console.log()
+  const [preview, setPreview] = useState(route.params.eventPreview);
+
+  const eventId = route.params.eventId;
+
+  useEffect(() => {
+    setEvent(preview);
+  }, [preview]);
+
+  useEffect(() => {
+    setPreview(route.params.eventPreview);
+  }, [route.params.eventPreview]);
 
   useEffect(() => {
     if (eventId) {
       fetchEvent();
+    } else if (preview) {
+      setEvent(preview);
     } else {
       Alert.alert('Event error.');
     }
   }, [eventId]);
 
   const fetchUserProfileImages = async (participants) => {
-    try {
-      const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
-      const data = await response.json();
-      setUserImages(data);
-    } catch (error) {
-      console.error('Error fetching user profile images:', error);
+    if (participants.length) {
+      try {
+        const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const data = await response.json();
+        setUserImages(data);
+      } catch (error) {
+        console.error('Error fetching user profile images:', error);
+      }
     }
   };
 
@@ -49,21 +61,25 @@ const EventScreen = ({ route }) => {
           'Authorization': `Token ${userToken}`,
         }
       });
-      const data = await response.json();
-      if (data.detail === "Not found.") {
-        Alert.alert('Event not found.');
-        return;
+      if (response.ok) {
+        const data = await response.json();
+        setEvent(data);
+        setJoined(data.joined);
+        setParticipants(data.participants || []);
+        fetchUserProfileImages(data.participants);
+      } else {
+        Alert.alert(response.status === 404 ? 'Event not Found.' : 'Unknown error on fetching event.');
       }
-      setEvent(data);
-      setJoined(data.joined);
-      setParticipants(data.participants || []);
-      fetchUserProfileImages(data.participants);
     } catch (error) {
       console.error('Error fetching event:', error);
     }
   };
 
   const onJoinLeaveEvent = async () => {
+    if (preview) {
+      setJoined(!joined)
+      return
+    }
     try {
       const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
         method: 'POST',
@@ -95,10 +111,10 @@ const EventScreen = ({ route }) => {
   };
 
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
-  const [longitude, latitude] = event.coordinates.match(/-?\d+\.\d+/g).map(Number);
+  const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
   return (
-    <View style={styles.gradientContainer}>
+    <View key={preview ? preview.title : 'loading'} style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
       {event.videos && event.videos.length ?
@@ -189,16 +205,17 @@ const EventScreen = ({ route }) => {
         }
 
         <Text style={styles.participantTitle}>Participants</Text>
+        {}
         <Pressable style={styles.participantsImages}
           onPress={() => {
             setParticipantsModalVisible(participants.length > 0);
           }}
         >
-          {userImages.map((image, index) =>
+          {(preview ? [...Array(5)] : userImages).map((image, index) =>
             <View key={index}
               style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
             >
-              {image.success ?
+              {!preview && image.success ?
                 <Image
                   source={{ uri: `data:image/jpeg;base64,${image.profile_image}` }}
                   style={{ width: '100%', height: '100%', borderRadius: 100 }}
@@ -210,10 +227,13 @@ const EventScreen = ({ route }) => {
             </View>
           )}
           {event.users_amount > 5 ? (<Text style={styles.moreText}>+{event.users_amount - 5}</Text>) : ''}
+          {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
           {participants.length > 0 ?
             <View style={styles.seeMoreButton}>
               <Text style={styles.seeAllText}>See All</Text>
-            </View> : ''}
+            </View> :
+            <Text style={styles.moreText}>There is still no participants.</Text>
+            }
         </Pressable>
 
         <Modal
@@ -280,6 +300,13 @@ const EventScreen = ({ route }) => {
           : ''
         }
 
+        {preview ?
+          <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
+            navigation.navigate("CreateEvent")
+          }}>
+            <Text style={styles.buttonText}>Back to edition</Text>
+          </TouchableOpacity> : ''
+        }
         <View style={{ marginBottom: 100 }}>
 
         </View>
@@ -297,7 +324,7 @@ const styles = StyleSheet.create({
     padding: width * 0.04,
   },
   infoBlock: {
-    width: width*0.82,
+    width: width * 0.82,
     flexDirection: 'row',
     alignItems: 'center',
   },

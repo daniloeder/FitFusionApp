@@ -76,7 +76,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Profile"
+      initialRouteName="CreateEvent"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,

@@ -5,25 +5,69 @@ import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DatePicker from '../../components/Forms/DatePicker';
-import { API_AUTHORIZATION } from '@env';
-import { SportsTypes } from '../../utils/sports';
+import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
-const CreateEventScreen = ({ navigation }) => {
+const CreateEventScreen = ({ route, navigation }) => {
+    const { userToken } = route.params;
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
-    const [date, setDate] = useState('2023-10-01');
-    const [time, setTime] = useState('15:00:00');
-    const [sportsType, setsportsType] = useState([]);
+    const [date, setDate] = useState('');
+    const [time, setTime] = useState('');
+    const [favoriteSports, setFavoriteSports] = useState([]);
     const [coordinates, setCoordinates] = useState('');
 
     const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
     const [selectedVideo, setSelectedVideo] = useState(null);
 
+    const eventPreview = {
+        title: title,
+        description: description,
+        location: location,
+        date: date,
+        time: time,
+        coordinates: coordinates,
+        sport_types: favoriteSports.map(sport => sport.id || sport),
+        photos: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
+        videos: selectedVideo ? [{ video: selectedVideo.uri }] : null,
+    }
+
+    const checkFieldsAndAlert = () => {
+        if (!title) {
+          Alert.alert('Error', 'Please fill in the Title field.');
+          return false;
+        }
+        if (!description) {
+          Alert.alert('Error', 'Please fill in the Description field.');
+          return false;
+        }
+        if (!location) {
+          Alert.alert('Error', 'Please fill in the Location field.');
+          return false;
+        }
+        if (!date) {
+          Alert.alert('Error', 'Please fill in the Date field.');
+          return false;
+        }
+        if (!time) {
+          Alert.alert('Error', 'Please fill in the Time field.');
+          return false;
+        }
+        if (favoriteSports.length === 0) {
+          Alert.alert('Error', 'Please select at least one Favorite Sport.');
+          return false;
+        }
+        if (!coordinates) {
+          Alert.alert('Error', 'Please fill in the Location field.');
+          return false;
+        }
+        return true;
+      };
+      
     const updateSelectedImage = (file, index) => {
         let tempImages = [...selectedImages];
         tempImages[index] = file;
@@ -61,44 +105,34 @@ const CreateEventScreen = ({ navigation }) => {
             const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/`, {
                 method: 'PATCH',
                 headers: {
-                    'Authorization': `Token ${API_AUTHORIZATION}`,
+                    'Authorization': `Token ${userToken}`,
                 },
                 body: formData
             });
 
             if (response.ok) {
                 const responseData = await response.json();
-                // Additional logic for successful response
+                navigation.navigate('Event', { eventId: responseData.id })
             } else {
                 const errorData = await response.json();
                 console.error("Server error response:", errorData);
-                // Additional logic for error response
             }
         } catch (error) {
             console.error('Error:', error);
-            // Handle error appropriately, maybe show an alert or notification to the user
         }
     };
 
-
     const createEvent = async () => {
-        if (!coordinates || coordinates === "") {
-            Alert.alert("Error", "Coordinates are required!");
-            return;
-        }
         const eventFormData = new FormData();
-
         logAndAppend(eventFormData, 'title', title);
         logAndAppend(eventFormData, 'description', description);
         logAndAppend(eventFormData, 'location', location);
         logAndAppend(eventFormData, 'date', date);
         logAndAppend(eventFormData, 'time', time);
-        sportsType.map(sport => sport.id).forEach(sportId => {
+        favoriteSports.map(sport => sport.id || sport).forEach(sportId => {
             logAndAppend(eventFormData, 'sport_types', String(sportId));
         });
-        
 
-        // Serialize the coordinates object to a JSON string
         const coordinatesString = JSON.stringify({
             type: "Point",
             coordinates: [coordinates.longitude, coordinates.latitude]
@@ -108,23 +142,20 @@ const CreateEventScreen = ({ navigation }) => {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${API_AUTHORIZATION}`,
-                    'Content-Type': 'multipart/form-data' // adding the content type header
+                    'Authorization': `Token ${userToken}`,
+                    'Content-Type': 'multipart/form-data'
                 },
                 body: eventFormData
             });
 
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
-                if (eventData.id) {
+                if (eventData.id && (selectedImages.some(item => item !== null && item !== undefined) || selectedVideo)) {
                     await updateEvent(eventData.id);
                 }
             } else {
-                // Log raw text response for better debugging.
                 const rawText = await eventResponse.text();
                 console.error("Raw server response:", rawText);
-
-                // Try parsing the response as JSON.
                 try {
                     const data = JSON.parse(rawText);
                     console.error("Parsed server response:", data);
@@ -137,7 +168,6 @@ const CreateEventScreen = ({ navigation }) => {
             console.error('Event creation error:', error);
         }
     };
-
 
     return (
         <View style={styles.gradientContainer}>
@@ -165,9 +195,7 @@ const CreateEventScreen = ({ navigation }) => {
 
                 <Text style={styles.inputTitles}>Sports Type</Text>
 
-                <SportsPicker
-                    sports={sportsType} setSports={setsportsType}
-                />
+                <SportsPicker sports={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSports={setFavoriteSports} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
@@ -180,23 +208,19 @@ const CreateEventScreen = ({ navigation }) => {
                     )}
                 </View>
 
-                {/* Display selected images */}
                 <View style={styles.selectedImagesContainer}>
                     <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
                     </ScrollView>
                 </View>
 
-
                 <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
                 <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => {
-                    //navigation.navigate('EventScreen', { param1: 'Some data', param2: 'Some more data' });
-                }}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { checkFieldsAndAlert() ? navigation.navigate('Event', { eventPreview: eventPreview }) : {} }}>
                     <Text style={styles.buttonText}>Preview Event</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={createEvent}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={()=>{checkFieldsAndAlert() ? createEvent() : {}}}>
                     <Text style={styles.buttonText}>Create Event</Text>
                 </TouchableOpacity>
             </ScrollView>
