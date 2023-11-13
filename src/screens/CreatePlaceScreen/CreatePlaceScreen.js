@@ -3,21 +3,20 @@ import {
     View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Alert
 } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
-import { API_AUTHORIZATION } from '@env';
+import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
-const CreatePlaceScreen = ({ navigation }) => {
+const CreatePlaceScreen = ({ route, navigation }) => {
+    const { userToken } = route.params;
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
-    const [sportsType, setsportsType] = useState([]);
+    const [sportsType, setSportsType] = useState([]);
     const [coordinates, setCoordinates] = useState('');
-    const [creator, setCreator] = useState(1);
 
     const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
     const [selectedVideo, setSelectedVideo] = useState(null);
@@ -32,64 +31,37 @@ const CreatePlaceScreen = ({ navigation }) => {
         formData.append(key, value);
     };
 
-    const updatePlace = async (placeId) => {
-        try {
-            const formData = new FormData();
-
-            selectedImages.filter(item => item !== null).forEach((img, index) => {
-                const imageType = img.mimeType.split("/")[1];
-                const imgData = {
-                    uri: img.uri,
-                    type: img.mimeType,
-                    name: `photo_${index}.${imageType}`,
-                };
-                formData.append('photos[]', imgData);
-            });
-
-            if (selectedVideo) {
-                const videoType = selectedVideo.mimeType.split("/")[1];
-                const videoData = {
-                    uri: selectedVideo.uri,
-                    type: selectedVideo.mimeType,
-                    name: `video.${videoType}`,
-                };
-                formData.append('videos[]', videoData);
-            }
-
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Token ${API_AUTHORIZATION}`,
-                },
-                body: formData
-            });
-
-            if (response.ok) {
-                const responseData = await response.json();
-                // Additional logic for successful response, perhaps a success alert or navigating back
-            } else {
-                const errorData = await response.json();
-                console.error("Server error response:", errorData);
-                // Additional logic for error response, maybe showing an error alert
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            // Handle error appropriately, maybe show an alert or notification to the user
-        }
-    };
-
     const createPlace = async () => {
-        if (!coordinates || coordinates === "") {
-            Alert.alert("Error", "Coordinates are required!");
+        if (!name || !description || !location || !coordinates || sportsType.length === 0) {
+            Alert.alert('Error', 'Please fill in all fields.');
             return;
         }
 
         const placeFormData = new FormData();
-
         logAndAppend(placeFormData, 'name', name);
         logAndAppend(placeFormData, 'description', description);
         logAndAppend(placeFormData, 'location', location);
-        logAndAppend(placeFormData, 'sport_types', sportsType.map(sport => sport.value).join(','));
+        sportsType.forEach(sport => {
+            logAndAppend(placeFormData, 'sport_types', String(sport.id || sport));
+        });
+
+        const coordinatesString = JSON.stringify({
+            type: "Point",
+            coordinates: [coordinates.longitude, coordinates.latitude]
+        });
+        logAndAppend(placeFormData, 'coordinates', coordinatesString);
+
+        // Handle Media Uploads
+        selectedImages.filter(item => item !== null).forEach((img, index) => {
+            const imageType = img.mimeType.split("/")[1];
+            const imgData = {
+                uri: img.uri,
+                type: img.mimeType,
+                name: `photo_${index}.${imageType}`,
+            };
+            formData.append('photos[]', imgData);
+        });
+
         if (selectedVideo) {
             const videoType = selectedVideo.mimeType.split("/")[1];
             const videoData = {
@@ -97,85 +69,54 @@ const CreatePlaceScreen = ({ navigation }) => {
                 type: selectedVideo.mimeType,
                 name: `video.${videoType}`,
             };
-            placeFormData.append('videos[]', videoData);
+            formData.append('videos[]', videoData);
         }
 
-        // Serialize the coordinates object to a JSON string
-        const coordinatesString = JSON.stringify({
-            type: "Point",
-            coordinates: [coordinates.longitude, coordinates.latitude]
-        });
-        logAndAppend(placeFormData, 'coordinates', coordinatesString);
-
-
         try {
-            const placeResponse = await fetch('http://192.168.0.118:8000/api/places/', {
+            const response = await fetch('http://192.168.0.118:8000/api/places/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${API_AUTHORIZATION}`,
+                    'Authorization': `Token ${userToken}`,
                     'Content-Type': 'multipart/form-data'
                 },
                 body: placeFormData
             });
 
-            if (placeResponse.ok) {
-                const placeData = await placeResponse.json();
-                console.log("Place created successfully:", placeData);
-                // You can navigate or inform the user here that the place was created
+            if (response.ok) {
+                const responseData = await response.json();
+                navigation.navigate('PlaceDetails', { placeId: responseData.id });
             } else {
-                // Log raw text response for better debugging.
-                const rawText = await placeResponse.text();
-                console.error("Raw server response:", rawText);
-
-                // Try parsing the response as JSON.
-                try {
-                    const data = JSON.parse(rawText);
-                    console.error("Parsed server response:", data);
-                } catch (e) {
-                    console.error("Failed to parse the server response as JSON");
-                }
+                const errorData = await response.json();
+                Alert.alert('Error', `Creation failed: ${errorData.detail}`);
             }
-
         } catch (error) {
-            console.error('Place creation error:', error);
-            // Handle error appropriately, maybe show an alert or notification to the user
+            console.error('Error:', error);
+            Alert.alert('Error', 'An unexpected error occurred.');
         }
     };
 
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-            <ScrollView style={styles.container} showsVerticalScrollIndicator={false} showsHorizontalScrollIndicator={false} overScrollMode="never" keyboardShouldPersistTaps='always'>
-
-                <Text style={styles.inputTitles}>Title</Text>
-                <TextInput
-                    style={styles.input}
-                    value={name}
-                    onChangeText={setName}
-                    placeholder="Title"
-                />
+            <ScrollView style={styles.container} showsVerticalScrollIndicator={false} overScrollMode="never" keyboardShouldPersistTaps='always'>
+                {/* Fields and Uploaders */}
+                <Text style={styles.inputTitles}>Name</Text>
+                <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Name" />
 
                 <Text style={styles.inputTitles}>Description</Text>
-                <TextInput
-                    style={[styles.input, { height: width * 0.3 }]}
-                    value={description}
-                    onChangeText={setDescription}
-                    placeholder="Description"
-                />
+                <TextInput style={[styles.input, { height: width * 0.3 }]} value={description} onChangeText={setDescription} placeholder="Description" multiline />
 
                 <Text style={styles.inputTitles}>Sports Type</Text>
-                <SportsPicker
-                    sports={sportsType} setSports={setsportsType}
-                />
+                <SportsPicker sports={SportsNames(sportsType.map(sport => sport.id || sport), true)} setSports={setSportsType} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
-                {coordinates? <ShowOnMap coordinates={coordinates} /> : ''}
+                {coordinates ? <ShowOnMap coordinates={coordinates} /> : null}
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>
                     {selectedImages.map((image, index) =>
-                        <UploadPicker key={index} type="image" limit={1} setFile={updateSelectedImage} index={index} />
+                        <UploadPicker key={index} type="image" limit={1} setFile={file => updateSelectedImage(file, index)} index={index} />
                     )}
                 </View>
 
@@ -196,51 +137,30 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 20,
+        padding: width * 0.05,
     },
     inputTitles: {
         color: '#FFF',
+        marginBottom: width * 0.01,
     },
     input: {
         borderWidth: 1,
         borderColor: 'gray',
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 15,
-        backgroundColor: '#FFF'
+        padding: width * 0.02,
+        borderRadius: width * 0.01,
+        marginBottom: width * 0.03,
+        backgroundColor: '#FFF',
     },
     button: {
         padding: width * 0.03,
-        borderRadius: 5,
+        borderRadius: width * 0.01,
         alignItems: 'center',
         marginTop: width * 0.05,
+        marginBottom: width * 0.1,
     },
     buttonText: {
         color: '#FFF',
-        fontSize: 16
-    },
-
-    // Data Piker
-    dataPikerContainer: {
-        padding: width * 0.03,
-        marginBottom: width * 0.04,
-        borderRadius: width * 0.012,
-        borderWidth: 1,
-        borderColor: '#EFEFEF',
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F8F8F8',
-    },
-
-
-    // Media picker
-
-    selectedImagesContainer: {
-        flexDirection: 'row',
-        marginTop: 10,
-    },
-    imageWrapper: {
-        marginRight: 10,
+        fontSize: width * 0.04,
     },
 });
 

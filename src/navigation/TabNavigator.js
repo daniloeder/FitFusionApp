@@ -9,6 +9,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
+import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
+import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
 import EventScreen from '../screens/EventScreen/EventScreen';
 import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
 import Map from '../screens/Map/Map';
@@ -121,6 +123,23 @@ const TabNavigator = () => {
         component={ProfileScreen}
         options={{
           tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="Place"
+        component={PlaceScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+        }}
+      />
+
+      <Tab.Screen
+        name="CreatePlace"
+        component={CreatePlaceScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
         }}
       />
       <Tab.Screen

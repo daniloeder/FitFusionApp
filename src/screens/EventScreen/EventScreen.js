@@ -21,7 +21,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
-  const eventId = route.params.eventId;
+  const eventId = 20//route.params.eventId;
 
   useEffect(() => {
     setEvent(preview);
@@ -169,7 +169,7 @@ const EventScreen = ({ route, navigation }) => {
         </View>
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
-          <Icons name="Sport" size={width * 0.06} style={[styles.infoIcons, { marginTop: -width * 0.04 }]} />
+          <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
           <Text style={styles.sportType}>
             {event.sport_types.length ? SportsNames(event.sport_types).join(', ') : ''}.
           </Text>

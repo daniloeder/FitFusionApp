@@ -149,7 +149,6 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         throw new Error('Network response was not ok' + eventsResponse.statusText);
       }
       const eventsData = await eventsResponse.json();
-      console.log()
       if (eventsData.length === 0) {
         return
       }
@@ -267,7 +266,8 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       >
         <Marker coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}></Marker>
         {isPlacesEnabled && places.map((place) => {
-          const coordinatesArray = place.display_coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
+
+          const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
@@ -283,7 +283,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
           );
         })}
         {isEventEnabled && events.map((event) => {
-          const coordinatesArray = event.display_coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
+          const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
           const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
           return (
             <Marker key={event.id} coordinate={{ latitude, longitude }}>
