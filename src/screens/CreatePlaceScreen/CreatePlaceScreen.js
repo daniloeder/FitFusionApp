@@ -7,6 +7,7 @@ import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps
 import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import { SportsNames } from '../../utils/sports';
+import OpenTimes from '../../components/Forms/OpenTimes.js';
 
 const width = Dimensions.get('window').width;
 
@@ -20,6 +21,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
     const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
     const [selectedVideo, setSelectedVideo] = useState(null);
+
+    const [dates, setDates] = useState({ "sun": null, "mon": { "openTime": 8, "closeTime": 17, "open": true }, "tue": { "openTime": 8, "closeTime": 17, "open": true }, "wed": { "openTime": 8, "closeTime": 17, "open": true }, "thu": { "openTime": 8, "closeTime": 17, "open": true }, "fri": { "openTime": 8, "closeTime": 17, "open": true }, "sat": { "openTime": 8, "closeTime": 17, "open": true } });
 
     const updateSelectedImage = (file, index) => {
         let tempImages = [...selectedImages];
@@ -122,6 +125,9 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
                 <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
                 <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
+
+                <Text style={[styles.inputTitles, {marginTop: width*0.05, marginBottom: -width*0.03}]}>Select The Hours This Place is Opened</Text>
+                <OpenTimes dates={dates} setDates={setDates} />
 
                 <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={createPlace}>
                     <Text style={styles.buttonText}>Create Place</Text>

@@ -106,18 +106,17 @@ const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime,
     );
 };
 
-const OpenTimes = ({ openTimes }) => {
-    const [dates, setDates] = useState(openTimes);
+const dates = ({ dates, setDates, add=false }) => {
     const [selectedAllOpenTime, setSelectedAllOpenTime] = useState('');
     const [selectedAllCloseTime, setSelectedAllCloseTime] = useState('');
-
+    
     useEffect(() => {
         const newDates = [];
 
         const daysOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
         daysOfWeek.forEach(day => {
-            const dayData = openTimes[day];
+            const dayData = dates[day];
             if (dayData) {
                 newDates.push({
                     date: day,
@@ -135,8 +134,8 @@ const OpenTimes = ({ openTimes }) => {
             }
         });
 
-        if (openTimes.custom && openTimes.custom.length > 0) {
-            openTimes.custom.forEach(customDate => {
+        if (dates.custom && dates.custom.length > 0) {
+            dates.custom.forEach(customDate => {
                 newDates.push({
                     date: customDate.date,
                     open_time: customDate.openTime ? `${customDate.openTime}:00` : '',
@@ -265,7 +264,7 @@ const OpenTimes = ({ openTimes }) => {
                     />
                 </View>
             </View>
-            { dates.length < 20 &&
+            { add && dates.length < 20 &&
             <TouchableOpacity style={styles.addDateButton} onPress={addDate}>
                 <Text style={styles.addDateButtonText}>Add Date</Text>
             </TouchableOpacity>
@@ -342,11 +341,13 @@ const styles = StyleSheet.create({
         padding: width * 0.01,
         borderRadius: width * 0.03,
     },
-    viewContainer
-: {
+
+    viewContainer: {
         flex: 1,
-        padding: 16,
-        backgroundColor: '#F8F9F9',
+        padding: width*0.02,
+        backgroundColor: 'rgba(248, 249, 249, 0.88)',
+        marginVertical: width * 0.05,
+        borderRadius: width*0.015,
     },
     titleText: {
         fontSize: 20,
@@ -425,4 +426,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default OpenTimes;
+export default dates;
