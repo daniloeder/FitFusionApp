@@ -106,10 +106,10 @@ const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime,
     );
 };
 
-const dates = ({ dates, setDates, add=false }) => {
+const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, add = false, cancel = false }) => {
     const [selectedAllOpenTime, setSelectedAllOpenTime] = useState('');
     const [selectedAllCloseTime, setSelectedAllCloseTime] = useState('');
-    
+
     useEffect(() => {
         const newDates = [];
 
@@ -120,8 +120,8 @@ const dates = ({ dates, setDates, add=false }) => {
             if (dayData) {
                 newDates.push({
                     date: day,
-                    open_time: dayData.openTime ? `${dayData.openTime}:00` : '',
-                    close_time: dayData.closeTime ? `${dayData.closeTime}:00` : '',
+                    open_time: dayData.open_time ? `${dayData.open_time}:00` : '',
+                    close_time: dayData.close_time ? `${dayData.close_time}:00` : '',
                     open: dayData.open
                 });
             } else {
@@ -138,8 +138,8 @@ const dates = ({ dates, setDates, add=false }) => {
             dates.custom.forEach(customDate => {
                 newDates.push({
                     date: customDate.date,
-                    open_time: customDate.openTime ? `${customDate.openTime}:00` : '',
-                    close_time: customDate.closeTime ? `${customDate.closeTime}:00` : '',
+                    open_time: customDate.open_time ? `${customDate.open_time}:00` : '',
+                    close_time: customDate.close_time ? `${customDate.close_time}:00` : '',
                     open: customDate.open
                 });
             });
@@ -264,11 +264,17 @@ const dates = ({ dates, setDates, add=false }) => {
                     />
                 </View>
             </View>
-            { add && dates.length < 20 &&
-            <TouchableOpacity style={styles.addDateButton} onPress={addDate}>
-                <Text style={styles.addDateButtonText}>Add Date</Text>
-            </TouchableOpacity>
+            {add && dates.length < 20 &&
+                <TouchableOpacity style={styles.addDateButton} onPress={addDate}>
+                    <Text style={styles.addDateButtonText}>Add Date</Text>
+                </TouchableOpacity>
             }
+            {cancel &&
+                <TouchableOpacity style={[styles.addDateButton, { alignSelf: 'flex-end', paddingHorizontal: width * 0.05 }]} onPress={()=>setSetOpenCloseTime(false)}>
+                    <Text style={styles.addDateButtonText}>Cancel</Text>
+                </TouchableOpacity>
+            }
+
         </View>
     );
 };
@@ -344,10 +350,10 @@ const styles = StyleSheet.create({
 
     viewContainer: {
         flex: 1,
-        padding: width*0.02,
+        padding: width * 0.02,
         backgroundColor: 'rgba(248, 249, 249, 0.88)',
         marginVertical: width * 0.05,
-        borderRadius: width*0.015,
+        borderRadius: width * 0.015,
     },
     titleText: {
         fontSize: 20,
@@ -426,4 +432,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default dates;
+export default OpenTimes;
