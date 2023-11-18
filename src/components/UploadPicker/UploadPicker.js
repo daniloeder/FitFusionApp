@@ -27,7 +27,6 @@ const UploadPicker = ({ type = "any", limit = 1, setFile, index }) => {
             };
 
             const docResult = await DocumentPicker.getDocumentAsync(options);
-            console.log(docResult, index);
 
             if (docResult.type === 'success') {
                 setSelectedFile(docResult);

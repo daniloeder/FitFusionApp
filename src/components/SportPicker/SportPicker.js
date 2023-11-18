@@ -4,13 +4,13 @@ import Checkbox from 'expo-checkbox';
 import { SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
-const SportsPicker = ({ sports, setSports, lang='en' }) => {
+const SportsPicker = ({ sports, setSports, lang = 'en' }) => {
     const [visibleInputArea, setVisibleInputArea] = useState(false);
     const sportsOptions = SportsTypes(lang);
 
     function addRemoveItem(selectedOption) {
         const sportExists = sports.some(sport => sport.id === selectedOption.id);
-        
+
         if (sportExists) {
             const newSports = sports.filter(sport => sport.id !== selectedOption.id);
             setSports(newSports);
@@ -22,7 +22,7 @@ const SportsPicker = ({ sports, setSports, lang='en' }) => {
     return (
         <View style={styles.container}>
             <Pressable onPress={() => setVisibleInputArea(!visibleInputArea)} style={styles.searchInputBox}>
-                <Text style={{color:'#999'}}>
+                <Text style={{ color: '#999' }}>
                     {sports.length ? sports.map(sport => sport.name).join(", ") : "Select Sports"}
                 </Text>
             </Pressable>
@@ -51,6 +51,12 @@ const SportsPicker = ({ sports, setSports, lang='en' }) => {
                                     }
                                 </ScrollView>
                             </View>
+                            <Pressable
+                                onPress={() => setVisibleInputArea(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>Close</Text>
+                            </Pressable>
                         </View>
                     </TouchableWithoutFeedback>
                 </Modal>
@@ -63,11 +69,11 @@ const SportsPicker = ({ sports, setSports, lang='en' }) => {
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        marginBottom: width*0.05,
+        marginBottom: width * 0.05,
         zIndex: 1,
     },
     searchInputBox: {
-        height: width*0.13,
+        height: width * 0.13,
         flexDirection: 'row',
         padding: width * 0.02,
         borderWidth: 1,
@@ -106,7 +112,20 @@ const styles = StyleSheet.create({
     selectItemCheckBox: {
         width: width * 0.032,
         height: width * 0.032,
-    }
+    },
+    closeButton: {
+        marginTop: width * 0.0,
+        backgroundColor: '#FFF',
+        paddingHorizontal: width * 0.3,
+        paddingVertical: width * 0.03,
+        borderBottomLeftRadius: width*0.1,
+        borderBottomRightRadius: width*0.1,
+        alignSelf: 'center',
+    },
+    closeButtonText: {
+        color: 'gray',
+        fontSize: width * 0.04,
+    },
 });
 
 export default SportsPicker;

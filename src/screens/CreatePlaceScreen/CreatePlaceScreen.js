@@ -138,7 +138,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
             if (response.ok) {
                 const responseData = await response.json();
-                navigation.navigate('PlaceDetails', { placeId: responseData.id });
+                navigation.navigate('Place', { placeId: responseData.id });
             } else {
                 const errorData = await response.json();
                 Alert.alert('Error', `Creation failed: ${errorData.detail}`);
