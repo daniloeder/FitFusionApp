@@ -78,7 +78,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="CreateEvent"
+      initialRouteName="Map"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
@@ -165,6 +165,8 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         options={{
           tabBarIcon: () => <Icons name="Map" size={width * 0.085} />,
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen

@@ -272,7 +272,9 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
               <Icons name="Gym" size={width * 0.08} />
-              <Callout tooltip={true} style={styles.calloutContainer}>
+              <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
+                navigation.navigate('Place', { placeId: place.id })
+              }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
                   <Text style={styles.calloutSubtitle}>Location: {place.location}</Text>
@@ -328,6 +330,37 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
         <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
       </View>
+
+      <Pressable
+        onPress={() => {
+          navigation.navigate('Tabs', {
+            screen: 'Home',
+            params: { userToken: userToken }
+          });
+        }}
+        style={{
+          width: width * 0.14,
+          height: width * 0.14,
+          borderRadius: width * 0.04,
+          position: 'absolute',
+          left: width * 0.05,
+          bottom: width * 0.2,
+          backgroundColor: 'rgba(153, 27, 27, 0.8)',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Icons name="Home" size={width * 0.08} />
+        <Text
+          style={{
+            color: '#FFF',
+            fontSize: width*0.03,
+            fontWeight: 'bold',
+          }}
+        >
+          Home
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -341,7 +374,7 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     position: 'absolute',
-    top: 10,
+    top: width * 0.1,
     left: 10,
     right: 10,
     borderRadius: 10,

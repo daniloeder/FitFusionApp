@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
@@ -11,7 +11,7 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const userToken = route.params.userToken;
     const [place, setPlace] = useState(null);
-    const placeId = 20//route.params.placeId;
+    const placeId = route.params.placeId;
 
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 

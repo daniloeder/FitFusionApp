@@ -21,7 +21,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
-  const eventId = 20//route.params.eventId;
+  const eventId = route.params.eventId;
 
   useEffect(() => {
     setEvent(preview);
