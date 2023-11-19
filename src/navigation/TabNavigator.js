@@ -118,14 +118,6 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Profile"
-        initialParams={{ userToken }}
-        component={ProfileScreen}
-        options={{
-          tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
-        }}
-      />
-      <Tab.Screen
         name="Place"
         component={PlaceScreen}
         initialParams={{ userToken }}
@@ -164,6 +156,14 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
+        initialParams={{ userToken }}
+        options={{
+          tabBarIcon: () => <Icons name="Chat" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
         name="Map"
         component={Map}
         initialParams={{ userToken }}
@@ -171,14 +171,6 @@ const TabNavigator = () => {
           tabBarIcon: () => <Icons name="Map" size={width * 0.085} />,
           headerShown: false,
           tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="Chat"
-        component={ChatScreen}
-        initialParams={{ userToken }}
-        options={{
-          tabBarIcon: () => <Icons name="Chat" size={width * 0.085} />,
         }}
       />
       <Tab.Screen
@@ -203,6 +195,15 @@ const TabNavigator = () => {
         component={SettingsScreen}
         options={{
           tabBarIcon: () => <Icons name="Settings" size={width * 0.085} />,
+          tabBarButton: () => null,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        initialParams={{ userToken }}
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
         }}
       />
     </Tab.Navigator>

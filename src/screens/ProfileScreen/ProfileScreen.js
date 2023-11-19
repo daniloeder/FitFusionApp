@@ -204,6 +204,21 @@ const ProfileScreen = ({ route }) => {
         showsHorizontalScrollIndicator={false}
         overScrollMode="never"
       >
+        <Pressable
+          onPress={()=>navigation.navigate('Settings')}
+          style={{
+            width: width*0.12,
+            height: width*0.12,
+            borderRadius: width*0.06,
+            backgroundColor: 'rgba(153, 27, 27, 0.6)',
+            position: 'absolute',
+            right: '2%',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Icons name="Settings" size={width*0.1} />
+        </Pressable>
         <View style={styles.profileHeader}>
           <Image
             style={styles.avatar}
@@ -362,9 +377,14 @@ const ProfileScreen = ({ route }) => {
             </TouchableOpacity>
           </>
           :
-          <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => setEditProfile(true)}>
+          <>
+          <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => navigation.navigate('Settings')}>
+            <Text style={styles.editButtonText}>Settings</Text>
+          </TouchableOpacity>
+          </>
         }
 
       </ScrollView>
