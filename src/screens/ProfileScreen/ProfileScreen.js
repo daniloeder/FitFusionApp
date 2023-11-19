@@ -333,7 +333,7 @@ const ProfileScreen = ({ route }) => {
 
               </View>
 
-              {profile.favorite_sports.length ?
+              {profile.favorite_sports && profile.favorite_sports.length ?
                 <View style={styles.infoItem}>
                   <Text style={styles.infoTitle}>Favorite Sports</Text>
                   <View style={styles.favoriteSports}>

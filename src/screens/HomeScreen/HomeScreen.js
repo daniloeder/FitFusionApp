@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { fetchAuthToken, deleteAuthToken } from '../../store/store';
 
 const width = Dimensions.get('window').width;
 
@@ -19,9 +20,11 @@ const HomeScreen = ({ route, navigation }) => {
         },
       });
       const data = await response.json();
-      setData(data);
       if (response.ok) {
-
+        setData(data);
+      } else if (data && data.detail === "Invalid token."){
+        deleteAuthToken();
+        navigation.navigate('Auth', { screen: 'LoginScreen' });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -31,7 +34,17 @@ const HomeScreen = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    fetchProfile();
+
+    fetchAuthToken()
+    .then((userToken) => {
+      console.log('userToken', userToken)
+      if (userToken) {
+        fetchProfile();
+      }
+    })
+    .catch((error) => {
+      console.error('Error fetching user token:', error);
+    });
   }, []);
 
   useEffect(() => {
