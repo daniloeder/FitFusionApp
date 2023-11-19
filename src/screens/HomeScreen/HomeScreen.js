@@ -4,63 +4,120 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 
 const width = Dimensions.get('window').width;
 
-const HomeScreen = ({ route }) => {
-
+const HomeScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
+  const [data, setData] = useState(null);
+  const [places, setPlaces] = useState([]);
+  const [joinedEvents, setJoinedEvents] = useState([]);
 
-  const [events, setEvents] = useState([]);
-
-  const fetchEvents = async () => {
+  const fetchProfile = async () => {
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/events/');
+      const response = await fetch('http://192.168.0.118:8000/api/users/home', {
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${userToken}`,
+        },
+      });
       const data = await response.json();
-      setEvents(data);
+      setData(data);
+      if (response.ok) {
+
+      }
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error('Error fetching profile:', error);
+    } finally {
+
     }
   };
 
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    if (data) {
+      setPlaces(data.places);
+      setJoinedEvents(data.joined_events);
+    }
+  }, [data]);
+
   return (
     <View style={styles.gradientContainer}>
-
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-      <ScrollView style={styles.container}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        overScrollMode="never"
-      >
+      <ScrollView style={styles.container}>
         <Text style={styles.title}>Welcome to Fit Fusion</Text>
-        <Text style={styles.subtitle}>Upcoming Events:</Text>
+        <Text style={styles.subtitle}>My Places:</Text>
 
-        {events.map((item) => (
-          <View key={item.id.toString()} style={styles.eventItem}>
-            <Text style={styles.eventTitle}>{item.title}</Text>
-            <Text style={styles.eventDate}>{item.date}</Text>
+        {places.map((place) => (
+          <View key={place.id.toString()} style={styles.placeItem}>
+            <Text style={styles.placeTitle}>{place.name}</Text>
+            {place.events.map((event) => (
+              <View key={event.id}>
+                <Pressable
+                  style={styles.eventButton}
+                  onPress={() => {
+                    navigation.navigate('Event', { eventId: event.id });
+                  }}
+                >
+                  <Text style={styles.buttonText}>{event.title}</Text>
+                  <Text style={styles.eventDate}>Date: {event.date}</Text>
+                  <Text style={styles.eventDate}>Time: {event.time}</Text>
+                </Pressable>
+              </View>
+            ))}
             <Pressable
-              style={styles.button}
+              style={styles.viewPlaceButton}
               onPress={() => {
-                // Handle event click here
-                console.log('Event clicked:', item.id);
+                navigation.navigate('Place', { placeId: place.id });
               }}
             >
-              <Text style={styles.buttonText}>View Event</Text>
+              <Text style={styles.buttonText}>View Place</Text>
+            </Pressable>
+          </View>
+        ))}
+
+        {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
+        {joinedEvents.map((event) => (
+          <View key={event.id} style={styles.joinedEventItem}>
+            <Pressable
+              style={styles.joinedEventButton}
+              onPress={() => {
+                navigation.navigate('Event', { eventId: event.id });
+              }}
+            >
+              <Text style={styles.joinedEventTitle}>{event.title}</Text>
+              <Text style={styles.eventDate}>Date: {event.date}</Text>
+              <Text style={styles.eventDate}>Time: {event.time}</Text>
             </Pressable>
           </View>
         ))}
 
         <Pressable
-          style={styles.profileButton}
+          style={styles.createButton}
           onPress={() => {
-            // Handle profile button click
-            console.log('Profile button clicked');
+            navigation.navigate('CreateEvent');
           }}
         >
-          <Text style={styles.profileButtonText}>View Profile</Text>
+          <Text style={styles.createButtonText}>Create Event</Text>
         </Pressable>
-
+        <Pressable
+          style={styles.createButton}
+          onPress={() => {
+            navigation.navigate('CreatePlace');
+          }}
+        >
+          <Text style={styles.createButtonText}>Create Place</Text>
+        </Pressable>
+        <Pressable
+          style={styles.viewProfileButton}
+          onPress={() => {
+            navigation.navigate('Profile');
+          }}
+        >
+          <Text style={styles.viewProfileButtonText}>View Profile</Text>
+        </Pressable>
       </ScrollView>
-
     </View>
   );
 };
@@ -68,15 +125,6 @@ const HomeScreen = ({ route }) => {
 const styles = StyleSheet.create({
   gradientContainer: {
     flex: 1,
-  },
-  gradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: '100%',
-    height: '100%',
   },
   container: {
     flex: 1,
@@ -86,59 +134,117 @@ const styles = StyleSheet.create({
     fontSize: width * 0.085,
     fontWeight: 'bold',
     marginBottom: width * 0.025,
-    color: '#E2E8F0',
+    color: '#ffffff',
   },
   subtitle: {
     fontSize: width * 0.06,
     fontWeight: '600',
     marginBottom: width * 0.05,
-    color: '#E2E8F0',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
-  eventItem: {
+  placeItem: {
     padding: width * 0.04,
-    backgroundColor: 'rgba(238, 238, 238, 0.1)',
+    backgroundColor: 'rgba(50, 50, 50, 0.2)',
     borderRadius: width * 0.025,
     marginBottom: width * 0.03,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 3,
   },
-  eventTitle: {
+  placeTitle: {
     fontSize: width * 0.045,
     fontWeight: '600',
     marginBottom: width * 0.02,
-    color: '#E2E8F0',
+    color: '#16a085',
+  },
+  eventButton: {
+    width: '100%',
+    minHeight: width * 0.05,
+    borderRadius: width * 0.03,
+    marginBottom: '4%',
+    marginLeft: '8%',
+    backgroundColor: 'rgba(50, 50, 50, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: width * 0.04,
+    marginBottom: width * 0.02,
   },
   eventDate: {
     fontSize: width * 0.04,
     marginBottom: width * 0.03,
-    color: '#CBD5E0',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
-  button: {
-    backgroundColor: '#B83030',
+  viewPlaceButton: {
+    backgroundColor: 'rgba(255, 0, 0, 0.5)',
     paddingVertical: width * 0.025,
     paddingHorizontal: width * 0.0375,
     borderRadius: width * 0.0125,
     alignItems: 'center',
   },
-  buttonText: {
-    color: '#E2E8F0',
+  joinedEventItem: {
+    padding: width * 0.04,
+    backgroundColor: 'rgba(50, 50, 50, 0.2)',
+    borderRadius: width * 0.025,
+    marginBottom: width * 0.03,
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  joinedEventTitle: {
+    fontSize: width * 0.045,
+    fontWeight: '600',
+    marginBottom: width * 0.02,
+    color: '#f39c12',
+  },
+  joinedEventButton: {
+    width: '100%',
+    minHeight: width * 0.05,
+    borderRadius: width * 0.03,
+    marginVertical: '2%',
+    marginLeft: '-8%',
+    backgroundColor: 'rgba(50, 50, 50, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  joinedEventButtonText: {
+    color: '#ffffff',
     fontWeight: '600',
     fontSize: width * 0.04,
+    marginBottom: width * 0.02,
   },
-  profileButton: {
+  createButton: {
     marginTop: width * 0.025,
-    marginBottom: width * 0.2,
-    backgroundColor: '#B83030',
+    marginBottom: width * 0.05,
+    backgroundColor: 'rgba(255, 0, 0, 0.5)',
     paddingVertical: width * 0.03,
     paddingHorizontal: width * 0.05,
     borderRadius: width * 0.0125,
     alignItems: 'center',
   },
-  profileButtonText: {
-    color: '#E2E8F0',
+  createButtonText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: width * 0.045,
+  },
+  viewProfileButton: {
+    backgroundColor: 'rgba(255, 0, 0, 0.5)',
+    marginTop: width * 0.025,
+    marginBottom: width * 0.05,
+    paddingVertical: width * 0.03,
+    paddingHorizontal: width * 0.05,
+    borderRadius: width * 0.0125,
+    alignItems: 'center',
+  },
+  viewProfileButtonText: {
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: width * 0.045,
   },

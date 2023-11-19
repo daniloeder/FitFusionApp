@@ -126,15 +126,14 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             placeFormData.append('opening_times', JSON.stringify(openingTimes));
         }
 
-        try {
-            const response = await fetch('http://192.168.0.118:8000/api/places/', {
+        try { 
+              const response = await fetch('http://192.168.0.118:8000/api/places/', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Token ${userToken}`,
-                    'Content-Type': 'multipart/form-data'
+                  'Authorization': `Token ${userToken}`,
                 },
-                body: placeFormData
-            });
+                body: placeFormData,
+              }); 
 
             if (response.ok) {
                 const responseData = await response.json();

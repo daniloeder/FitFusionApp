@@ -193,11 +193,10 @@ const ProfileScreen = ({ route }) => {
   };
 
   if (isLoading) return <ActivityIndicator size="large" color="#991B1B" />;
-  console.log(profile.favorite_sports)
 
   return (
     <View style={styles.container}>
-      <GradientBackground startColor="#991B1B" endColor="blue" />
+    <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
       <ScrollView
         style={styles.contentContainer}

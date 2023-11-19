@@ -78,7 +78,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Map"
+      initialRouteName="Home"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
@@ -131,6 +131,7 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         options={{
           tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+          tabBarButton: () => null,
         }}
       />
 
@@ -140,6 +141,7 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         options={{
           tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+          tabBarButton: () => null,
         }}
       />
       <Tab.Screen
@@ -148,6 +150,7 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         options={{
           tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+          tabBarButton: () => null,
         }}
       />
 
@@ -157,6 +160,7 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         options={{
           tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
+          tabBarButton: () => null,
         }}
       />
       <Tab.Screen
