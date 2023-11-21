@@ -30,6 +30,40 @@ import Eye from './../../../assets/icons/eye.svg';
 import Google from './../../../assets/icons/google.svg';
 import Edit from './../../../assets/icons/edit.svg';
 
+import AmericanFootball from './../../../assets/icons/sports/American_Football.svg';
+import CanoeingKayaking from './../../../assets/icons/sports/Canoeing_Kayaking.svg';
+import Gymnastics from './../../../assets/icons/sports/Gymnastics.svg';
+import Sailing from './../../../assets/icons/sports/Sailing.svg';
+import TableTennis from './../../../assets/icons/sports/Table_Tennis.svg';
+import Archery from './../../../assets/icons/sports/Archery.svg';
+import Cricket from './../../../assets/icons/sports/Cricket.svg';
+import IceHockey from './../../../assets/icons/sports/Ice_Hockey.svg';
+import Skateboarding from './../../../assets/icons/sports/Skateboarding.svg';
+import Tennis from './../../../assets/icons/sports/Tennis.svg';
+import Badminton from './../../../assets/icons/sports/Badminton.svg';
+import Cycling from './../../../assets/icons/sports/Cycling.svg';
+import MartialArts from './../../../assets/icons/sports/Martial_Arts.svg';
+import Skiing from './../../../assets/icons/sports/Skiing.svg';
+import TrackAndField from './../../../assets/icons/sports/Track_and_Field.svg';
+import Baseball from './../../../assets/icons/sports/Baseball.svg';
+import Equestrian from './../../../assets/icons/sports/Equestrian.svg';
+import MountainBiking from './../../../assets/icons/sports/Mountain_Biking.svg';
+import Snowboarding from './../../../assets/icons/sports/Snowboarding.svg';
+import Volleyball from './../../../assets/icons/sports/Volleyball.svg';
+import Basketball from './../../../assets/icons/sports/Basketball.svg';
+import Fencing from './../../../assets/icons/sports/Fencing.svg';
+import RockClimbing from './../../../assets/icons/sports/Rock_Climbing.svg';
+import Soccer from './../../../assets/icons/sports/Soccer.svg';
+import Wrestling from './../../../assets/icons/sports/Wrestling.svg';
+import Bowling from './../../../assets/icons/sports/Bowling.svg';
+import FieldHockey from './../../../assets/icons/sports/Field_Hockey.svg';
+import RollerSkating from './../../../assets/icons/sports/Roller_Skating.svg';
+import Surfing from './../../../assets/icons/sports/Surfing.svg';
+import Boxing from './../../../assets/icons/sports/Boxing.svg';
+import Golf from './../../../assets/icons/sports/Golf.svg';
+import Rugby from './../../../assets/icons/sports/Rugby.svg';
+import Swimming from './../../../assets/icons/sports/Swimming.svg';
+
 const Icons = ({
   name,
   size = 15,
@@ -71,6 +105,39 @@ const Icons = ({
     Google: Google,
     Edit: Edit,
     
+    AmericanFootball: AmericanFootball,
+    CanoeingKayaking: CanoeingKayaking,
+    Gymnastics: Gymnastics,
+    Sailing: Sailing,
+    TableTennis: TableTennis,
+    Archery: Archery,
+    Cricket: Cricket,
+    IceHockey: IceHockey,
+    Skateboarding: Skateboarding,
+    Tennis: Tennis,
+    Badminton: Badminton,
+    Cycling: Cycling,
+    MartialArts: MartialArts,
+    Skiing: Skiing,
+    TrackAndField: TrackAndField,
+    Baseball: Baseball,
+    Equestrian: Equestrian,
+    MountainBiking: MountainBiking,
+    Snowboarding: Snowboarding,
+    Volleyball: Volleyball,
+    Basketball: Basketball,
+    Fencing: Fencing,
+    RockClimbing: RockClimbing,
+    Soccer: Soccer,
+    Wrestling: Wrestling,
+    Bowling: Bowling,
+    FieldHockey: FieldHockey,
+    RollerSkating: RollerSkating,
+    Surfing: Surfing,
+    Boxing: Boxing,
+    Golf: Golf,
+    Rugby: Rugby,
+    Swimming: Swimming,
   }[name];
 
   if (!Icon) {

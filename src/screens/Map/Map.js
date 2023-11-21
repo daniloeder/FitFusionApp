@@ -36,18 +36,7 @@ function deg2rad(deg) {
 
 const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
   return (
-    <View
-      onPress={() => { }}
-      style={{
-        width: width * 0.22,
-        height: width * 0.1,
-        backgroundColor: '#EEE',
-        borderRadius: width * 0.04,
-        marginBottom: width * 0.01,
-        flexDirection: 'row',
-        alignItems: 'center'
-      }}
-    >
+    <View onPress={() => { }} style={styles.onOffButtonStyle}>
       <Icons name={icon} size={width * 0.08} style={{ marginLeft: 4 }} />
       <Switch
         value={isLocalEnabled}
@@ -106,7 +95,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
   const [pickerCoordinates, setPickerCoordinates] = useState(null);
 
-  const [closerUsersPicture, setCloserUsersPicture] = useState({});
+  const iconNamesByIndex = ["Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "BodyBuilding", "Other"];
 
   const updatePlaces = async () => {
     try {
@@ -314,10 +303,6 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
     }
   };
 
-  if (!userLocation || !currentPosition) {
-    return null;
-  }
-
   return (
     <View style={styles.container}>
       <MapView
@@ -328,11 +313,10 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         scrollEnabled={SCROLL_ENABLED}
         zoomEnabled={ZOOM_ENABLED}
       >
-        <Marker coordinate={{ latitude: userLocation.latitude, longitude: userLocation.longitude }}></Marker>
         {isPlacesEnabled && places.map((place) => {
 
-          const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
-          const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
+          const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g);
+          const [longitude, latitude] = coordinatesArray.map(Number);
           return (
             <Marker key={place.id} coordinate={{ latitude, longitude }}>
               <Icons name="Gym" size={width * 0.08} />
@@ -342,15 +326,14 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
                   <Text style={styles.calloutSubtitle}>Location: {place.location}</Text>
-                  {/* Add any other details you want to show for a place */}
                 </View>
               </Callout>
             </Marker>
           );
         })}
         {isEventEnabled && events.map((event) => {
-          const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g); // Extract numeric values from the string
-          const [longitude, latitude] = coordinatesArray.map(Number); // Convert to numbers
+          const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g);
+          const [longitude, latitude] = coordinatesArray.map(Number);
           return (
             <Marker key={event.id} coordinate={{ latitude, longitude }}>
               <Icons name="Events" size={width * 0.08} />
@@ -370,6 +353,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         {isUserEnabled && users.map((user, index) => {
           const coordinatesArray = user.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
+
           return (
             <Marker key={user.id} coordinate={{ latitude, longitude }}>
 
@@ -385,13 +369,33 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
                 :
                 <Icons name="Profile" size={width * 0.08} />
               }
+              <View
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  bottom: 0,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                }}
+              >
+                {user.favorite_sports.slice(0, 3).map((sport, index) => {
+                  return (
+                    <View key={sport}
+                      style={[{ borderRadius: 10, backgroundColor: 'rgba(255, 255, 255, 0.7)' }, index == 1 ? { position: 'absolute', right: 0, top: -width * 0.052 } : {}]}
+                    >
+                      <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.03} />
+                    </View>
+                  )
+                }
+                )}
+              </View>
 
               <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
                 navigation.navigate('Event', { userId: user.id })
               }}>
                 <View style={styles.calloutView}>
-                  <Text style={styles.calloutTitle}>{user.title}</Text>
-                  <Text style={styles.calloutSubtitle}>Location: {user.location}</Text>
+                  <Text style={styles.calloutSubtitle}>User: {user.username}</Text>
+                  <Text style={styles.calloutSubtitle}>Age: {user.age}</Text>
                 </View>
               </Callout>
             </Marker>
@@ -408,53 +412,19 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       <View style={styles.inputContainer}>
         <GoogleAutocompletePicker setCoordinates={setPickerCoordinates} />
       </View>
-      <View
-        style={{
-          width: width * 0.25,
-          padding: 5,
-          paddingBottom: 2,
-          borderRadius: width * 0.01,
-          backgroundColor: '#CCC',
-          opacity: 0.9,
-          position: 'absolute',
-          right: width * 0.02,
-          bottom: width * 0.05,
-        }}
-      >
+      <View style={styles.toggleButtonContainer}>
         <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
         <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
         <OnOffButton icon="Profile" isLocalEnabled={isUserEnabled} setIsLocalEnabled={setIsUserEnabled} />
       </View>
 
-      <Pressable
-        onPress={() => {
-          navigation.navigate('Tabs', {
-            screen: 'Home',
-            params: { userToken: userToken }
-          });
-        }}
-        style={{
-          width: width * 0.14,
-          height: width * 0.14,
-          borderRadius: width * 0.04,
-          position: 'absolute',
-          left: width * 0.05,
-          bottom: width * 0.2,
-          backgroundColor: 'rgba(153, 27, 27, 0.8)',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
+      <Pressable onPress={() => {
+        navigation.navigate('Tabs', { screen: 'Home', params: { userToken: userToken } });
+      }}
+        style={styles.homeButtonStyle}
       >
         <Icons name="Home" size={width * 0.08} />
-        <Text
-          style={{
-            color: '#FFF',
-            fontSize: width * 0.03,
-            fontWeight: 'bold',
-          }}
-        >
-          Home
-        </Text>
+        <Text style={styles.homeButtonText}>Home</Text>
       </Pressable>
     </View>
   );
@@ -475,31 +445,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     flexDirection: 'row',
   },
-  input: {
-    flex: 1,
-    padding: 10,
-    right: 5,
-    borderRadius: 10,
-    backgroundColor: 'white',
-  },
-  inputGo: {
-    width: 50,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 25,
-    backgroundColor: '#0c8ce9'
-  },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-  },
   calloutContainer: {
     flexDirection: 'column',
     alignSelf: 'flex-start',
   },
   calloutView: {
-    width: 200,
+    width: width * 0.5,
     padding: 10,
     borderRadius: 10,
     backgroundColor: 'white',
@@ -509,7 +460,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 2,
-    elevation: 2, // for Android
+    elevation: 2,
   },
   calloutTitle: {
     color: '#333',
@@ -519,6 +470,49 @@ const styles = StyleSheet.create({
   calloutSubtitle: {
     color: '#666',
     fontSize: 14,
+  },
+  onOffButtonStyle: {
+    width: width * 0.22,
+    height: width * 0.1,
+    backgroundColor: '#EEE',
+    borderRadius: width * 0.04,
+    marginBottom: width * 0.01,
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  userImageStyle: {
+    width: width * 0.08, 
+    height: width * 0.08, 
+    borderRadius: width * 0.05, 
+    borderWidth: 3,
+    borderColor: '#DDD', // Default borderColor, overridden in code
+  },
+  toggleButtonContainer: {
+    width: width * 0.25,
+    padding: 5,
+    paddingBottom: 2,
+    borderRadius: width * 0.01,
+    backgroundColor: '#CCC',
+    opacity: 0.9,
+    position: 'absolute',
+    right: width * 0.02,
+    bottom: width * 0.05,
+  },
+  homeButtonStyle: {
+    width: width * 0.14,
+    height: width * 0.14,
+    borderRadius: width * 0.04,
+    position: 'absolute',
+    left: width * 0.05,
+    bottom: width * 0.2,
+    backgroundColor: 'rgba(153, 27, 27, 0.8)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  homeButtonText: {
+    color: '#FFF',
+    fontSize: width * 0.03,
+    fontWeight: 'bold',
   },
 });
 
