@@ -46,7 +46,7 @@ const ProfileScreen = ({ route }) => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/users/auth/profile/', {
+      const response = await fetch('http://192.168.0.118:8000/api/users/profile/', {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -196,7 +196,7 @@ const ProfileScreen = ({ route }) => {
 
   return (
     <View style={styles.container}>
-    <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
       <ScrollView
         style={styles.contentContainer}
@@ -205,11 +205,11 @@ const ProfileScreen = ({ route }) => {
         overScrollMode="never"
       >
         <Pressable
-          onPress={()=>navigation.navigate('Settings')}
+          onPress={() => navigation.navigate('Settings')}
           style={{
-            width: width*0.12,
-            height: width*0.12,
-            borderRadius: width*0.06,
+            width: width * 0.12,
+            height: width * 0.12,
+            borderRadius: width * 0.06,
             backgroundColor: 'rgba(153, 27, 27, 0.6)',
             position: 'absolute',
             right: '2%',
@@ -217,7 +217,7 @@ const ProfileScreen = ({ route }) => {
             justifyContent: 'center',
           }}
         >
-          <Icons name="Settings" size={width*0.1} />
+          <Icons name="Settings" size={width * 0.1} />
         </Pressable>
         <View style={styles.profileHeader}>
           <Image
@@ -359,10 +359,12 @@ const ProfileScreen = ({ route }) => {
                 </View> : ''
               }
 
-              <View style={styles.infoItem}>
-                <Text style={styles.infoTitle}>Bio</Text>
-                <Text style={styles.bio}>{profile.bio}</Text>
-              </View>
+              {profile.bio ?
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoTitle}>Bio</Text>
+                  <Text style={styles.bio}>{profile.bio}</Text>
+                </View>
+                : ''}
             </>
           )}
         </View>
@@ -378,12 +380,12 @@ const ProfileScreen = ({ route }) => {
           </>
           :
           <>
-          <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
-            <Text style={styles.editButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => navigation.navigate('Settings')}>
-            <Text style={styles.editButtonText}>Settings</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => navigation.navigate('Settings')}>
+              <Text style={styles.editButtonText}>Settings</Text>
+            </TouchableOpacity>
           </>
         }
 

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import React, { useState, useEffect, useReducer } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Image } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { fetchAuthToken, deleteAuthToken } from '../../store/store';
+import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
+import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
+import Icons from '../../components/Icons/Icons.js';
 
 const width = Dimensions.get('window').width;
 
@@ -10,6 +12,46 @@ const HomeScreen = ({ route, navigation }) => {
   const [data, setData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+  const [closerUsers, setCloserUsers] = useState(null);
+  const [closerUsersPicture, setCloserUsersPicture] = useState(null);
+
+  const fetchUserProfileImages = async (participants) => {
+    if (participants.length) {
+      try {
+        const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const data = await response.json();
+        if (response.ok) {
+          setCloserUsersPicture(data)
+        }
+      } catch (error) {
+        console.error('Error fetching user profile images:', error);
+      }
+    }
+  };
+
+  const fetchNearbyUsers = async (userToken, location) => {
+    try {
+      const extendSearch = true;
+      const distance = 1000 * 2;
+      const max_users = 8;
+      const response = await fetch(`http://192.168.0.118:8000/api/users/nearby-users/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}&extend=${extendSearch}&max_users=${max_users}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${userToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setCloserUsers(data);
+        fetchUserProfileImages(data.map((user) => user.id));
+      }
+    } catch (error) {
+      console.error('Error fetching nearby users:', error);
+    }
+    return null;
+  };
 
   const fetchProfile = async () => {
     try {
@@ -22,7 +64,7 @@ const HomeScreen = ({ route, navigation }) => {
       const data = await response.json();
       if (response.ok) {
         setData(data);
-      } else if (data && data.detail === "Invalid token."){
+      } else if (data && data.detail === "Invalid token.") {
         deleteAuthToken();
         navigation.navigate('Auth', { screen: 'LoginScreen' });
       }
@@ -34,18 +76,30 @@ const HomeScreen = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-
     fetchAuthToken()
-    .then((userToken) => {
-      console.log('userToken', userToken)
-      if (userToken) {
-        fetchProfile();
-      }
-    })
-    .catch((error) => {
-      console.error('Error fetching user token:', error);
-    });
+      .then((userToken) => {
+        if (userToken) {
+          fetchProfile();
+
+          fetchData('@userLocation')
+            .then((fetchedLocation) => {
+              setUserLocation(fetchedLocation);
+            })
+            .catch((error) => {
+              console.error('Error fetching user token:', error);
+            });
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching user token:', error);
+      });
   }, []);
+
+  useEffect(() => {
+    if (userLocation) {
+      fetchNearbyUsers(userToken, userLocation);
+    }
+  }, [data]);
 
   useEffect(() => {
     if (data) {
@@ -60,51 +114,140 @@ const HomeScreen = ({ route, navigation }) => {
 
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Welcome to Fit Fusion</Text>
-        <Text style={styles.subtitle}>My Places:</Text>
 
-        {places.map((place) => (
-          <View key={place.id.toString()} style={styles.placeItem}>
-            <Text style={styles.placeTitle}>{place.name}</Text>
-            {place.events.map((event) => (
-              <View key={event.id}>
+        {places.length || joinedEvents.length ?
+          <>
+            {places.length ? <Text style={styles.subtitle}>My Places:</Text> : ''}
+            {places.map((place) => (
+              <View key={place.id.toString()} style={styles.placeItem}>
+                <Text style={styles.placeTitle}>{place.name}</Text>
+                {place.events.map((event) => (
+                  <View key={event.id}>
+                    <Pressable
+                      style={styles.eventButton}
+                      onPress={() => {
+                        navigation.navigate('Event', { eventId: event.id });
+                      }}
+                    >
+                      <Text style={styles.buttonText}>{event.title}</Text>
+                      <Text style={styles.eventDate}>Date: {event.date}</Text>
+                      <Text style={styles.eventDate}>Time: {event.time}</Text>
+                    </Pressable>
+                  </View>
+                ))}
                 <Pressable
-                  style={styles.eventButton}
+                  style={styles.viewPlaceButton}
+                  onPress={() => {
+                    navigation.navigate('Place', { placeId: place.id });
+                  }}
+                >
+                  <Text style={styles.buttonText}>View Place</Text>
+                </Pressable>
+              </View>
+            ))}
+
+            {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
+            {joinedEvents.map((event) => (
+              <View key={event.id} style={styles.joinedEventItem}>
+                <Pressable
+                  style={styles.joinedEventButton}
                   onPress={() => {
                     navigation.navigate('Event', { eventId: event.id });
                   }}
                 >
-                  <Text style={styles.buttonText}>{event.title}</Text>
+                  <Text style={styles.joinedEventTitle}>{event.title}</Text>
                   <Text style={styles.eventDate}>Date: {event.date}</Text>
                   <Text style={styles.eventDate}>Time: {event.time}</Text>
                 </Pressable>
               </View>
             ))}
-            <Pressable
-              style={styles.viewPlaceButton}
-              onPress={() => {
-                navigation.navigate('Place', { placeId: place.id });
-              }}
-            >
-              <Text style={styles.buttonText}>View Place</Text>
-            </Pressable>
-          </View>
-        ))}
+          </>
+          :
+          <>
+            <Text style={{ fontSize: width * 0.05, color: '#FFF' }} >
+              Lets start looking for sports places, events and partness near you:
+            </Text>
+            <GetUserCoordinates userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
 
-        {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
-        {joinedEvents.map((event) => (
-          <View key={event.id} style={styles.joinedEventItem}>
-            <Pressable
-              style={styles.joinedEventButton}
-              onPress={() => {
-                navigation.navigate('Event', { eventId: event.id });
-              }}
-            >
-              <Text style={styles.joinedEventTitle}>{event.title}</Text>
-              <Text style={styles.eventDate}>Date: {event.date}</Text>
-              <Text style={styles.eventDate}>Time: {event.time}</Text>
-            </Pressable>
+            {userLocation ?
+              <>
+                <Text style={{ fontSize: width * 0.045, color: '#FFF' }} >
+                  You Can Now See The Updates Around You:
+                </Text>
+                <Pressable
+                  style={{
+                    paddingHorizontal: width * 0.03,
+                    height: width * 0.12,
+                    borderRadius: width * 0.05,
+                    backgroundColor: '#EEE',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'row',
+                    marginBottom: width * 0.1,
+                  }}
+                  onPress={() => navigation.navigate('Map')}
+                >
+                  <Text style={{ fontSize: width * 0.04, fontWeight: 'bold', color: '#000', marginRight: '5%' }}>Check on Map</Text>
+                  <Icons name="Map" size={width * 0.06} />
+                </Pressable>
+              </>
+              : ''
+            }
+          </>
+        }
+
+        {closerUsers ?
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              marginBottom: width * 0.05,
+            }}
+          >{closerUsers.slice(0, 8).map((user, index) => {
+            return (
+              <View key={index}
+                style={{
+                  width: width * 0.2,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: width * 0.03,
+                }}
+              >
+                <Pressable
+                  onPress={() => {
+
+                  }}
+                  style={{
+                    width: width * 0.2,
+                    height: width * 0.2,
+                    borderRadius: width * 0.1,
+                    backgroundColor: '#FFF',
+                    borderWidth: 3,
+                    borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
+                    <Image
+                      source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
+                      style={{ width: '100%', height: '100%', borderRadius: width*0.1 }}
+                      onError={(error) => console.error('Image Error:', error)}
+                    />
+                    :
+                    <Icons name="Profile" size={width*0.14} />
+                  }
+                </Pressable>
+                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{user.username}</Text>
+              </View>
+            )
+          }
+          )}
           </View>
-        ))}
+          :
+          ''
+        }
 
         <Pressable
           style={styles.createButton}

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
-import { StyleSheet, View, Text, Dimensions, Switch, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
 
 import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
@@ -94,15 +94,19 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
   const [userLocation, setUserLocation] = useState(null);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
+  const [users, setUsers] = useState([]);
   const mapRef = useRef();
 
   const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
   const [isEventEnabled, setIsEventEnabled] = useState(true);
+  const [isUserEnabled, setIsUserEnabled] = useState(true);
 
   const [currentPosition, setCurrentPosition] = useState(null);
   const [coodinatesList, setCoordinatesList] = useState([{ lat: 0, lng: 0 }]);
 
   const [pickerCoordinates, setPickerCoordinates] = useState(null);
+
+  const [closerUsersPicture, setCloserUsersPicture] = useState({});
 
   const updatePlaces = async () => {
     try {
@@ -167,6 +171,65 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       console.error('There was a problem with fetching events: ', error);
     }
   };
+  const fetchUserProfileImages = async (participants) => {
+    if (participants.length) {
+      try {
+        const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const data = await response.json();
+        if (response.ok) {
+          // Create a map of user IDs to their profile image data
+          const profileImageMap = {};
+          data.forEach((user) => {
+            profileImageMap[user.user_id] = user.profile_image;
+          });
+
+          // Update each user in the state with their profile image data
+          setUsers((prevUsers) => {
+            return prevUsers.map((user) => {
+              if (profileImageMap.hasOwnProperty(user.id)) {
+                return { ...user, profile_image: profileImageMap[user.id] };
+              }
+              return user;
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user profile images:', error);
+      }
+    }
+  };
+  const updateUsers = async () => {
+    try {
+      const usersResponse = await fetch(`http://192.168.0.118:8000/api/users/nearby-users/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 200}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${userToken}`
+        }
+      });
+
+      const usersData = await usersResponse.json();
+      if (usersData.length === 0) {
+        return
+      }
+      if (usersResponse.ok) {
+        fetchUserProfileImages(usersData.map((user) => user.id));
+      } else {
+        throw new Error('Network response was not ok' + usersResponse.statusText);
+      }
+
+      setUsers((prevUsers) => {
+        const newUsers = [...prevUsers];
+        usersData.forEach((user) => {
+          if (!newUsers.some((existingUser) => existingUser.id === user.id)) {
+            newUsers.push(user);
+          }
+        });
+        return newUsers;
+      });
+    } catch (error) {
+      console.error('There was a problem with fetching users: ', error);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -198,6 +261,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
     if (currentPosition) {
       updatePlaces();
       updateEvents();
+      updateUsers();
     }
   }, [currentPosition]);
 
@@ -303,6 +367,36 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
             </Marker>
           );
         })}
+        {isUserEnabled && users.map((user, index) => {
+          const coordinatesArray = user.coordinates.match(/-?\d+\.\d+/g);
+          const [longitude, latitude] = coordinatesArray.map(Number);
+          return (
+            <Marker key={user.id} coordinate={{ latitude, longitude }}>
+
+              {user && user.profile_image ?
+                <Image
+                  source={{ uri: `data:image/jpeg;base64,${user.profile_image}` }}
+                  style={{
+                    width: width * 0.08, height: width * 0.08, borderRadius: width * 0.05, borderWidth: 3,
+                    borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD',
+                  }}
+                  onError={(error) => console.error('Image Error:', error)}
+                />
+                :
+                <Icons name="Profile" size={width * 0.08} />
+              }
+
+              <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
+                navigation.navigate('Event', { userId: user.id })
+              }}>
+                <View style={styles.calloutView}>
+                  <Text style={styles.calloutTitle}>{user.title}</Text>
+                  <Text style={styles.calloutSubtitle}>Location: {user.location}</Text>
+                </View>
+              </Callout>
+            </Marker>
+          );
+        })}
 
         {false && coodinatesList.map((coordinates, index) =>
           <DoubleCircleOverlay key={index}
@@ -329,6 +423,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       >
         <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
         <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
+        <OnOffButton icon="Profile" isLocalEnabled={isUserEnabled} setIsLocalEnabled={setIsUserEnabled} />
       </View>
 
       <Pressable
@@ -354,7 +449,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         <Text
           style={{
             color: '#FFF',
-            fontSize: width*0.03,
+            fontSize: width * 0.03,
             fontWeight: 'bold',
           }}
         >
