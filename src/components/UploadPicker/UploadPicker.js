@@ -1,100 +1,159 @@
-import React, { useState } from 'react';
-import { View, Image, TouchableOpacity, StyleSheet, Dimensions, Pressable } from 'react-native';
+// UploadPicker.js
+import React from 'react';
+import { View, Pressable, Image, StyleSheet, Dimensions } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import Icons from '../../components/Icons/Icons'; // Assuming this path is correct
+import Icons from '../Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
-const UploadPicker = ({ type = "any", limit = 1, setFile, index }) => {
-    const [selectedFile, setSelectedFile] = useState(null);
+const UploadPicker = ({ selectedImages, setSelectedImages, type = "image", size = 100, max = 1, move=true }) => {
 
-    const getFileType = (type) => {
-        switch (type) {
-            case 'image':
-                return 'image/*';
-            case 'video':
-                return 'video/*';
-            default:
-                return '*/*';
+    const onImageSelect = (uri) => {
+        setSelectedImages([...selectedImages, uri]);
+    };
+    const onDeleteImage = (index) => {
+        const newImages = selectedImages.filter((_, i) => i !== index);
+        setSelectedImages(newImages);
+    };
+    const onEditImage = (newUri, index) => {
+        const updatedImages = [...selectedImages];
+        updatedImages[index] = newUri;
+        setSelectedImages(updatedImages);
+    };
+    const onSwapLeft = (index) => {
+        if (index === 0) return;
+        const newImages = [...selectedImages];
+        [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
+        setSelectedImages(newImages);
+    };
+    const onSwapRight = (index) => {
+        if (index === selectedImages.length - 1) return;
+        const newImages = [...selectedImages];
+        [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+        setSelectedImages(newImages);
+    };
+
+
+    const pickImage = async () => {
+        let result = await DocumentPicker.getDocumentAsync({ type: `${type}/*` });
+        if (result.type === 'success') {
+            onImageSelect(result);
+        }
+    };
+    const editImage = async (index) => {
+        let result = await DocumentPicker.getDocumentAsync({ type: `${type}/*` });
+        if (result.type === 'success') {
+            onEditImage(result, index);
+        }
+    };
+    const swapLeft = (index) => {
+        if (index > 0) {
+            onSwapLeft(index);
         }
     };
 
-    async function selectFiles() {
-        try {
-            const options = {
-                type: getFileType(type),
-                multiple: limit > 1,
-            };
-
-            const docResult = await DocumentPicker.getDocumentAsync(options);
-
-            if (docResult.type === 'success') {
-                setSelectedFile(docResult);
-                setFile(docResult, index);
-            }
-        } catch (err) {
-            console.warn(err);
+    const swapRight = (index) => {
+        if (index < selectedImages.length - 1) {
+            onSwapRight(index);
         }
-    }
+    };
+    if (type != "image" && type != "video") return;
 
     return (
-        <>
-            <View style={styles.container}>
-                <TouchableOpacity style={styles.button} onPress={selectFiles}>
-                    {selectedFile && selectedFile.uri ? (
-                        <Image source={{ uri: selectedFile.uri }} style={styles.thumbnail} />
-                    ) :
-                        type === "image" ? <Icons name="AddImage" size={width * 0.12} style={styles.centerIcon} /> :
-                            type === "video" ? <Icons name="AddVideo" size={width * 0.12} style={styles.centerIcon} /> : ''
-                    }
-                </TouchableOpacity>
-
-                {selectedFile && selectedFile.uri && (
-                    <Pressable style={styles.closeIcon} onPress={() => {
-                        setSelectedFile(null);
-                        setFile(null, index);
-                    }}>
-                        <Icons name="CloseX" size={width * 0.08} />
+        <View style={styles.container}>
+            {selectedImages && selectedImages.map((media, index) => (
+                <View key={index} style={[styles.imageContainer, { width: size, height: size }]}>
+                    <Image source={{ uri: media.image_id ? `http://192.168.0.118:8000/${media.image}` : media.uri }} style={styles.image} />
+                    <Pressable
+                        style={[styles.closeIcon, styles.icons]}
+                        onPress={() => onDeleteImage(index)}
+                    >
+                        <Icons name="CloseX" size={width * 0.05} />
                     </Pressable>
-                )}
-            </View>
-
-        </>
+                    <Pressable
+                        style={[styles.editIcon, styles.icons]}
+                        onPress={() => editImage(index)}
+                    >
+                        <Icons name="Edit" size={width * 0.05} />
+                    </Pressable>
+                    {move && index > 0?
+                        <Pressable
+                            style={[styles.leftArrow, styles.icons]}
+                            onPress={() => swapLeft(index)}
+                        >
+                            <Icons name="LeftArrow" size={width * 0.05} />
+                        </Pressable> : ''
+                    }
+                    {move && index < selectedImages.length - 1 ?
+                        <Pressable
+                            style={[styles.rightArrow, styles.icons]}
+                            onPress={() => swapRight(index)}
+                        >
+                            <Icons name="RightArrow" size={width * 0.05} />
+                        </Pressable> : ''
+                    }
+                </View>
+            ))}
+            {selectedImages && selectedImages.length < max ?
+                <Pressable onPress={pickImage} style={[styles.addButton, { width: size, height: size }]}>
+                    <Icons name={type === 'image' ? "AddImage" : "AddVideo"} size={width * 0.12} style={styles.centerIcon} />
+                </Pressable> : ''
+            }
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        maxWidth: width * 0.2,
+        width: '100%',
+        paddingVertical: width * 0.05,
         marginTop: width * 0.02,
         flexDirection: 'row',
+        flexWrap: 'wrap',
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    button: {
+    imageContainer: {
+        margin: width * 0.03,
+        position: 'relative',
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+    },
+    closeIcon: {
+        top: -width * 0.03,
+        right: -width * 0.03,
+    },
+    editIcon: {
+        bottom: '-10%',
+        left: '35%',
+    },
+    leftArrow: {
+        top: '35%',
+        left: '-10%',
+        opacity: 0.5,
+    },
+    rightArrow: {
+        top: '35%',
+        right: '-10%',
+        opacity: 0.5,
+    },
+    icons: {
+        position: 'absolute',
+        padding: width * 0.02,
+        borderRadius: width * 0.05,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    },
+    addButton: {
         padding: width * 0.008,
-        width: width * 0.15,
-        height: width * 0.15,
-        marginRight: width * 0.03,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#FFF',
+        margin: width * 0.03,
         position: 'relative',
-    },
-    thumbnail: {
-        width: '100%',
-        height: '100%',
-        resizeMode: 'cover',
-    },
-    closeIcon: {
-        position: 'absolute',
-        top: -width * 0.035,
-        right: width * 0.015,
-    },
-    centerIcon: {
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: [{ translateX: -width * 0.05 }, { translateY: -width * 0.05 }],
     },
 });
 

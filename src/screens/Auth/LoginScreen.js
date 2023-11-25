@@ -15,6 +15,7 @@ function LoginScreen() {
     const [socialToken, setSocialToken] = useState(null);
 
     function GoToHome(token) {
+        console.log('token', token)
         navigation.navigate('Tabs', {
             screen: 'Home',
             params: { userToken: token }
@@ -29,7 +30,7 @@ function LoginScreen() {
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/users/auth/login/', {
+            const response = await fetch('http://192.168.0.118:8000/api/users/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

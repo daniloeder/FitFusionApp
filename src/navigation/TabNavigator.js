@@ -9,6 +9,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
+import OtherUserProfileScreen from '../screens/ProfileScreen/OtherUserProfileScreen';
 import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
 import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
 import EventScreen from '../screens/EventScreen/EventScreen';
@@ -122,7 +123,6 @@ const TabNavigator = () => {
         component={PlaceScreen}
         initialParams={{ userToken }}
         options={{
-          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
           tabBarButton: () => null,
         }}
       />
@@ -132,7 +132,6 @@ const TabNavigator = () => {
         component={CreatePlaceScreen}
         initialParams={{ userToken }}
         options={{
-          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
           tabBarButton: () => null,
         }}
       />
@@ -141,7 +140,6 @@ const TabNavigator = () => {
         component={EventScreen}
         initialParams={{ userToken }}
         options={{
-          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
           tabBarButton: () => null,
         }}
       />
@@ -151,7 +149,6 @@ const TabNavigator = () => {
         component={CreateEventScreen}
         initialParams={{ userToken }}
         options={{
-          tabBarIcon: () => <Icons name="Events" size={width * 0.085} />,
           tabBarButton: () => null,
         }}
       />
@@ -194,16 +191,23 @@ const TabNavigator = () => {
         initialParams={{ userToken }}
         component={SettingsScreen}
         options={{
-          tabBarIcon: () => <Icons name="Settings" size={width * 0.085} />,
           tabBarButton: () => null,
         }}
       />
       <Tab.Screen
         name="Profile"
-        initialParams={{ userToken }}
+        initialParams={{ userToken, id: false }}
         component={ProfileScreen}
         options={{
           tabBarIcon: () => <Icons name="Profile" size={width * 0.085} />,
+        }}
+      />
+      <Tab.Screen
+        name="OtherUserProfile"
+        initialParams={{ userToken }}
+        component={OtherUserProfileScreen}
+        options={{
+          tabBarButton: () => null,
         }}
       />
     </Tab.Navigator>

@@ -16,6 +16,8 @@ const HomeScreen = ({ route, navigation }) => {
   const [closerUsers, setCloserUsers] = useState(null);
   const [closerUsersPicture, setCloserUsersPicture] = useState(null);
 
+  const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
+
   const fetchUserProfileImages = async (participants) => {
     if (participants.length) {
       try {
@@ -164,30 +166,21 @@ const HomeScreen = ({ route, navigation }) => {
           </>
           :
           <>
-            <Text style={{ fontSize: width * 0.05, color: '#FFF' }} >
-              Lets start looking for sports places, events and partness near you:
+            <Text style={styles.initialMessageText}>
+              Let's start looking for sports places, events and partners near you:
             </Text>
             <GetUserCoordinates userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
 
             {userLocation ?
               <>
-                <Text style={{ fontSize: width * 0.045, color: '#FFF' }} >
+                <Text style={styles.updatesMessageText}>
                   You Can Now See The Updates Around You:
                 </Text>
                 <Pressable
-                  style={{
-                    paddingHorizontal: width * 0.03,
-                    height: width * 0.12,
-                    borderRadius: width * 0.05,
-                    backgroundColor: '#EEE',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexDirection: 'row',
-                    marginBottom: width * 0.1,
-                  }}
+                  style={styles.mapButton}
                   onPress={() => navigation.navigate('Map')}
                 >
-                  <Text style={{ fontSize: width * 0.04, fontWeight: 'bold', color: '#000', marginRight: '5%' }}>Check on Map</Text>
+                  <Text style={styles.mapButtonText}>Check on Map</Text>
                   <Icons name="Map" size={width * 0.06} />
                 </Pressable>
               </>
@@ -197,56 +190,42 @@ const HomeScreen = ({ route, navigation }) => {
         }
 
         {closerUsers ?
-          <View
-            style={{
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              marginBottom: width * 0.05,
-            }}
-          >{closerUsers.slice(0, 8).map((user, index) => {
-            return (
-              <View key={index}
-                style={{
-                  width: width * 0.2,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: width * 0.03,
-                }}
-              >
-                <Pressable
-                  onPress={() => {
+          <View style={styles.closerUsersContainer}>
+            {closerUsers.slice(0, 8).map((user, index) => {
+              return (
+                <View key={index} style={styles.userCard}>
+                  <Pressable
+                    onPress={() => {
+                      navigation.navigate('OtherUserProfile', { id: user.id })
+                    }}
+                    style={styles.userCardInner}
+                  >
+                    {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
+                      <Image
+                        source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
+                        style={styles.userImage}
+                        onError={(error) => console.error('Image Error:', error)}
+                      />
+                      :
+                      <Icons name="Profile" size={width * 0.14} />
+                    }
 
-                  }}
-                  style={{
-                    width: width * 0.2,
-                    height: width * 0.2,
-                    borderRadius: width * 0.1,
-                    backgroundColor: '#FFF',
-                    borderWidth: 3,
-                    borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
-                    <Image
-                      source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
-                      style={{ width: '100%', height: '100%', borderRadius: width*0.1 }}
-                      onError={(error) => console.error('Image Error:', error)}
-                    />
-                    :
-                    <Icons name="Profile" size={width*0.14} />
-                  }
-                </Pressable>
-                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{user.username}</Text>
-              </View>
-            )
-          }
-          )}
+                    <View style={styles.userCardIcons}>
+                      {user.favorite_sports.slice(0, 3).map((sport, index) => {
+                        return (
+                          <View key={sport} style={[styles.favoriteSportIcon, index === 1 ? styles.favoriteSportIconSpecial : {}]}>
+                            <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
+                          </View>
+                        )
+                      })}
+                    </View>
+                  </Pressable>
+                  <Text style={styles.usernameText}>{user.username}</Text>
+                </View>
+              )
+            })}
           </View>
-          :
-          ''
+          : ''
         }
 
         <Pressable
@@ -370,12 +349,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  joinedEventButtonText: {
-    color: '#ffffff',
-    fontWeight: '600',
-    fontSize: width * 0.04,
-    marginBottom: width * 0.02,
-  },
   createButton: {
     marginTop: width * 0.025,
     marginBottom: width * 0.05,
@@ -403,6 +376,79 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '700',
     fontSize: width * 0.045,
+  },
+  // Refactored styles from inline styles
+  initialMessageText: {
+    fontSize: width * 0.05,
+    color: '#FFF',
+  },
+  updatesMessageText: {
+    fontSize: width * 0.045,
+    color: '#FFF',
+  },
+  mapButton: {
+    paddingHorizontal: width * 0.03,
+    height: width * 0.12,
+    borderRadius: width * 0.05,
+    backgroundColor: '#EEE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginBottom: width * 0.1,
+  },
+  mapButtonText: {
+    fontSize: width * 0.04,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: '5%',
+  },
+  closerUsersContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: width * 0.05,
+  },
+  userCard: {
+    width: width * 0.2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: width * 0.03,
+  },
+  userCardInner: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
+    backgroundColor: '#FFF',
+    borderWidth: 3,
+    borderColor: '#DDD',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: width * 0.1,
+  },
+  userCardIcons: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  favoriteSportIcon: {
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    padding: width * 0.005,
+  },
+  favoriteSportIconSpecial: {
+    position: 'absolute',
+    right: 0,
+    top: -width * 0.14,
+  },
+  usernameText: {
+    color: '#FFF',
+    fontWeight: 'bold',
   },
 });
 

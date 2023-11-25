@@ -278,7 +278,7 @@ const EventScreen = ({ route, navigation }) => {
           }}
         >
           {event.photos && event.photos.map((photo, index) =>
-            <ShowMedia key={index} media={photo} video={false} />
+            <ShowMedia key={index} media={photo.photo} video={false} />
           )}
         </View>
 

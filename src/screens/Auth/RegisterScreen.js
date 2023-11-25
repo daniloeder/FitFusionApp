@@ -15,10 +15,13 @@ function RegisterScreen({ navigation }) {
     const [socialData, setSocialData] = useState(null);
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
+    const [name, setName] = useState('');
     const [sex, setSex] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState(null);
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
+
+    const [validusername, setValidUsername] = useState(false);
 
     const [isModalVisible, setModalVisible] = useState(false);
     const [successRegistration, setSuccessRegistration] = useState(false);
@@ -36,15 +39,15 @@ function RegisterScreen({ navigation }) {
 
             if (response.ok) {
                 storeAuthToken(accessToken)
-                  .then(() => {
-                    navigation.navigate('Tabs', {
-                        screen: 'Home',
-                        params: { userToken: accessToken }
+                    .then(() => {
+                        navigation.navigate('Tabs', {
+                            screen: 'Home',
+                            params: { userToken: accessToken }
+                        });
+                    })
+                    .catch((error) => {
+                        console.error('Error storing token:', error);
                     });
-                  })
-                  .catch((error) => {
-                    console.error('Error storing token:', error);
-                  });
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {
@@ -102,30 +105,36 @@ function RegisterScreen({ navigation }) {
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/users/auth/register/', {
+            const response = await fetch('http://192.168.0.118:8000/api/users/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+
                 body: JSON.stringify(socialToken ? {
-                    social: true, token: socialToken, email: socialData.email, username: socialData.name
+                    social: true, token: socialToken, email: socialData.email, username: socialData.email.split('@')[0], name: socialData.name
                 } : {
-                    social: false, email, password: !socialToken ? password : "", username, date_of_birth: dateOfBirth, sex
+                    social: false, email, password: !socialToken ? password : "", username, name, date_of_birth: dateOfBirth, sex
                 })
             });
 
             const responseData = await response.json();
-            console.log(responseData)
             if (response.ok) {
                 setAccessToken(responseData.token);
                 setSuccessRegistration(true);
                 Alert.alert('Success', 'Registered successfully!');
             } else {
                 let errorMessage = '';
+
                 for (const key in responseData) {
-                    // Adding each error message to the errorMessage string.
-                    errorMessage += responseData[key].join('\n') + '\n';
+                    if (Array.isArray(responseData[key])) {
+                        errorMessage += responseData[key].join('\n') + '\n';
+                    } else {
+                        // Handle non-array values
+                        errorMessage += responseData[key] + '\n';
+                    }
                 }
+
                 Alert.alert('Registration Error', errorMessage.trim());
             }
 
@@ -134,6 +143,37 @@ function RegisterScreen({ navigation }) {
             Alert.alert('Error', 'There was an error with the registration process. Please try again.');
         }
     };
+    const checkUsername = async () => {
+        try {
+            const url = `http://192.168.0.118:8000/api/users/check-username/?username=${encodeURIComponent(username)}`;
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setValidUsername(data.available);
+            } else {
+                console.error("Error response:", data);
+                Alert.alert('Error', 'There was an error with the username check process. Please try again.');
+            }
+        } catch (error) {
+            console.error("There was an error:", error);
+            Alert.alert('Error', 'There was an error with the registration process. Please try again.');
+        }
+    };
+
+    useEffect(() => {
+        if (username.length > 4) {
+            checkUsername();
+        }
+    }, [username])
+
+    useEffect(() => {
+        setUsername(name.trim().split(/\s+/).join('').toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+    }, [name])
 
     useEffect(() => {
         if (socialToken) {
@@ -154,13 +194,26 @@ function RegisterScreen({ navigation }) {
                         onChangeText={setEmail}
                         value={email}
                     />
-
                     <CustomInput
-                        placeholder="Username"
+                        placeholder="Your Name"
                         placeholderTextColor="#656565"
-                        onChangeText={setUsername}
+                        onChangeText={setName}
+                        value={name}
+                    />
+                    {username.length ?
+                        validusername ?
+                            <Text style={{ color: 'green', fontWeight: 'bold' }}>This is a valid username</Text>
+                            :
+                            <Text style={{ color: 'red' }}>This username is invalid</Text>
+                        : ''
+                    }
+                    <CustomInput
+                        placeholder="@ Username"
+                        placeholderTextColor="#656565"
+                        onChangeText={(text) => setUsername(text.trim().split(/\s+/).join('').toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                         value={username}
-                    /></> : successRegistration ? <Text style={{ textAlign: 'center', margin: width * 0.05, fontWeight: 'bold', color: '#FFF', fontSize: width * 0.04 }}>{"Registered successfully!\nNow you need just complete these info!"}</Text> : ''}
+                    />
+                </> : successRegistration ? <Text style={styles.successRegistrationText}>{"Registered successfully!\nNow you need just complete these info!"}</Text> : ''}
 
                 <DatePicker setDate={setDateOfBirth} mode="date" dateType='DD/MM/YYYY' customStyle={styles.timePicker} />
 
@@ -364,6 +417,13 @@ const styles = StyleSheet.create({
         color: '#000',
         textAlign: 'left',
     },
+    successRegistrationText: {
+        textAlign: 'center',
+        margin: width * 0.05,
+        fontWeight: 'bold',
+        color: '#FFF',
+        fontSize: width * 0.04
+    }
 });
 
 export default RegisterScreen;

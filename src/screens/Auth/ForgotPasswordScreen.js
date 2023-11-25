@@ -12,7 +12,7 @@ function ForgotPasswordScreen() {
 
     const handleForgotPassword = async () => {
         try {
-            const response = await fetch('http://192.168.0.118:8000/api/auth/password/reset/', {
+            const response = await fetch('http://192.168.0.118:8000/api/password/reset/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

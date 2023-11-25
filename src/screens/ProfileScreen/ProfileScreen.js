@@ -1,20 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Alert,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Pressable,
-  Image,
-  ScrollView,
-  Modal,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
+import { Alert, View, Text, StyleSheet, TouchableOpacity, Pressable, Image, ScrollView, Modal, ActivityIndicator, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import DatePicker from '../../components/Forms/DatePicker';
+import ShowMedia from '../../components/ShowMedia/ShowMedia';
+import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
@@ -30,10 +20,10 @@ const ProfileScreen = ({ route }) => {
   const [isLoading, setIsLoading] = useState(true);
   const navigation = useNavigation();
 
-  const [selectedImages, setSelectedImages] = useState([]);
+  const [selectedProfileImage, setSelectedProfileImage] = useState([]);
   const [currentImage, setCurrentImage] = useState(null);
 
-  const [editProfile, setEditProfile] = useState(false); // Set to true to enable editing
+  const [editProfile, setEditProfile] = useState(false);
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
   const [sex, setSex] = useState('');
@@ -43,6 +33,11 @@ const ProfileScreen = ({ route }) => {
 
   const [bio, setBio] = useState('');
   const [favoriteSports, setFavoriteSports] = useState([]);
+
+  const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
+
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [editImages, setEditImages] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -60,6 +55,9 @@ const ProfileScreen = ({ route }) => {
         setBio(data.bio || '');
         setDateOfBirth(data.date_of_birth);
         setFavoriteSports(data.favorite_sports);
+        if (data.user_images) {
+          setSelectedImages(data.user_images);
+        }
       }
       if (data.profile_image && data.profile_image.image) {
         setCurrentImage('http://192.168.0.118:8000/' + data.profile_image.image);
@@ -76,12 +74,71 @@ const ProfileScreen = ({ route }) => {
   }, []);
 
   useEffect(() => {
-    if (selectedImages.length) {
-      setCurrentImage(selectedImages[0].uri);
+    if (selectedProfileImage.length) {
+      setCurrentImage(selectedProfileImage[0].uri);
     }
-  }, [selectedImages]);
+  }, [selectedProfileImage]);
 
-  // Add a function to update the user's profile information
+  const updateExistingImages = async () => {
+    const existingImagesData = selectedImages.map((img, index) => ({
+      id: img.id,
+      image_id: index + 1
+    }));
+
+    const response = await fetch('http://192.168.0.118:8000/api/users/update-existing-images/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ images: existingImagesData })
+    });
+
+    if (response.ok) {
+      setEditImages(false);
+      uploadImages();
+    }
+  };
+
+  const uploadImages = async () => {
+    try {
+      // Filter out already uploaded images and only keep new ones
+      const newImages = selectedImages.filter(img => !img.image);
+
+      for (let i = 0; i < newImages.length; i++) {
+        const img = newImages[i];
+        const imageId = selectedImages.indexOf(img) + 1;
+
+        const formData = new FormData();
+        formData.append('image_id', imageId);
+        formData.append('image', {
+          uri: img.uri,
+          type: img.mimeType,
+          name: img.name,
+        });
+
+        const response = await fetch('http://192.168.0.118:8000/api/users/upload-image/', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${userToken}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Server error response:", errorData);
+          break;
+        }
+
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    fetchProfile();
+  };
+
   const updateProfile = async () => {
     const requestBody = {};
     if (dateOfBirth) {
@@ -93,7 +150,7 @@ const ProfileScreen = ({ route }) => {
     if (password) {
       requestBody.password = password;
     }
-    if (username) {
+    if (username != profile.username) {
       requestBody.username = username;
     }
     if (bio) {
@@ -131,19 +188,19 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  const updateSelectedImage = (file) => {
-    setSelectedImages([file]);
+  const updateSelectedProfileImage = (file) => {
+    setSelectedProfileImage([file]);
   };
 
   const onSetProfileImage = async () => {
-    if (selectedImages.length === 0) {
+    if (selectedProfileImage.length === 0) {
       return;
     }
 
     try {
       const formData = new FormData();
       formData.append('image', {
-        uri: selectedImages[0].uri,
+        uri: selectedProfileImage[0].uri,
         type: 'image/jpeg',
         name: 'profile_image.jpg',
       });
@@ -163,7 +220,7 @@ const ProfileScreen = ({ route }) => {
       const data = await uploadResponse.json();
 
       if (uploadResponse.ok && data && data.profile_image) {
-        setSelectedImages([]);
+        setSelectedProfileImage([]);
       } else {
         console.error('Error uploading image:', uploadResponse.status);
       }
@@ -181,7 +238,7 @@ const ProfileScreen = ({ route }) => {
       });
 
       if (result.type === 'success') {
-        updateSelectedImage({
+        updateSelectedProfileImage({
           uri: result.uri,
           name: result.name,
           mimeType: result.type,
@@ -206,19 +263,11 @@ const ProfileScreen = ({ route }) => {
       >
         <Pressable
           onPress={() => navigation.navigate('Settings')}
-          style={{
-            width: width * 0.12,
-            height: width * 0.12,
-            borderRadius: width * 0.06,
-            backgroundColor: 'rgba(153, 27, 27, 0.6)',
-            position: 'absolute',
-            right: '2%',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={styles.settingsButton}
         >
           <Icons name="Settings" size={width * 0.1} />
         </Pressable>
+
         <View style={styles.profileHeader}>
           <Image
             style={styles.avatar}
@@ -229,7 +278,7 @@ const ProfileScreen = ({ route }) => {
               <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
                 <Icons name="Edit" />
               </TouchableOpacity>
-              {selectedImages.length > 0 && (
+              {selectedProfileImage.length > 0 && (
                 <TouchableOpacity style={styles.setProfileImageButton} onPress={onSetProfileImage}>
                   <Text style={styles.setProfileImageButtonText}>Set Profile Image</Text>
                 </TouchableOpacity>
@@ -295,8 +344,6 @@ const ProfileScreen = ({ route }) => {
                 value={username}
               />
 
-              {/* New input fields for bio and favorite sports */}
-
               <Text style={styles.sectionTitle}>Bio</Text>
               <Text style={styles.inputTitles}>Bio Description</Text>
               <CustomInput
@@ -332,10 +379,16 @@ const ProfileScreen = ({ route }) => {
             </>
           ) : (
             <>
-              <Text style={styles.username}>{profile.username}</Text>
-              <Text style={styles.email}>{profile.email}</Text>
+              <Text style={styles.username}>@{profile.username}</Text>
+              <Text style={styles.name}>{profile.name}</Text>
 
               <View style={styles.profileInfo}>
+
+                <View style={styles.infoItem}>
+                  <Text style={styles.infoTitle}>Age</Text>
+                  <Text style={styles.infoData}>{profile.age}</Text>
+                </View>
+
                 <View style={styles.infoItem}>
                   <Text style={styles.infoTitle}>Date of Birth</Text>
                   <Text style={styles.infoData}>{profile.date_of_birth}</Text>
@@ -352,9 +405,14 @@ const ProfileScreen = ({ route }) => {
                 <View style={styles.infoItem}>
                   <Text style={styles.infoTitle}>Favorite Sports</Text>
                   <View style={styles.favoriteSports}>
-                    {SportsNames(profile.favorite_sports).map((sport, index) => (
-                      <Text key={index} style={styles.sportItem}>{sport}</Text>
-                    ))}
+                    {profile.favorite_sports.slice(0, 10).map((sport, index) =>
+                      <View key={sport} style={styles.sportItem}>
+                        <Text style={{ color: '#FFF', fontSize: width * 0.03 }}>
+                          {SportsNames([sport])}
+                        </Text>
+                        <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} style={{ marginLeft: 5 }} />
+                      </View>
+                    )}
                   </View>
                 </View> : ''
               }
@@ -374,7 +432,7 @@ const ProfileScreen = ({ route }) => {
             <TouchableOpacity style={styles.editButton} onPress={updateProfile}>
               <Text style={styles.editButtonText}>Save Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => setEditProfile(false)}>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => setEditProfile(false)}>
               <Text style={styles.editButtonText}>Cancel</Text>
             </TouchableOpacity>
           </>
@@ -383,8 +441,52 @@ const ProfileScreen = ({ route }) => {
             <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
               <Text style={styles.editButtonText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.3 }]} onPress={() => navigation.navigate('Settings')}>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => navigation.navigate('Settings')}>
               <Text style={styles.editButtonText}>Settings</Text>
+            </TouchableOpacity>
+          </>
+        }
+
+        {editImages ?
+          <>
+            <UploadPicker
+              selectedImages={selectedImages}
+              setSelectedImages={setSelectedImages}
+              max={5}
+            />
+            <TouchableOpacity style={styles.editButton} onPress={() => {
+              updateExistingImages();
+            }}>
+              <Text style={styles.editButtonText}>Update Images</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => {
+              setEditImages(false);
+            }}>
+              <Text style={styles.editButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </>
+          :
+          <>
+            {profile.user_images && profile.user_images.length ?
+              <View
+                style={styles.userImagesContainer}
+              >
+                {profile.user_images.map((image, index) => {
+                  return (
+                    <View key={index}
+                      style={styles.userImagesItems}
+                    >
+                      <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                    </View>
+                  )
+                })}
+              </View>
+              : ''
+            }
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => {
+              setEditImages(true);
+            }}>
+              <Text style={styles.editButtonText}>{profile.user_images && profile.user_images.length ? "Edit Images" : "Add Images"}</Text>
             </TouchableOpacity>
           </>
         }
@@ -411,15 +513,14 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.2,
     marginBottom: width * 0.08,
   },
-  username: {
+  name: {
     fontSize: width * 0.06,
-    fontWeight: '600',
+    fontWeight: '800',
     color: '#E2E8F0',
   },
-  email: {
-    fontSize: width * 0.045,
-    color: '#CBD5E0',
-    marginBottom: width * 0.04,
+  username: {
+    fontSize: width * 0.05,
+    color: '#E2E8F0',
   },
   profileInfo: {
     flexDirection: 'row',
@@ -452,6 +553,7 @@ const styles = StyleSheet.create({
   favoriteSports: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    flexWrap: 'wrap',
     marginBottom: width * 0.04,
   },
   sportItem: {
@@ -461,6 +563,8 @@ const styles = StyleSheet.create({
     fontSize: width * 0.03,
     margin: width * 0.005,
     color: '#E2E8F0',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bio: {
     fontSize: width * 0.04,
@@ -497,6 +601,23 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.0125,
     alignItems: 'center',
   },
+  userImagesContainer: {
+    width: '90%',
+    paddingVertical: width * 0.01,
+    marginLeft: '5%',
+    borderRadius: width * 0.02,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  userImagesItems: {
+    width: width * 0.26,
+    height: width * 0.26,
+    margin: width * 0.01,
+    position: 'relative',
+  },
   setProfileImageButtonText: {
     color: '#E2E8F0',
     fontSize: width * 0.035,
@@ -512,6 +633,16 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     backgroundColor: '#FFF',
     alignItems: 'center'
+  },
+  settingsButton: {
+    width: width * 0.12,
+    height: width * 0.12,
+    borderRadius: width * 0.06,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+    position: 'absolute',
+    right: '3%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // sex modal picker

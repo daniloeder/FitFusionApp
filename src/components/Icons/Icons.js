@@ -24,12 +24,14 @@ import CloseX from './../../../assets/icons/closeX.svg';
 import AddImage from './../../../assets/icons/addImage.svg';
 import AddVideo from './../../../assets/icons/addVideo.svg';
 import LeftArrow from './../../../assets/icons/leftArrow.svg';
+import RightArrow from './../../../assets/icons/rightArrow.svg';
 import PlayVideo from './../../../assets/icons/playVideo.svg';
 import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
 import Google from './../../../assets/icons/google.svg';
 import Edit from './../../../assets/icons/edit.svg';
 
+import BodyBuilding from './../../../assets/icons/sports/BodyBuilding.svg';
 import AmericanFootball from './../../../assets/icons/sports/American_Football.svg';
 import CanoeingKayaking from './../../../assets/icons/sports/Canoeing_Kayaking.svg';
 import Gymnastics from './../../../assets/icons/sports/Gymnastics.svg';
@@ -99,12 +101,14 @@ const Icons = ({
     AddImage: AddImage,
     AddVideo: AddVideo,
     LeftArrow: LeftArrow,
+    RightArrow: RightArrow,
     PlayVideo: PlayVideo,
     Eye: Eye,
     EyeSlash: EyeSlash,
     Google: Google,
     Edit: Edit,
     
+    BodyBuilding: BodyBuilding,
     AmericanFootball: AmericanFootball,
     CanoeingKayaking: CanoeingKayaking,
     Gymnastics: Gymnastics,

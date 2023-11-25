@@ -9,12 +9,12 @@ import Icons from '../../components/Icons/Icons';
 
 const { width } = Dimensions.get('window');
 
-const ShowImage = ({ media }) => {
+const ShowImage = ({ media, size=width*0.4 }) => {
     const [modalVisible, setModalVisible] = useState(false);
 
     const images = [
         {
-            url: media.photo,
+            url: media,
         },
     ];
 
@@ -23,15 +23,15 @@ const ShowImage = ({ media }) => {
             <TouchableOpacity
                 onPress={() => setModalVisible(true)}
                 style={{
-                    width: width * 0.4,
-                    height: width * 0.4,
+                    width: size,
+                    height: size,
                     marginRight: width * 0.05,
                     marginBottom: width * 0.05,
                     borderWidth: 3,
                     borderColor: '#CCC',
                 }}
             >
-                <Image source={{ uri: media.photo }} style={{ flex: 1 }} resizeMode="cover" />
+                <Image source={{ uri: media }} style={{ flex: 1 }} resizeMode="cover" />
             </TouchableOpacity>
 
             {modalVisible && (
@@ -151,9 +151,9 @@ const styles = StyleSheet.create({
     },
 });
 
-const ShowMedia = ({ media, isVideo }) => {
+const ShowMedia = ({ media, isVideo, size }) => {
     return (
-        isVideo ? <ShowVideo media={media} /> : <ShowImage media={media} />
+        isVideo ? <ShowVideo media={media} /> : <ShowImage media={media} size={size} />
     )
 };
 

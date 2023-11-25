@@ -3,6 +3,7 @@ import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
+import { SportsNames } from '../../utils/sports';
 
 import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
@@ -95,7 +96,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
   const [pickerCoordinates, setPickerCoordinates] = useState(null);
 
-  const iconNamesByIndex = ["Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "BodyBuilding", "Other"];
+  const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
   const updatePlaces = async () => {
     try {
@@ -353,30 +354,22 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         {isUserEnabled && users.map((user, index) => {
           const coordinatesArray = user.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
-
           return (
             <Marker key={user.id} coordinate={{ latitude, longitude }}>
 
-              {user && user.profile_image ?
-                <Image
-                  source={{ uri: `data:image/jpeg;base64,${user.profile_image}` }}
-                  style={{
-                    width: width * 0.08, height: width * 0.08, borderRadius: width * 0.05, borderWidth: 3,
-                    borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD',
-                  }}
-                  onError={(error) => console.error('Image Error:', error)}
-                />
-                :
-                <Icons name="Profile" size={width * 0.08} />
-              }
+              <View style={[styles.userBall, { borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD' }]}>
+
+                {user && user.profile_image ?
+                  <Image style={styles.userBallImageProfile}
+                    source={{ uri: `data:image/jpeg;base64,${user.profile_image}` }}
+                    onError={(error) => console.error('Image Error:', error)}
+                  />
+                  :
+                  <Icons name="Profile" size={width * 0.08} />
+                }
+              </View>
               <View
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  bottom: 0,
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}
+                style={styles.userSportsIconsContainer}
               >
                 {user.favorite_sports.slice(0, 3).map((sport, index) => {
                   return (
@@ -391,11 +384,20 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
               </View>
 
               <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
-                navigation.navigate('Event', { userId: user.id })
+                navigation.navigate('OtherUserProfile', { id: user.id })
               }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutSubtitle}>User: {user.username}</Text>
                   <Text style={styles.calloutSubtitle}>Age: {user.age}</Text>
+                  {user.favorite_sports.length ? <Text style={styles.calloutSubtitle}>Sports:</Text> : ''}
+                  {user.favorite_sports.slice(0, 3).map((sport, index) =>
+                    <View key={sport} style={styles.userSportsList}>
+                      <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
+                      <Text style={[styles.calloutSubtitle, { marginLeft: '5%' }]}>
+                        {SportsNames([sport])}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </Callout>
             </Marker>
@@ -480,12 +482,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center'
   },
+  userBall: {
+    borderRadius: width * 0.05,
+    borderWidth: 2,
+    width: width * 0.08,
+    height: width * 0.08,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userBallImageProfile: {
+    width: '100%',
+    height: '100%',
+    borderRadius: width * 0.05
+  },
   userImageStyle: {
-    width: width * 0.08, 
-    height: width * 0.08, 
-    borderRadius: width * 0.05, 
+    width: width * 0.08,
+    height: width * 0.08,
+    borderRadius: width * 0.05,
     borderWidth: 3,
-    borderColor: '#DDD', // Default borderColor, overridden in code
+    borderColor: '#DDD',
+  },
+  userSportsIconsContainer: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  userSportsList: {
+    flexDirection: 'row',
+    marginLeft: '10%',
+    alignItems: 'center'
   },
   toggleButtonContainer: {
     width: width * 0.25,
