@@ -12,7 +12,6 @@ const width = Dimensions.get('window').width;
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
 const CreateEventScreen = ({ route, navigation }) => {
-    console.log(route.params)
     const { userToken } = route.params;
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -21,14 +20,12 @@ const CreateEventScreen = ({ route, navigation }) => {
     const [time, setTime] = useState('');
     const [favoriteSports, setFavoriteSports] = useState([]);
     const [coordinates, setCoordinates] = useState('');
-    const [selectedOptions, setSelectedOptions] = useState([]);
 
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState([]);
 
     const [places, setPlaces] = useState([]);
     const[eventPlace, setEventPlace] = useState([]);
-    console.log(eventPlace)
 
     const eventPreview = {
         title: title,

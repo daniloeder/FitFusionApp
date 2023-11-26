@@ -57,13 +57,15 @@ const PlaceScreen = ({ route, navigation }) => {
 
             <ScrollView style={styles.container}>
 
-                <Pressable
-                    onPress={() => navigation.navigate('CreateEvent', {placeId: [{id: place.id, name: place.name}]})}
-                    style={styles.createEventButton}
-                >
-                    <Icons name="Events" size={width * 0.08} />
-                    <Text style={{color:'#FFF',fontWeight:'bold',fontSize:width*0.035,marginLeft:'3%'}}>Create Event</Text>
-                </Pressable>
+                {place.created_by == userId ?
+                    <Pressable
+                        onPress={() => navigation.navigate('CreateEvent', { placeId: [{ id: place.id, name: place.name }] })}
+                        style={styles.createEventButton}
+                    >
+                        <Icons name="Events" size={width * 0.08} />
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>
+                    </Pressable> : ''
+                }
 
                 <Text style={styles.title}>{place.name}</Text>
 
@@ -160,7 +162,7 @@ const styles = StyleSheet.create({
     },
     createEventButton: {
         height: width * 0.12,
-        paddingHorizontal: width*0.05,
+        paddingHorizontal: width * 0.05,
         borderRadius: width * 0.06,
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
         marginLeft: 'auto',

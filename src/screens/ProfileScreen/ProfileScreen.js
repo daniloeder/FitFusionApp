@@ -9,8 +9,7 @@ import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
-import SportsPicker from '../../components/SportPicker/SportPicker';
-import { SportsNames } from '../../utils/sports';
+import { SportsNames, SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
@@ -353,7 +352,7 @@ const ProfileScreen = ({ route }) => {
               />
 
               <Text style={styles.inputTitles}>Favorite Sports</Text>
-              <SportsPicker sports={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSports={setFavoriteSports} />
+              <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
               {!profile.social ?
                 <>

@@ -101,10 +101,6 @@ const EventScreen = ({ route, navigation }) => {
     }
   };
 
-  const onNavigateToProfile = (userId) => {
-    navigation.navigate('ProfileScreen', { userId });
-  };
-
   const toggleVideoModal = () => {
     setVideoModalVisible(!isVideoModalVisible);
   };
