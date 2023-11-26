@@ -59,7 +59,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 {place.created_by == userId ?
                     <Pressable
-                        onPress={() => navigation.navigate('CreateEvent', { placeId: [{ id: place.id, name: place.name }] })}
+                        onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
                         style={styles.createEventButton}
                     >
                         <Icons name="Events" size={width * 0.08} />

@@ -25,6 +25,7 @@ import AddImage from './../../../assets/icons/addImage.svg';
 import AddVideo from './../../../assets/icons/addVideo.svg';
 import LeftArrow from './../../../assets/icons/leftArrow.svg';
 import RightArrow from './../../../assets/icons/rightArrow.svg';
+import Back from './../../../assets/icons/back.svg';
 import PlayVideo from './../../../assets/icons/playVideo.svg';
 import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
@@ -103,6 +104,7 @@ const Icons = ({
     AddVideo: AddVideo,
     LeftArrow: LeftArrow,
     RightArrow: RightArrow,
+    Back: Back,
     PlayVideo: PlayVideo,
     Eye: Eye,
     Images: Images,

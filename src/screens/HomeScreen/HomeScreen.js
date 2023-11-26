@@ -196,7 +196,7 @@ const HomeScreen = ({ route, navigation }) => {
                 <View key={index} style={styles.userCard}>
                   <Pressable
                     onPress={() => {
-                      navigation.navigate('OtherUserProfile', { id: user.id })
+                      navigation.navigate('User Profile', { id: user.id })
                     }}
                     style={styles.userCardInner}
                   >
@@ -231,7 +231,7 @@ const HomeScreen = ({ route, navigation }) => {
         <Pressable
           style={styles.createButton}
           onPress={() => {
-            navigation.navigate('CreateEvent');
+            navigation.navigate('Create Event');
           }}
         >
           <Text style={styles.createButtonText}>Create Event</Text>
@@ -239,7 +239,7 @@ const HomeScreen = ({ route, navigation }) => {
         <Pressable
           style={styles.createButton}
           onPress={() => {
-            navigation.navigate('CreatePlace');
+            navigation.navigate('Create Place');
           }}
         >
           <Text style={styles.createButtonText}>Create Place</Text>

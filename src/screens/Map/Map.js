@@ -384,7 +384,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
               </View>
 
               <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
-                navigation.navigate('OtherUserProfile', { id: user.id })
+                navigation.navigate('User Profile', { id: user.id })
               }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutSubtitle}>User: {user.username}</Text>
@@ -425,7 +425,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       }}
         style={styles.homeButtonStyle}
       >
-        <Icons name="Home" size={width * 0.08} />
+        <Icons name="Home" size={width * 0.08} fill='#1C274C' />
         <Text style={styles.homeButtonText}>Home</Text>
       </Pressable>
     </View>
