@@ -4,7 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
-import { storeAuthToken } from '../../store/store';
+import { storeAuthToken, storeData } from '../../store/store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -83,6 +83,7 @@ function RegisterScreen({ navigation }) {
             if (response.ok) {
                 Alert.alert('Success', 'Profile updated successfully!');
                 ActivateAccount();
+                storeData(responseData.user_id, 'user_id');
             } else {
                 let errorMessage = '';
                 for (const key in responseData) {

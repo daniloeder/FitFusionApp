@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
+import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
+import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons';
-import { SportsNames } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
 const PlaceScreen = ({ route, navigation }) => {
-    const userToken = route.params.userToken;
+    const { userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
     const placeId = route.params.placeId;
 
@@ -55,66 +56,95 @@ const PlaceScreen = ({ route, navigation }) => {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
             <ScrollView style={styles.container}>
-                {/* Place details display */}
+
+                <Pressable
+                    onPress={() => navigation.navigate('CreateEvent', {placeId: [{id: place.id, name: place.name}]})}
+                    style={styles.createEventButton}
+                >
+                    <Icons name="Events" size={width * 0.08} />
+                    <Text style={{color:'#FFF',fontWeight:'bold',fontSize:width*0.035,marginLeft:'3%'}}>Create Event</Text>
+                </Pressable>
+
                 <Text style={styles.title}>{place.name}</Text>
 
-                {/* Location display */}
                 <View style={styles.infoBlock}>
                     <Icons name="Map2" size={width * 0.07} style={styles.infoIcons} />
                     <Text style={styles.location}>{place.location}</Text>
                 </View>
                 {place.coordinates ? <ShowOnMap coordinates={{ 'latitude': latitude, 'longitude': longitude }} /> : null}
 
-                {/* Sports types display */}
-                <View style={styles.infoBlock}>
+                <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
                     <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
-                    <Text style={styles.sportType}>
-                        {place.sport_types.length ? SportsNames(place.sport_types).join(', ') : ''}
-                    </Text>
+                    <SportsItems favoriteSports={place.sport_types_keys} />
                 </View>
 
-                {/* Description display */}
+                <View style={styles.infoBlock}>
+                    <Icons name="Watch" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
+                    <OpenTimesTable openTimes={place.open_times} />
+                </View>
+
                 <View style={styles.infoBlock}>
                     <Icons name="Description" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.07 }]} />
                     <Text style={styles.description}>{place.description}</Text>
                 </View>
-                {/* Media display */}
-                {place.photos && place.photos.length ?
-                    <View style={styles.mediaSection}>
-                        <Text style={styles.mediaTitle}>Images</Text>
-                        <View style={styles.mediaContainer}>
-                            {place.photos.map((photo, index) => (
-                                <ShowMedia key={index} media={photo.photo} isVideo={false} />
-                            ))}
+
+                {place.place_photos && place.place_photos.length ?
+                    <View
+                        style={styles.userImagesContainer}
+                    >
+                        <View style={styles.infoBlock}>
+                            <Icons name="Images" size={width * 0.07} style={styles.infoIcons} />
+                        </View>
+                        {place.place_photos.map((image, index) => {
+                            return (
+                                <View key={index}
+                                    style={styles.userImagesItems}
+                                >
+                                    <ShowMedia media={`http://192.168.0.118:8000/${image.photo}`} size={width * 0.26} />
+                                </View>
+                            )
+                        })}
+                    </View>
+                    : ''
+                }
+                {place.place_videos && place.place_videos.length ?
+                    <View
+                        style={styles.userImagesContainer}
+                    >
+                        <View style={[styles.infoBlock, { justifyContent: 'center' }]}>
+                            <Icons name="Images" size={width * 0.07} style={[styles.infoIcons, { position: 'absolute', left: 0, top: 0 }]} />
+                            <Pressable onPress={toggleVideoModal} >
+                                <Icons name="PlayVideo" size={width * 0.25} style={{ backgroundColor: '#DDD' }} />
+                            </Pressable>
                         </View>
                     </View>
-                    : null
+                    : ''
                 }
 
-                {place.videos && place.videos.length ?
-                    <View style={styles.mediaSection}>
-                        <Text style={styles.mediaTitle}>Videos</Text>
-                        <Pressable onPress={toggleVideoModal} style={styles.videoThumbnail}>
-                            {/* Placeholder for video thumbnail */}
-                            <Icons name="PlayVideo" size={width * 0.3} />
-                        </Pressable>
-                    </View>
-                    : null
+                {place.place_videos && place.place_videos.length ?
+                    <Modal
+                        animationType="slide"
+                        transparent={false}
+                        visible={isVideoModalVisible}
+                        onRequestClose={toggleVideoModal}
+                        style={{ width: '100%', backgroundColor: '#000' }}
+                    >
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', backgroundColor: '#000' }}>
+                            <TouchableOpacity activeOpacity={1}
+                                style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+                            >
+                                <ShowMedia
+                                    media={`http://192.168.0.118:8000/${place.place_videos[0].video}`}
+                                    isVideo={true}
+                                    style={{ width: width, height: width * (9 / 16) }}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </Modal>
+                    : ''
                 }
 
-                <Modal
-                    animationType="slide"
-                    transparent={false}
-                    visible={isVideoModalVisible}
-                    onRequestClose={toggleVideoModal}
-                >
-                    <View style={styles.modalView}>
-                        {place.videos && place.videos.map((video, index) => (
-                            <ShowMedia key={index} media={video.video} isVideo={true} />
-                        ))}
-                    </View>
-                </Modal>
-
+                <View style={{ marginBottom: 100 }}></View>
             </ScrollView>
         </View>
     );
@@ -127,6 +157,16 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: width * 0.04,
+    },
+    createEventButton: {
+        height: width * 0.12,
+        paddingHorizontal: width*0.05,
+        borderRadius: width * 0.06,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginLeft: 'auto',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     infoBlock: {
         width: width * 0.82,
@@ -155,7 +195,24 @@ const styles = StyleSheet.create({
     infoIcons: {
         marginRight: width * 0.025,
     },
-    // Additional styles can be added as needed
+
+    userImagesContainer: {
+        width: '100%',
+        paddingVertical: width * 0.01,
+        borderRadius: width * 0.02,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
+        marginVertical: width * 0.03,
+    },
+    userImagesItems: {
+        width: width * 0.26,
+        height: width * 0.26,
+        margin: width * 0.02,
+        position: 'relative',
+    },
 });
 
 export default PlaceScreen;

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable, Image } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons';
-import { SportsNames } from '../../utils/sports';
+import SportsItems from '../../components/SportsItems/SportsItems.js';
 
 const width = Dimensions.get('window').width;
 
@@ -170,9 +169,7 @@ const EventScreen = ({ route, navigation }) => {
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
           <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
-          <Text style={styles.sportType}>
-            {event.sport_types.length ? SportsNames(event.sport_types).join(', ') : ''}.
-          </Text>
+          <SportsItems favoriteSports={event.sport_types} />
         </View>
 
         <View style={styles.infoBlock}>
@@ -205,7 +202,6 @@ const EventScreen = ({ route, navigation }) => {
         }
 
         <Text style={styles.participantTitle}>Participants</Text>
-        {}
         <Pressable style={styles.participantsImages}
           onPress={() => {
             setParticipantsModalVisible(participants.length > 0);
@@ -233,70 +229,68 @@ const EventScreen = ({ route, navigation }) => {
               <Text style={styles.seeAllText}>See All</Text>
             </View> :
             <Text style={styles.moreText}>There is still no participants.</Text>
-            }
+          }
         </Pressable>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={participantsModalVisible}
-          onRequestClose={() => setParticipantsModalVisible(false)}
-        >
-          <View style={styles.modalBackground}>
-            <View style={styles.modalContent}>
-              <ScrollView>
-                {participants.map((participant, index) => (
-                  <TouchableOpacity key={index} style={styles.participantContainer}>
-                    <View style={styles.iconContainer}>
-                      <Icons name="Profile2" size={width * 0.05} />
-                    </View>
-                    <Text style={styles.participantName}>{participant.username}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              <TouchableOpacity
-                onPress={() => setParticipantsModalVisible(false)}
-                style={styles.closeButton}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
 
         {(event.photos && event.photos.length) || (event.videos && event.videos.length) ? <Text style={styles.participantTitle}>Media</Text> : ''}
         {event.photos && event.photos.length ?
           <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Images</Text>
           : ''
         }
-        <View
-          style={{
-            flex: 1,
-            flexDirection: 'row',
-            flexWrap: "wrap",
-            justifyContent: "space-evenly",
-          }}
-        >
-          {event.photos && event.photos.map((photo, index) =>
-            <ShowMedia key={index} media={photo.photo} video={false} />
-          )}
-        </View>
 
-        {event.videos && event.videos.length ?
-          <>
-            <Text style={{ fontSize: width * 0.05, color: '#FFF', fontWeight: 'bold' }}>Videos</Text>
-            <Pressable onPress={toggleVideoModal}
-              style={{
-                width: width * 0.3,
-                height: width * 0.3,
-                backgroundColor: '#FFF',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <Icons name="PlayVideo" size={width * 0.3} style={{ backgroundColor: '#DDD' }} />
-            </Pressable>
-          </>
+        {event.photos && event.photos.length ?
+          <View
+            style={styles.userImagesContainer}
+          >
+            <View style={styles.infoBlock}>
+              <Icons name="Images" size={width * 0.07} style={styles.infoIcons} />
+            </View>
+            {event.photos.map((image, index) => {
+              return (
+                <View key={index}
+                  style={styles.userImagesItems}
+                >
+                  <ShowMedia media={`${!preview ? 'http://192.168.0.118:8000/' : ''}${image.photo}`} size={width * 0.26} />
+                </View>
+              )
+            })}
+          </View>
+          : ''
+        }
+        {(event.place_videos && event.place_videos.length) || (preview && event.videos) ?
+          <View
+            style={styles.userImagesContainer}
+          >
+            <View style={[styles.infoBlock, { justifyContent: 'center' }]}>
+              <Icons name="Images" size={width * 0.07} style={[styles.infoIcons, { position: 'absolute', left: 0, top: 0 }]} />
+              <Pressable onPress={toggleVideoModal} >
+                <Icons name="PlayVideo" size={width * 0.25} style={{ backgroundColor: '#DDD' }} />
+              </Pressable>
+            </View>
+          </View>
+          : ''
+        }
+
+        {(event.place_videos && event.place_videos.length) || (preview && event.videos) ?
+          <Modal
+            animationType="slide"
+            transparent={false}
+            visible={isVideoModalVisible}
+            onRequestClose={toggleVideoModal}
+            style={{ width: '100%', backgroundColor: '#000' }}
+          >
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', backgroundColor: '#000' }}>
+              <TouchableOpacity activeOpacity={1}
+                style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
+              >
+                <ShowMedia
+                  media={preview ? event.videos : `http://192.168.0.118:8000/${event.place_videos[0].video}`}
+                  isVideo={true}
+                  style={{ width: width, height: width * (9 / 16) }}
+                />
+              </TouchableOpacity>
+            </View>
+          </Modal>
           : ''
         }
 
@@ -488,6 +482,25 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: 'gray',
     fontSize: width * 0.04,
+  },
+
+
+  userImagesContainer: {
+    width: '100%',
+    paddingVertical: width * 0.01,
+    borderRadius: width * 0.02,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    marginVertical: width * 0.03,
+  },
+  userImagesItems: {
+    width: width * 0.26,
+    height: width * 0.26,
+    margin: width * 0.02,
+    position: 'relative',
   },
 });
 

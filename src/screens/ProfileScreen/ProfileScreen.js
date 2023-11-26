@@ -5,6 +5,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import DatePicker from '../../components/Forms/DatePicker';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
+import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
@@ -33,8 +34,6 @@ const ProfileScreen = ({ route }) => {
 
   const [bio, setBio] = useState('');
   const [favoriteSports, setFavoriteSports] = useState([]);
-
-  const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [editImages, setEditImages] = useState(false);
@@ -404,16 +403,7 @@ const ProfileScreen = ({ route }) => {
               {profile.favorite_sports && profile.favorite_sports.length ?
                 <View style={styles.infoItem}>
                   <Text style={styles.infoTitle}>Favorite Sports</Text>
-                  <View style={styles.favoriteSports}>
-                    {profile.favorite_sports.slice(0, 10).map((sport, index) =>
-                      <View key={sport} style={styles.sportItem}>
-                        <Text style={{ color: '#FFF', fontSize: width * 0.03 }}>
-                          {SportsNames([sport])}
-                        </Text>
-                        <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} style={{ marginLeft: 5 }} />
-                      </View>
-                    )}
-                  </View>
+                  <SportsItems favoriteSports={profile.favorite_sports} />
                 </View> : ''
               }
 
@@ -549,22 +539,6 @@ const styles = StyleSheet.create({
   },
   inputTitles: {
     color: '#FFF',
-  },
-  favoriteSports: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    marginBottom: width * 0.04,
-  },
-  sportItem: {
-    padding: width * 0.012,
-    backgroundColor: '#888',
-    borderRadius: width * 0.05,
-    fontSize: width * 0.03,
-    margin: width * 0.005,
-    color: '#E2E8F0',
-    flexDirection: 'row',
-    alignItems: 'center',
   },
   bio: {
     fontSize: width * 0.04,

@@ -28,6 +28,7 @@ import RightArrow from './../../../assets/icons/rightArrow.svg';
 import PlayVideo from './../../../assets/icons/playVideo.svg';
 import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
+import Images from './../../../assets/icons/Images.svg';
 import Google from './../../../assets/icons/google.svg';
 import Edit from './../../../assets/icons/edit.svg';
 
@@ -104,6 +105,7 @@ const Icons = ({
     RightArrow: RightArrow,
     PlayVideo: PlayVideo,
     Eye: Eye,
+    Images: Images,
     EyeSlash: EyeSlash,
     Google: Google,
     Edit: Edit,

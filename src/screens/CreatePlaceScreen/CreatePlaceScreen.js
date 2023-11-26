@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import {
-    View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Alert
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Alert } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
-import SportsPicker from '../../components/SportPicker/SportPicker';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
-import { SportsNames } from '../../utils/sports';
+import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import OpenTimes from '../../components/Forms/OpenTimes.js';
+import { SportsNames, SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
@@ -56,17 +54,11 @@ const CreatePlaceScreen = ({ route, navigation }) => {
     const [sportsType, setSportsType] = useState([]);
     const [coordinates, setCoordinates] = useState('');
 
-    const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
-    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedVideo, setSelectedVideo] = useState([]);
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
 
     const [dates, setDates] = useState({ "sun": null, "mon": { "open_time": 8, "close_time": 17, "open": true }, "tue": { "open_time": 8, "close_time": 17, "open": true }, "wed": { "open_time": 8, "close_time": 17, "open": true }, "thu": { "open_time": 8, "close_time": 17, "open": true }, "fri": { "open_time": 8, "close_time": 17, "open": true }, "sat": { "open_time": 8, "close_time": 17, "open": true } });
-
-    const updateSelectedImage = (file, index) => {
-        let tempImages = [...selectedImages];
-        tempImages[index] = file;
-        setSelectedImages(tempImages);
-    }
 
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
@@ -103,11 +95,11 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             placeFormData.append('photos[]', imgData);
         });
 
-        if (selectedVideo) {
-            const videoType = selectedVideo.mimeType.split("/")[1];
+        if (selectedVideo.length) {
+            const videoType = selectedVideo[0].mimeType.split("/")[1];
             const videoData = {
-                uri: selectedVideo.uri,
-                type: selectedVideo.mimeType,
+                uri: selectedVideo[0].uri,
+                type: selectedVideo[0].mimeType,
                 name: `video.${videoType}`,
             };
             placeFormData.append('videos[]', videoData);
@@ -126,14 +118,14 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             placeFormData.append('opening_times', JSON.stringify(openingTimes));
         }
 
-        try { 
-              const response = await fetch('http://192.168.0.118:8000/api/places/', {
+        try {
+            const response = await fetch('http://192.168.0.118:8000/api/places/', {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Token ${userToken}`,
+                    'Authorization': `Token ${userToken}`,
                 },
                 body: placeFormData,
-              }); 
+            });
 
             if (response.ok) {
                 const responseData = await response.json();
@@ -159,8 +151,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                 <Text style={styles.inputTitles}>Description</Text>
                 <TextInput style={[styles.input, { height: width * 0.3 }]} value={description} onChangeText={setDescription} placeholder="Description" multiline />
 
-                <Text style={styles.inputTitles}>Sports Type</Text>
-                <SportsPicker sports={SportsNames(sportsType.map(sport => sport.id || sport), true)} setSports={setSportsType} />
+                <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
+                <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = sportsType.map(sport => sport.id || sport), index = true)} setSelectedOptions={setSportsType} max={5} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
@@ -168,13 +160,20 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>
-                    {selectedImages.map((image, index) =>
-                        <UploadPicker key={index} type="image" limit={1} setFile={file => updateSelectedImage(file, index)} index={index} />
-                    )}
+                    <UploadPicker
+                        selectedImages={selectedImages}
+                        setSelectedImages={setSelectedImages}
+                        max={5}
+                    />
                 </View>
 
                 <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
-                <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
+                <UploadPicker
+                    selectedImages={selectedVideo}
+                    setSelectedImages={setSelectedVideo}
+                    type="video"
+                    max={1}
+                />
 
                 {setOpenCloseTime ?
                     <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} cancel />
@@ -186,7 +185,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                     </TouchableOpacity>
                 }
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { validateOpenTimes(dates) ? createPlace() : {} }}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
                     <Text style={styles.buttonText}>Create Place</Text>
                 </TouchableOpacity>
             </ScrollView>

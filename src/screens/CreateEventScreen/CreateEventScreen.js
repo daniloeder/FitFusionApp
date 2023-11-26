@@ -1,17 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, LogBox, Alert } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
-import SportsPicker from '../../components/SportPicker/SportPicker';
+import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DatePicker from '../../components/Forms/DatePicker';
-import { SportsNames } from '../../utils/sports';
+import { SportsNames, SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
 
 LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
 const CreateEventScreen = ({ route, navigation }) => {
+    console.log(route.params)
     const { userToken } = route.params;
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -20,9 +21,14 @@ const CreateEventScreen = ({ route, navigation }) => {
     const [time, setTime] = useState('');
     const [favoriteSports, setFavoriteSports] = useState([]);
     const [coordinates, setCoordinates] = useState('');
+    const [selectedOptions, setSelectedOptions] = useState([]);
 
-    const [selectedImages, setSelectedImages] = useState([null, null, null, null, null]);
-    const [selectedVideo, setSelectedVideo] = useState(null);
+    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedVideo, setSelectedVideo] = useState([]);
+
+    const [places, setPlaces] = useState([]);
+    const[eventPlace, setEventPlace] = useState([]);
+    console.log(eventPlace)
 
     const eventPreview = {
         title: title,
@@ -33,46 +39,57 @@ const CreateEventScreen = ({ route, navigation }) => {
         coordinates: coordinates,
         sport_types: favoriteSports.map(sport => sport.id || sport),
         photos: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
-        videos: selectedVideo ? [{ video: selectedVideo.uri }] : null,
+        videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
+
+    const fetchPlaces = async () => {
+        try {
+            const response = await fetch('http://192.168.0.118:8000/api/places/', {
+              method: 'GET',
+              headers: {
+                Authorization: `Token ${userToken}`,
+              },
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setPlaces(data.map(place=>({id:place.id, name: place.name})));
+            }
+        } catch (error) {
+            console.error('Error fetching places:', error);
+        }
+    };
 
     const checkFieldsAndAlert = () => {
         if (!title) {
-          Alert.alert('Error', 'Please fill in the Title field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Title field.');
+            return false;
         }
         if (!description) {
-          Alert.alert('Error', 'Please fill in the Description field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Description field.');
+            return false;
         }
         if (!location) {
-          Alert.alert('Error', 'Please fill in the Location field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Location field.');
+            return false;
         }
         if (!date) {
-          Alert.alert('Error', 'Please fill in the Date field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Date field.');
+            return false;
         }
         if (!time) {
-          Alert.alert('Error', 'Please fill in the Time field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Time field.');
+            return false;
         }
         if (favoriteSports.length === 0) {
-          Alert.alert('Error', 'Please select at least one Favorite Sport.');
-          return false;
+            Alert.alert('Error', 'Please select at least one Favorite Sport.');
+            return false;
         }
         if (!coordinates) {
-          Alert.alert('Error', 'Please fill in the Location field.');
-          return false;
+            Alert.alert('Error', 'Please fill in the Location field.');
+            return false;
         }
         return true;
-      };
-      
-    const updateSelectedImage = (file, index) => {
-        let tempImages = [...selectedImages];
-        tempImages[index] = file;
-        setSelectedImages(tempImages);
-    }
+    };
 
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
@@ -92,11 +109,11 @@ const CreateEventScreen = ({ route, navigation }) => {
                 formData.append('photos[]', imgData);
             });
 
-            if (selectedVideo) {
-                const videoType = selectedVideo.mimeType.split("/")[1];
+            if (selectedVideo.length) {
+                const videoType = selectedVideo[0].mimeType.split("/")[1];
                 const videoData = {
-                    uri: selectedVideo.uri,
-                    type: selectedVideo.mimeType,
+                    uri: selectedVideo[0].uri,
+                    type: selectedVideo[0].mimeType,
                     name: `video.${videoType}`,
                 };
                 formData.append('videos[]', videoData);
@@ -132,12 +149,14 @@ const CreateEventScreen = ({ route, navigation }) => {
         favoriteSports.map(sport => sport.id || sport).forEach(sportId => {
             logAndAppend(eventFormData, 'sport_types', String(sportId));
         });
+        logAndAppend(eventFormData, 'place', eventPlace[0].id);
 
         const coordinatesString = JSON.stringify({
             type: "Point",
             coordinates: [coordinates.longitude, coordinates.latitude]
         });
         logAndAppend(eventFormData, 'coordinates', coordinatesString);
+
         try {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
@@ -169,6 +188,11 @@ const CreateEventScreen = ({ route, navigation }) => {
         }
     };
 
+    useEffect(() => {
+        fetchPlaces();
+        setEventPlace(route.params.placeId);
+    }, []);
+
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -193,9 +217,11 @@ const CreateEventScreen = ({ route, navigation }) => {
                 <Text style={styles.inputTitles}>Date and Time of Event</Text>
                 <DatePicker date={date} setDate={setDate} setTime={setTime} dateType="YYYY/MM/DD" customStyle={styles.dataPikerContainer} />
 
-                <Text style={styles.inputTitles}>Sports Type</Text>
+                <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
+                <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
-                <SportsPicker sports={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSports={setFavoriteSports} />
+                <Text style={styles.inputTitles}>Event Place</Text>
+                <CustomPicker options={places} selectedOptions={eventPlace} setSelectedOptions={setEventPlace} max={1} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
@@ -203,9 +229,11 @@ const CreateEventScreen = ({ route, navigation }) => {
 
                 <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
                 <View style={{ flexDirection: 'row' }}>
-                    {selectedImages.map((image, index) =>
-                        <UploadPicker key={index} type="image" limit={1} setFile={updateSelectedImage} index={index} />
-                    )}
+                    <UploadPicker
+                        selectedImages={selectedImages}
+                        setSelectedImages={setSelectedImages}
+                        max={5}
+                    />
                 </View>
 
                 <View style={styles.selectedImagesContainer}>
@@ -214,13 +242,18 @@ const CreateEventScreen = ({ route, navigation }) => {
                 </View>
 
                 <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
-                <UploadPicker type="video" limit={1} setFile={setSelectedVideo} index={0} />
+                <UploadPicker
+                    selectedImages={selectedVideo}
+                    setSelectedImages={setSelectedVideo}
+                    type="video"
+                    max={1}
+                />
 
                 <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { checkFieldsAndAlert() ? navigation.navigate('Event', { eventPreview: eventPreview }) : {} }}>
                     <Text style={styles.buttonText}>Preview Event</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={()=>{checkFieldsAndAlert() ? createEvent() : {}}}>
+                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { checkFieldsAndAlert() ? createEvent() : {} }}>
                     <Text style={styles.buttonText}>Create Event</Text>
                 </TouchableOpacity>
             </ScrollView>

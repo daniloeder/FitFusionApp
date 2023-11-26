@@ -120,7 +120,7 @@ const HomeScreen = ({ route, navigation }) => {
         {places.length || joinedEvents.length ?
           <>
             {places.length ? <Text style={styles.subtitle}>My Places:</Text> : ''}
-            {places.map((place) => (
+            {places.slice(0, 3).map((place) => (
               <View key={place.id.toString()} style={styles.placeItem}>
                 <Text style={styles.placeTitle}>{place.name}</Text>
                 {place.events.map((event) => (

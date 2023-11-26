@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
-import { View, Pressable, Text, StyleSheet, Dimensions, ScrollView, TouchableWithoutFeedback, Modal } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Dimensions, ScrollView, TouchableWithoutFeedback, Modal, Alert } from 'react-native';
 import Checkbox from 'expo-checkbox';
-import { SportsTypes } from '../../utils/sports';
 
 const width = Dimensions.get('window').width;
-const SportsPicker = ({ sports, setSports, lang = 'en' }) => {
+
+const CustomPicker = ({ options, selectedOptions, setSelectedOptions, max }) => {
     const [visibleInputArea, setVisibleInputArea] = useState(false);
-    const sportsOptions = SportsTypes(lang);
 
     function addRemoveItem(selectedOption) {
-        const sportExists = sports.some(sport => sport.id === selectedOption.id);
+        const optionExists = selectedOptions.some(option => option.id === selectedOption.id);
 
-        if (sportExists) {
-            const newSports = sports.filter(sport => sport.id !== selectedOption.id);
-            setSports(newSports);
-        } else if (sports.length < 3) {
-            setSports([...sports, selectedOption]);
+        if (optionExists) {
+            const newSelectedOptions = selectedOptions.filter(option => option.id !== selectedOption.id);
+            setSelectedOptions(newSelectedOptions);
+        } else if (selectedOptions.length < max) { // Check against the max limit
+            setSelectedOptions([...selectedOptions, selectedOption]);
+        } else {
+            Alert.alert('Maximum Selection Reached', `You can select up to ${max} options.`);
         }
     }
 
@@ -23,7 +24,7 @@ const SportsPicker = ({ sports, setSports, lang = 'en' }) => {
         <View style={styles.container}>
             <Pressable onPress={() => setVisibleInputArea(!visibleInputArea)} style={styles.searchInputBox}>
                 <Text style={{ color: '#999' }}>
-                    {sports.length ? sports.map(sport => sport.name).join(", ") : "Select Sports"}
+                    {selectedOptions.length ? selectedOptions.map(option => option.name).join(", ") : "Select Options"}
                 </Text>
             </Pressable>
 
@@ -34,17 +35,17 @@ const SportsPicker = ({ sports, setSports, lang = 'en' }) => {
                             <View style={styles.selectContainer}>
                                 <ScrollView style={styles.selectBox}>
                                     {
-                                        Object.values(sportsOptions).map(sport => (
+                                        options.map(option => (
                                             <Pressable
-                                                key={sport.id}
+                                                key={option.id}
                                                 style={styles.selectItem}
-                                                onPress={() => addRemoveItem(sport)}
+                                                onPress={() => addRemoveItem(option)}
                                             >
-                                                <Text style={styles.itemText}>{sport.name}</Text>
+                                                <Text style={styles.itemText}>{option.name}</Text>
                                                 <Checkbox
                                                     style={styles.selectItemCheckBox}
-                                                    value={sports.some(s => s.id === sport.id)}
-                                                    onValueChange={() => addRemoveItem(sport)}
+                                                    value={selectedOptions.some(o => o.id === option.id)}
+                                                    onValueChange={() => addRemoveItem(option)}
                                                 />
                                             </Pressable>
                                         ))
@@ -64,7 +65,6 @@ const SportsPicker = ({ sports, setSports, lang = 'en' }) => {
         </View>
     );
 }
-
 
 const styles = StyleSheet.create({
     container: {
@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
     },
     selectItem: {
+        height: width*0.12,
         flexDirection: 'row',
         alignItems: 'center',
         padding: width * 0.02,
@@ -107,19 +108,19 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     itemText: {
-        fontSize: width * 0.03,
+        fontSize: width * 0.035,
     },
     selectItemCheckBox: {
-        width: width * 0.032,
-        height: width * 0.032,
+        width: width * 0.042,
+        height: width * 0.042,
     },
     closeButton: {
         marginTop: width * 0.0,
         backgroundColor: '#FFF',
         paddingHorizontal: width * 0.3,
         paddingVertical: width * 0.03,
-        borderBottomLeftRadius: width*0.1,
-        borderBottomRightRadius: width*0.1,
+        borderBottomLeftRadius: width * 0.1,
+        borderBottomRightRadius: width * 0.1,
         alignSelf: 'center',
     },
     closeButtonText: {
@@ -128,4 +129,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SportsPicker;
+export default CustomPicker;

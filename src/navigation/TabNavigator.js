@@ -3,7 +3,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { fetchAuthToken } from '../store/store';
+import { fetchAuthToken, fetchData, storeAuthToken, storeData } from '../store/store';
 import { useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
@@ -19,6 +19,7 @@ import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import Notifications from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
+import { saveToLibraryAsync } from 'expo-media-library';
 
 const width = Dimensions.get('window').width;
 
@@ -61,12 +62,20 @@ const NavGradientBackground = () => {
 
 const TabNavigator = () => {
   const navigation = useNavigation();
+  const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
-  
+
   useEffect(() => {
-    fetchAuthToken()
-      .then((token) => {
-        setUserToken(token);
+    fetchData('user_id')
+      .then((id) => {
+        setUserId(id);
+        fetchAuthToken()
+          .then((token) => {
+            setUserToken(token);
+          })
+          .catch((error) => {
+            console.error('Error fetching user token:', error);
+          });
       })
       .catch((error) => {
         console.error('Error fetching user token:', error);
@@ -113,7 +122,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarIcon: () => <Icons name="Home" size={width * 0.085} />,
         }}
@@ -121,7 +130,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Place"
         component={PlaceScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarButton: () => null,
         }}
@@ -130,15 +139,16 @@ const TabNavigator = () => {
       <Tab.Screen
         name="CreatePlace"
         component={CreatePlaceScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarButton: () => null,
         }}
       />
+
       <Tab.Screen
         name="Event"
         component={EventScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarButton: () => null,
         }}
@@ -147,7 +157,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="CreateEvent"
         component={CreateEventScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarButton: () => null,
         }}
@@ -155,7 +165,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Chat"
         component={ChatScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarIcon: () => <Icons name="Chat" size={width * 0.085} />,
         }}
@@ -163,7 +173,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Map"
         component={Map}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarIcon: () => <Icons name="Map" size={width * 0.085} />,
           headerShown: false,
@@ -173,14 +183,14 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Search"
         component={SearchScreen}
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         options={{
           tabBarIcon: () => <Icons name="Search" size={width * 0.085} />,
         }}
       />
       <Tab.Screen
         name="Notifications"
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         component={Notifications}
         options={{
           tabBarIcon: () => <Icons name="Notifications" size={width * 0.085} />,
@@ -188,7 +198,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen
         name="Settings"
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         component={SettingsScreen}
         options={{
           tabBarButton: () => null,
@@ -204,7 +214,7 @@ const TabNavigator = () => {
       />
       <Tab.Screen
         name="OtherUserProfile"
-        initialParams={{ userToken }}
+        initialParams={{ userId, userToken }}
         component={OtherUserProfileScreen}
         options={{
           tabBarButton: () => null,
