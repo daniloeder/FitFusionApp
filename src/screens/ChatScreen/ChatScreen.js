@@ -50,7 +50,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
       const newMessage = await response.json();
       if (response.ok) {
-        setMessages(previousMessages => [newMessage, ...previousMessages]);
+        setMessages(previousMessages => [...previousMessages, newMessage]);
         setInput('');
       } else {
         console.error('Error in response:', newMessage);
@@ -113,13 +113,13 @@ const ChatListScreen = ({ route, navigation }) => {
         </View>
         <FlatList
           data={messages}
+          ListHeaderComponent={<View style={{marginTop:width*0.12}}></View>}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>
           )}
-          inverted
         />
       </View>
       <View style={styles.inputContainer}>
@@ -152,21 +152,23 @@ const styles = StyleSheet.create({
     left: 10,
     padding: 5,
     borderRadius: width * 0.03,
-    backgroundColor: 'rgba(100, 100, 100, 0.9)',
+    backgroundColor: 'rgba(100, 100, 100, 0.4)',
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 1,
-
   },
   chatImage: {
-    width: 40,
-    height: 40,
+    width: 35,
+    height: 35,
     borderRadius: 20,
     marginRight: 10,
   },
   chatName: {
-    fontSize: 18,
+    fontSize: 13,
     color: '#FFF',
+    fontWeight: '900',
+    textShadowColor: '#000',
+    textShadowRadius: 10,
   },
   messageBox: {
     padding: 10,
