@@ -68,6 +68,8 @@ import Golf from './../../../assets/icons/sports/Golf.svg';
 import Rugby from './../../../assets/icons/sports/Rugby.svg';
 import Swimming from './../../../assets/icons/sports/Swimming.svg';
 
+import SendMessage from './../../../assets/icons/sendMessage.svg';
+
 const Icons = ({
   name,
   size = 15,
@@ -146,6 +148,9 @@ const Icons = ({
     Golf: Golf,
     Rugby: Rugby,
     Swimming: Swimming,
+
+    SendMessage: SendMessage,
+
   }[name];
 
   if (!Icon) {

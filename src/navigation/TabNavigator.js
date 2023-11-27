@@ -15,6 +15,7 @@ import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
 import EventScreen from '../screens/EventScreen/EventScreen';
 import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
 import Map from '../screens/Map/Map';
+import ChatListScreen from '../screens/ChatScreen/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import Notifications from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
@@ -105,7 +106,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
+      initialRouteName="Chat List"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
@@ -189,12 +190,23 @@ const TabNavigator = () => {
         }}
       />
       <Tab.Screen
-        name="Chat"
-        component={ChatScreen}
+        name="Chat List"
+        component={ChatListScreen}
         initialParams={{ userId, userToken }}
         options={{
           tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+        }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
+        initialParams={{ userId, userToken }}
+        options={{
+          tabBarButton: () => null,
+          tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.navigate('Chat List')} />,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tab.Screen

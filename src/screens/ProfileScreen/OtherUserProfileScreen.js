@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Dimensions, } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
@@ -31,6 +31,36 @@ const ProfileScreen = ({ route }) => {
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    const startChat = async (participantId) => {
+        try {
+            const response = await fetch(`http://192.168.0.118:8000/api/chatrooms/fetch/?user_id=${participantId}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Token ${userToken}`,
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.error) {
+                    console.error('Error starting chat:', data.error);
+                } else {
+                    if (data.exists) {
+                        navigation.navigate('Chat', { chatId: data.id, chatImage: data.participant_image.image, chatName: data.participand_name });
+                    } else {
+                        navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image.image, chatName: profile.name });
+                    }
+                }
+            } else {
+                const data = await response.json();
+                console.error('Error starting chat:', data);
+            }
+        } catch (error) {
+            console.error('Error fetching chat:', error);
         } finally {
             setIsLoading(false);
         }
@@ -75,6 +105,13 @@ const ProfileScreen = ({ route }) => {
                                 </View>
 
                             </View>
+
+                            <TouchableOpacity style={styles.sendMessageButton} onPress={() => startChat(profile.id)}>
+                                <View style={styles.sendMessageIconContainer}>
+                                    <Icons name="SendMessage" size={width * 0.06} />
+                                </View>
+                                <Text style={styles.sendMessageText}>Chat</Text>
+                            </TouchableOpacity>
 
                             {profile.favorite_sports && profile.favorite_sports.length ?
                                 <View style={styles.infoItem}>
@@ -171,6 +208,35 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#B83030',
     },
+    sendMessageButton: {
+        paddingHorizontal: width * 0.08,
+        paddingVertical: width * 0.02,
+        borderRadius: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#4a90e2',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        alignSelf: 'center',
+        marginBottom: 20,
+    },
+    sendMessageIconContainer: {
+        padding: 10,
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.5)',
+        marginRight: 10,
+    },
+    sendMessageText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
     favoriteSports: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -200,10 +266,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.3)',
     },
     userImagesItems: {
-      width: width * 0.26,
-      height: width * 0.26,
-      margin: width * 0.01,
-      position: 'relative',
+        width: width * 0.26,
+        height: width * 0.26,
+        margin: width * 0.01,
+        position: 'relative',
     },
 });
 

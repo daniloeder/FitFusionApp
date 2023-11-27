@@ -1,29 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import Icons from '../../components/Icons/Icons';
 
-const ChatScreen = ({ route }) => {
+const { width } = Dimensions.get('window');
+
+const ChatListScreen = ({ route, navigation }) => {
+  const { userToken, userId, chatId, participantId, chatImage, chatName } = route.params;
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-
-  // Assuming you are passing chatId through route params.
-  const { chatId } = route.params;
-
-  useEffect(() => {
-    // Fetching chat messages from the server
-    fetchMessages();
-  }, [chatId]);
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [onlineStatus, setOnlineStatus] = useState(true);
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/chat/messages/?chat=${chatId}`);
+      const response = await fetch(`http://192.168.0.118:8000/api/chatrooms/${chatId}/messages/`, {
+        headers: {
+          'Authorization': `Token ${userToken}`,
+        },
+      });
       const data = await response.json();
       setMessages(data);
     } catch (error) {
@@ -31,58 +26,112 @@ const ChatScreen = ({ route }) => {
     }
   };
 
+
   const sendMessage = async () => {
     if (input.trim() === '') return;
     try {
-      await fetch('http://localhost:8000/api/chat/messages/', {
+      let endpoint;
+      let requestBody;
+      endpoint = 'http://192.168.0.118:8000/api/chatrooms/';
+      requestBody = {
+        participant_id: participantId,
+        text: input,
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Token ${userToken}`,
         },
-        body: JSON.stringify({
-          chat: chatId,
-          text: input,
-          // Assuming you have the sender id, or it's being managed by the backend.
-        }),
+        body: JSON.stringify(requestBody),
       });
 
-      setInput('');
-      fetchMessages();
+      const newMessage = await response.json();
+      if (response.ok) {
+        setMessages(previousMessages => [newMessage, ...previousMessages]);
+        setInput('');
+      } else {
+        console.error('Error in response:', newMessage);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     }
   };
 
+
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true),
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false),
+    );
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isKeyboardVisible) {
+      //navigation.setOptions({ tabBarStyle: { display: 'none' } });
+    } else {
+      //navigation.setOptions({ tabBarStyle: { display: undefined } });
+    }
+  }, [isKeyboardVisible, navigation]);
+
+  useEffect(() => {
+    if (chatId) {
+      fetchMessages();
+    }
+  }, [chatId]);
+
+  useEffect(() => {
+    setMessages([]);
+  }, []);
+
   return (
-    <View style={styles.gradientContainer}>
+    <KeyboardAvoidingView style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-      
       <View style={styles.container}>
+        <View style={styles.userInfo}>
+          {onlineStatus && (
+            <View style={styles.onlineDot}></View>
+          )}
+          <Image
+            source={{ uri: `http://192.168.0.118:8000${chatImage}` }}
+            style={styles.chatImage}
+          />
+          <Text style={styles.chatName}>{chatName}</Text>
+        </View>
         <FlatList
           data={messages}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <View style={styles.messageBox}>
+            <View style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>
           )}
           inverted
         />
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type a message"
-            placeholderTextColor="#A0AEC0"
-          />
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-            <Text style={styles.sendText}>Send</Text>
-          </TouchableOpacity>
-        </View>
       </View>
-    </View>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          value={input}
+          onChangeText={setInput}
+          placeholder="Type a message"
+          placeholderTextColor="#A0AEC0"
+        />
+        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+          <Icons name="SendMessage" size={width * 0.07} />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -94,56 +143,89 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 10,
   },
+  userInfo: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+
+  },
+  chatImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  chatName: {
+    fontSize: 18,
+    color: '#FFF',
+  },
   messageBox: {
-    backgroundColor: '#2D3748',
-    opacity: 0.8,
     padding: 10,
-    marginVertical: 5,
-    borderRadius: 5,
+    marginVertical: 1,
+    borderRadius: 10,
+    maxWidth: '70%',
+  },
+  myMessage: {
+    backgroundColor: 'rgba(49, 130, 206, 0.8)',
+    alignSelf: 'flex-end',
+  },
+  otherMessage: {
+    backgroundColor: 'rgba(45, 55, 72, 0.8)',
     alignSelf: 'flex-start',
   },
   messageText: {
     fontSize: 16,
-    color: '#A0AEC0',
+    color: '#E2E8F0',
   },
   inputContainer: {
+    width: width,
+    height: width * 0.13,
     flexDirection: 'row',
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#2D3748',
-    opacity: 0.8,
     borderTopColor: '#4A5568',
     borderTopWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5,
   },
   input: {
     flex: 1,
-    height: 40,
     backgroundColor: '#4A5568',
     borderColor: '#4A5568',
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 15,
     padding: 10,
     color: '#A0AEC0',
+    marginRight: 5,
   },
   sendButton: {
-    backgroundColor: '#3182CE',
-    borderRadius: 5,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    marginLeft: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 1.41,
-    elevation: 2,
+    width: width * 0.12,
+    height: width * 0.12,
+    backgroundColor: 'rgba(49, 130, 206, 0.8)',
+    borderRadius: width * 0.06,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 4,
   },
-  sendText: {
-    color: '#FFF',
-    fontSize: 16,
-    textAlign: 'center',
+  onlineDot: {
+    width: 10,
+    height: 10,
+    backgroundColor: 'green',
+    borderRadius: 5,
+    marginRight: 10,
   },
 });
 
-export default ChatScreen;
+export default ChatListScreen;
