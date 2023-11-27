@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
 
@@ -90,9 +91,11 @@ const ChatListScreen = ({ route, navigation }) => {
     }
   }, [chatId]);
 
-  useEffect(() => {
-    setMessages([]);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMessages();
+    }, [])
+  );
 
   return (
     <KeyboardAvoidingView style={styles.gradientContainer}>
@@ -147,8 +150,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     left: 10,
+    padding: 5,
+    borderRadius: width * 0.03,
+    backgroundColor: 'rgba(100, 100, 100, 0.9)',
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 1,
 
   },
   chatImage: {
@@ -163,7 +170,7 @@ const styles = StyleSheet.create({
   },
   messageBox: {
     padding: 10,
-    marginVertical: 1,
+    marginVertical: 3,
     borderRadius: 10,
     maxWidth: '70%',
   },
