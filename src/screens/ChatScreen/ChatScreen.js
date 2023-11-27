@@ -21,7 +21,7 @@ const ChatListScreen = ({ route, navigation }) => {
         },
       });
       const data = await response.json();
-      setMessages(data);
+      setMessages(data.reverse());
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
@@ -50,7 +50,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
       const newMessage = await response.json();
       if (response.ok) {
-        setMessages(previousMessages => [...previousMessages, newMessage]);
+        setMessages(previousMessages => [newMessage, ...previousMessages]);
         setInput('');
       } else {
         console.error('Error in response:', newMessage);
@@ -85,16 +85,13 @@ const ChatListScreen = ({ route, navigation }) => {
     }
   }, [isKeyboardVisible, navigation]);
 
-  useEffect(() => {
-    if (chatId) {
-      fetchMessages();
-    }
-  }, [chatId]);
-
   useFocusEffect(
     useCallback(() => {
-      fetchMessages();
-    }, [])
+      setMessages([]);
+      if (chatId) {
+        fetchMessages();
+      }
+    }, [chatId])
   );
 
   return (
@@ -113,13 +110,14 @@ const ChatListScreen = ({ route, navigation }) => {
         </View>
         <FlatList
           data={messages}
-          ListHeaderComponent={<View style={{marginTop:width*0.12}}></View>}
+          ListFooterComponent={<View style={{marginTop:width*0.12}}></View>}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>
           )}
+          inverted
         />
       </View>
       <View style={styles.inputContainer}>
