@@ -52,8 +52,8 @@ const ChatListScreen = ({ route, navigation }) => {
             const isGroupChat = chat.is_group_chat;
             const chatImage = isGroupChat ? null : chat.participant.profile_image?.image;
             const chatName = isGroupChat ? 'Group Chat' : chat.participant_name;
-            const lastMessageText = chat.last_message.length > 100 ? chat.last_message.slice(0, 100)+'...' : chat.last_message
-              ? ((chat.last_message.text.length > 85 ? chat.last_message.text.slice(0, 85)+'...' : chat.last_message.text) || (chat.last_message.media ? `[${chat.last_message.media}]` : '[Media]'))
+            const lastMessageText = chat.last_message
+              ? ((chat.last_message.text.length > 85 ? chat.last_message.text.slice(0, 85) + '...' : chat.last_message.text) || (chat.last_message.media ? `[${chat.last_message.media}]` : '[Media]'))
               : 'No messages yet';
             const isOnline = onlineStatus[chat.id];
             return (

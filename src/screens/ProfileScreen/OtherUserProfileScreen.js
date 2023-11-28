@@ -50,7 +50,7 @@ const ProfileScreen = ({ route }) => {
                     console.error('Error starting chat:', data.error);
                 } else {
                     if (data.exists) {
-                        navigation.navigate('Chat', { chatId: data.id, chatImage: data.participant_image.image, chatName: data.participand_name });
+                        navigation.navigate('Chat', { chatId: data.id, chatImage: data.participant.profile_image.image, chatName: data.participand_name });
                     } else {
                         navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image.image, chatName: profile.name });
                     }
