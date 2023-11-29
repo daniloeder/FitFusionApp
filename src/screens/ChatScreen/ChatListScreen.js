@@ -21,7 +21,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
       const onlineStatusData = {};
       data.forEach((chat) => {
-        onlineStatusData[chat.id] = chat.is_online;
+        onlineStatusData[chat.id] = Math.floor(Math.random() * (100 - 50)) + 22 < 50 || chat == data[data.length-1] ? true : false//chat.is_online;
       });
       setOnlineStatus(onlineStatusData);
 

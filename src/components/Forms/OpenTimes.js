@@ -106,47 +106,9 @@ const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime,
     );
 };
 
-const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, add = false, cancel = false }) => {
+const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, update, add = false, cancel = false }) => {
     const [selectedAllOpenTime, setSelectedAllOpenTime] = useState('');
     const [selectedAllCloseTime, setSelectedAllCloseTime] = useState('');
-
-    useEffect(() => {
-        const newDates = [];
-
-        const daysOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-
-        daysOfWeek.forEach(day => {
-            const dayData = dates[day];
-            if (dayData) {
-                newDates.push({
-                    date: day,
-                    open_time: dayData.open_time ? `${dayData.open_time}:00` : '',
-                    close_time: dayData.close_time ? `${dayData.close_time}:00` : '',
-                    open: dayData.open
-                });
-            } else {
-                newDates.push({
-                    date: day,
-                    open_time: '',
-                    close_time: '',
-                    open: false
-                });
-            }
-        });
-
-        if (dates.custom && dates.custom.length > 0) {
-            dates.custom.forEach(customDate => {
-                newDates.push({
-                    date: customDate.date,
-                    open_time: customDate.open_time ? `${customDate.open_time}:00` : '',
-                    close_time: customDate.close_time ? `${customDate.close_time}:00` : '',
-                    open: customDate.open
-                });
-            });
-        }
-
-        setDates(newDates);
-    }, []);
 
     useEffect(() => {
         if (selectedAllOpenTime) {
@@ -269,8 +231,19 @@ const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, add = false, cancel =
                     <Text style={styles.addDateButtonText}>Add Date</Text>
                 </TouchableOpacity>
             }
+            {update &&
+                <TouchableOpacity style={[styles.addDateButton, { alignSelf: 'flex-end', paddingHorizontal: width * 0.2 }]} onPress={()=>{
+                    update();
+                    setDates(dates);
+                    setSetOpenCloseTime(false)
+                }}>
+                    <Text style={styles.addDateButtonText}>Update</Text>
+                </TouchableOpacity>
+            }
             {cancel &&
-                <TouchableOpacity style={[styles.addDateButton, { alignSelf: 'flex-end', paddingHorizontal: width * 0.05 }]} onPress={()=>setSetOpenCloseTime(false)}>
+                <TouchableOpacity style={[styles.addDateButton, { alignSelf: 'flex-end', paddingHorizontal: width * 0.05 }]} onPress={()=>{
+                    setSetOpenCloseTime(false)
+                }}>
                     <Text style={styles.addDateButtonText}>Cancel</Text>
                 </TouchableOpacity>
             }

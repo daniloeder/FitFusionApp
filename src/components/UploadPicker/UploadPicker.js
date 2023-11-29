@@ -1,12 +1,12 @@
 // UploadPicker.js
 import React from 'react';
-import { View, Pressable, Image, StyleSheet, Dimensions } from 'react-native';
+import { View, Pressable, Image, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Icons from '../Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
-const UploadPicker = ({ selectedImages, setSelectedImages, type = "image", size = 100, max = 1, move=true }) => {
+const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages, type = "image", size = 100, max = 1, move = true, cancel }) => {
 
     const onImageSelect = (uri) => {
         setSelectedImages([...selectedImages, uri]);
@@ -76,7 +76,7 @@ const UploadPicker = ({ selectedImages, setSelectedImages, type = "image", size 
                     >
                         <Icons name="Edit" size={width * 0.05} />
                     </Pressable>
-                    {move && index > 0?
+                    {move && index > 0 ?
                         <Pressable
                             style={[styles.leftArrow, styles.icons]}
                             onPress={() => swapLeft(index)}
@@ -98,6 +98,24 @@ const UploadPicker = ({ selectedImages, setSelectedImages, type = "image", size 
                 <Pressable onPress={pickImage} style={[styles.addButton, { width: size, height: size }]}>
                     <Icons name={type === 'image' ? "AddImage" : "AddVideo"} size={width * 0.12} style={styles.centerIcon} />
                 </Pressable> : ''
+            }
+            {upload ?
+                <TouchableOpacity
+                    style={{ width: '100%', alignItems: 'center', padding: width * 0.04, borderRadius: width * 0.02, backgroundColor: 'rgba(255,255,255,0.3)', }}
+                    onPress={() => upload()}
+                >
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.04 }}>Upload</Text>
+                </TouchableOpacity>
+                : ''
+            }
+            {cancel && setEditImages ?
+                <TouchableOpacity
+                    style={{ width: '50%', alignItems: 'center', padding: width * 0.04, borderRadius: width * 0.02, backgroundColor: 'rgba(255,255,255,0.3)', marginLeft: 'auto', marginTop: 10 }}
+                    onPress={() => setEditImages(false)}
+                >
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.04 }}>Cancel</Text>
+                </TouchableOpacity>
+                : ''
             }
         </View>
     );

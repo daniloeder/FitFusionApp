@@ -48,17 +48,18 @@ function validateOpenTimes(data) {
 
 const CreatePlaceScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [location, setLocation] = useState('');
-    const [sportsType, setSportsType] = useState([]);
-    const [coordinates, setCoordinates] = useState('');
+    const { preview } = route.params;
+    const [name, setName] = useState(preview && preview.name || '');
+    const [description, setDescription] = useState(preview && preview.description || '');
+    const [location, setLocation] = useState(preview && preview.location || '');
+    const [sportsType, setSportsType] = useState(preview && preview.sportType || []);
+    const [coordinates, setCoordinates] = useState(preview && preview.coordinates || '');
 
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState([]);
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
 
-    const [dates, setDates] = useState({ "sun": null, "mon": { "open_time": 8, "close_time": 17, "open": true }, "tue": { "open_time": 8, "close_time": 17, "open": true }, "wed": { "open_time": 8, "close_time": 17, "open": true }, "thu": { "open_time": 8, "close_time": 17, "open": true }, "fri": { "open_time": 8, "close_time": 17, "open": true }, "sat": { "open_time": 8, "close_time": 17, "open": true } });
+    const [dates, setDates] = useState([{ "close_time": "18:00", "date": "Sunday", "open": false, "open_time": "07:00" }, { "close_time": "18:00", "date": "Monday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Tuesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Wednesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Thursday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Friday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Saturday", "open": true, "open_time": "07:00" }]);
 
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
@@ -90,9 +91,9 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             const imgData = {
                 uri: img.uri,
                 type: img.mimeType,
-                name: `photo_${index}.${imageType}`,
+                name: `image_${index}.${imageType}`,
             };
-            placeFormData.append('photos[]', imgData);
+            placeFormData.append('images[]', imgData);
         });
 
         if (selectedVideo.length) {
@@ -119,8 +120,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         }
 
         try {
-            const response = await fetch('http://192.168.0.118:8000/api/places/', {
-                method: 'POST',
+            const response = await fetch(`http://192.168.0.118:8000/api/places/${preview ? preview.placeId + '/' : ''}`, {
+                method: preview ? 'PATCH' : 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
                 },
@@ -129,7 +130,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
             if (response.ok) {
                 const responseData = await response.json();
-                navigation.navigate('Place', { placeId: responseData.id });
+                console.log(responseData)
+                navigation.navigate(preview ? 'Manage Place' : 'Place', { placeId: responseData.id });
             } else {
                 const errorData = await response.json();
                 Alert.alert('Error', `Creation failed: ${errorData.detail}`);
@@ -155,39 +157,47 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = sportsType.map(sport => sport.id || sport), index = true)} setSelectedOptions={setSportsType} max={5} />
 
                 <Text style={styles.inputTitles}>Location</Text>
-                <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
+                <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
                 {coordinates ? <ShowOnMap coordinates={coordinates} /> : null}
 
-                <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
-                <View style={{ flexDirection: 'row' }}>
-                    <UploadPicker
-                        selectedImages={selectedImages}
-                        setSelectedImages={setSelectedImages}
-                        max={5}
-                    />
-                </View>
+                {!preview ?
+                    <>
+                        <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
+                        <View style={{ flexDirection: 'row' }}>
+                            <UploadPicker
+                                selectedImages={selectedImages}
+                                setSelectedImages={setSelectedImages}
+                                max={5}
+                            />
+                        </View>
 
-                <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
-                <UploadPicker
-                    selectedImages={selectedVideo}
-                    setSelectedImages={setSelectedVideo}
-                    type="video"
-                    max={1}
-                />
+                        <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
+                        <UploadPicker
+                            selectedImages={selectedVideo}
+                            setSelectedImages={setSelectedVideo}
+                            type="video"
+                            max={1}
+                        />
 
-                {setOpenCloseTime ?
-                    <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} cancel />
+                        {setOpenCloseTime ?
+                            <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} cancel />
+                            :
+                            <TouchableOpacity style={styles.AddWorkingTimeButton} onPress={() => setSetOpenCloseTime(true)}>
+                                <Text style={{ color: '#FFFFFF', fontSize: 16, }}>
+                                    Add Working Time
+                                </Text>
+                            </TouchableOpacity>
+                        }
+
+                        <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
+                            <Text style={styles.buttonText}>Create Place</Text>
+                        </TouchableOpacity>
+                    </>
                     :
-                    <TouchableOpacity style={styles.AddWorkingTimeButton} onPress={() => setSetOpenCloseTime(true)}>
-                        <Text style={{ color: '#FFFFFF', fontSize: 16, }}>
-                            Add Working Time
-                        </Text>
+                    <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
+                        <Text style={styles.buttonText}>Update Place</Text>
                     </TouchableOpacity>
                 }
-
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
-                    <Text style={styles.buttonText}>Create Place</Text>
-                </TouchableOpacity>
             </ScrollView>
         </View>
     );

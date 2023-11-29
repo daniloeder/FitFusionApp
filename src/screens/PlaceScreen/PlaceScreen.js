@@ -59,11 +59,11 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 {place.created_by == userId ?
                     <Pressable
-                        onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
+                        onPress={() => navigation.navigate('Manage Place', {placeId: placeId})}
                         style={styles.createEventButton}
                     >
-                        <Icons name="Events" size={width * 0.08} />
-                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>
+                        <Icons name="Settings" size={width * 0.08} />
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Manage Place</Text>
                     </Pressable> : ''
                 }
 
@@ -90,19 +90,19 @@ const PlaceScreen = ({ route, navigation }) => {
                     <Text style={styles.description}>{place.description}</Text>
                 </View>
 
-                {place.place_photos && place.place_photos.length ?
+                {place.place_images && place.place_images.length ?
                     <View
                         style={styles.userImagesContainer}
                     >
                         <View style={styles.infoBlock}>
                             <Icons name="Images" size={width * 0.07} style={styles.infoIcons} />
                         </View>
-                        {place.place_photos.map((image, index) => {
+                        {place.place_images.map((image, index) => {
                             return (
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={`http://192.168.0.118:8000/${image.photo}`} size={width * 0.26} />
+                                    <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}

@@ -11,6 +11,7 @@ import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
 import OtherUserProfileScreen from '../screens/ProfileScreen/OtherUserProfileScreen';
 import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
+import ManagePlace from '../screens/PlaceScreen/ManagePlace'
 import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
 import EventScreen from '../screens/EventScreen/EventScreen';
 import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
@@ -106,7 +107,7 @@ const TabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Chat List"
+      initialRouteName="Home"
       screenOptions={{
         headerStyle: {
           height: width * 0.2,
@@ -159,7 +160,15 @@ const TabNavigator = () => {
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
         }}
       />
-
+      <Tab.Screen
+        name="Manage Place"
+        component={ManagePlace}
+        initialParams={{ userId, userToken }}
+        options={{
+          tabBarButton: () => null,
+          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+        }}
+      />
       <Tab.Screen
         name="Create Place"
         component={CreatePlaceScreen}

@@ -7,7 +7,7 @@ import Icons from '../../components/Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
-const GoogleAutocompletePicker = ({ setLocation, setCoordinates, language = "en" }) => {
+const GoogleAutocompletePicker = ({ setLocation, setCoordinates, placeholder, language = "en" }) => {
   const handleSelectPlace = (data, details = null) => {
     { setLocation && setLocation(details.formatted_address) }
     { setCoordinates && setCoordinates({ latitude: details.geometry.location.lat, longitude: details.geometry.location.lng }) }
@@ -16,7 +16,7 @@ const GoogleAutocompletePicker = ({ setLocation, setCoordinates, language = "en"
   return (
     <View style={styles.container}>
       <GooglePlacesAutocomplete
-        placeholder='Search for a place...'
+        placeholder={placeholder || 'Search for a place...'}
         onPress={handleSelectPlace}
         fetchDetails={true}
         query={{

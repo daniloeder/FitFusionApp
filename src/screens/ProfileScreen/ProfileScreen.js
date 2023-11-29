@@ -99,6 +99,7 @@ const ProfileScreen = ({ route }) => {
   };
 
   const uploadImages = async () => {
+    setEditImages(false);
     try {
       // Filter out already uploaded images and only keep new ones
       const newImages = selectedImages.filter(img => !img.image);
@@ -124,7 +125,9 @@ const ProfileScreen = ({ route }) => {
           body: formData
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+          //setEditImages(false);
+        } else {
           const errorData = await response.json();
           console.error("Server error response:", errorData);
           break;
@@ -437,23 +440,14 @@ const ProfileScreen = ({ route }) => {
         }
 
         {editImages ?
-          <>
-            <UploadPicker
-              selectedImages={selectedImages}
-              setSelectedImages={setSelectedImages}
-              max={5}
-            />
-            <TouchableOpacity style={styles.editButton} onPress={() => {
-              updateExistingImages();
-            }}>
-              <Text style={styles.editButtonText}>Update Images</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => {
-              setEditImages(false);
-            }}>
-              <Text style={styles.editButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </>
+          <UploadPicker
+            selectedImages={selectedImages}
+            setSelectedImages={setSelectedImages}
+            max={5}
+            upload={updateExistingImages}
+            setEditImages={setEditImages}
+            cancel
+          />
           :
           <>
             {profile.user_images && profile.user_images.length ?
