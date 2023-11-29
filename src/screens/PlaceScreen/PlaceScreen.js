@@ -13,8 +13,11 @@ const PlaceScreen = ({ route, navigation }) => {
     const { userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
     const placeId = route.params.placeId;
-
+    const [joined, setJoined] = useState('none');
+    const [participants, setParticipants] = useState([]);
+    const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
+
 
     useEffect(() => {
         if (placeId) {
@@ -23,7 +26,6 @@ const PlaceScreen = ({ route, navigation }) => {
             Alert.alert('Place error.');
         }
     }, [placeId]);
-
     const fetchPlace = async () => {
         try {
             const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}`, {
@@ -36,6 +38,11 @@ const PlaceScreen = ({ route, navigation }) => {
             if (response.ok) {
                 const data = await response.json();
                 setPlace(data);
+                if (data.joined) {
+                    setJoined('joined');
+                }
+                setParticipants(data.participants);
+
             } else {
                 Alert.alert(response.status === 404 ? 'Place not Found.' : 'Unknown error on fetching place.');
             }
@@ -43,7 +50,38 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('Error fetching place:', error);
         }
     };
+    const onJoinLeaveEvent = async () => {
+        if (false) {
+            setJoined(!joined)
+            return
+        }
+        try {
+            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${userToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            const data = await response.json();
 
+            if (response.status === 200) {
+                if (data.status === "joined") {
+                    setJoined("joined");
+                } else if (data.status === "requested") {
+                    setJoined("requested");
+                } else if (data.status === "removed_request" || data.status === "removed") {
+                    setJoined("none");
+                }
+            } else if (response.status === 400) {
+                setJoined("none");
+            } else {
+                console.error('Failed to join the event.');
+            }
+        } catch (error) {
+            console.error('An error occurred:', error);
+        }
+    };
     const toggleVideoModal = () => {
         setVideoModalVisible(!isVideoModalVisible);
     };
@@ -59,7 +97,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 {place.created_by == userId ?
                     <Pressable
-                        onPress={() => navigation.navigate('Manage Place', {placeId: placeId})}
+                        onPress={() => navigation.navigate('Manage Place', { placeId: placeId })}
                         style={styles.createEventButton}
                     >
                         <Icons name="Settings" size={width * 0.08} />
@@ -79,6 +117,44 @@ const PlaceScreen = ({ route, navigation }) => {
                     <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
                     <SportsItems favoriteSports={place.sport_types_keys} />
                 </View>
+
+                {place.created_by != userId ?
+                    joined === "joined" ?
+                        <>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
+                                <Text style={styles.buttonText}>Leave Event</Text>
+                            </TouchableOpacity>
+                            <View>
+                                <Text style={[styles.joinText, { color: '#22AA00' }]}>
+                                    You joined this event.
+                                </Text>
+                            </View>
+                        </>
+                        : joined === "none" ?
+                            <>
+                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeaveEvent}>
+                                    <Text style={styles.buttonText}>{place.is_privated ? "Request to Join Event" : "Join Event"}</Text>
+                                </TouchableOpacity>
+                                <View>
+                                    <Text style={[styles.joinText, { color: '#AAA' }]}>
+                                        You are not at this event.{place.is_privated ? " (Privated)" : ""}
+                                    </Text>
+                                </View>
+                            </>
+                            : joined === "requested" ?
+                                <>
+                                    <TouchableOpacity style={[styles.button, { backgroundColor: '#CCC' }]} onPress={onJoinLeaveEvent}>
+                                        <Text style={styles.buttonText}>Remove Request</Text>
+                                    </TouchableOpacity>
+                                    <View>
+                                        <Text style={[styles.joinText, { color: '#AAA' }]}>
+                                            You requested to join this event.
+                                        </Text>
+                                    </View>
+                                </>
+                                : ''
+                    : ''
+                }
 
                 <View style={styles.infoBlock}>
                     <Icons name="Watch" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
@@ -189,6 +265,32 @@ const styles = StyleSheet.create({
     sportType: {
         fontSize: width * 0.045,
         color: '#3182CE',
+    },
+    button: {
+        opacity: 0.8,
+        paddingVertical: width * 0.025,
+        paddingHorizontal: width * 0.038,
+        borderRadius: width * 0.0125,
+        marginTop: width * 0.025,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+    },
+    joinText: {
+        marginTop: width * 0.01,
+        marginBottom: width * 0.04,
+        fontSize: width * 0.045,
+        fontWeight: 'bold',
+    },
+    buttonText: {
+        color: '#FFF',
+        fontSize: width * 0.04,
+        textAlign: 'center',
     },
     description: {
         fontSize: width * 0.045,

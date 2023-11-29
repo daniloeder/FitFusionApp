@@ -113,7 +113,6 @@ const EventScreen = ({ route, navigation }) => {
 
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
-  console.log(event.creator)
 
   return (
     <View key={preview ? preview.title : 'loading'} style={styles.gradientContainer}>

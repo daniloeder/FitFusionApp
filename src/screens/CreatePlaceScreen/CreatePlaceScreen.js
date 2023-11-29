@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
+import CustomInput from '../../components/Forms/CustomInput.js';
 import OpenTimes from '../../components/Forms/OpenTimes.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 
@@ -74,6 +75,10 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         const placeFormData = new FormData();
         logAndAppend(placeFormData, 'name', name);
         logAndAppend(placeFormData, 'description', description);
+        console.log(privated)
+        if(privated[0].id === 1){
+            logAndAppend(placeFormData, 'is_privated', true);
+        }
         logAndAppend(placeFormData, 'location', location);
         sportsType.forEach(sport => {
             logAndAppend(placeFormData, 'sport_types', String(sport.id || sport));
@@ -130,7 +135,6 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
             if (response.ok) {
                 const responseData = await response.json();
-                console.log(responseData)
                 navigation.navigate(preview ? 'Manage Place' : 'Place', { placeId: responseData.id });
             } else {
                 const errorData = await response.json();
@@ -141,6 +145,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             Alert.alert('Error', 'An unexpected error occurred.');
         }
     };
+    const [privated, setPrivated] = useState([{id: 1, name: "Private"}]);
 
     return (
         <View style={styles.gradientContainer}>
@@ -155,6 +160,9 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
                 <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = sportsType.map(sport => sport.id || sport), index = true)} setSelectedOptions={setSportsType} max={5} />
+
+                <Text style={styles.inputTitles}>Is Private</Text>
+                <CustomPicker options={[{id: 1, name: "Private"}, {id: 2, name: "Public"}]} selectedOptions={privated} setSelectedOptions={setPrivated} max={1} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
