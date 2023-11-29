@@ -198,7 +198,7 @@ const HomeScreen = ({ route, navigation }) => {
                     onPress={() => {
                       navigation.navigate('User Profile', { id: user.id })
                     }}
-                    style={styles.userCardInner}
+                    style={[styles.userCardInner, {borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD'}]}
                   >
                     {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
                       <Image
