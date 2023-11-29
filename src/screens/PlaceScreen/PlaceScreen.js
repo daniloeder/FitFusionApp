@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity, Image } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
@@ -18,6 +18,7 @@ const PlaceScreen = ({ route, navigation }) => {
     const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
+    const [userImages, setUserImages] = useState([]);
 
     useEffect(() => {
         if (placeId) {
@@ -26,6 +27,18 @@ const PlaceScreen = ({ route, navigation }) => {
             Alert.alert('Place error.');
         }
     }, [placeId]);
+
+    const fetchUserProfileImages = async (participants) => {
+        if (participants.length) {
+            try {
+                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const data = await response.json();
+                setUserImages(data);
+            } catch (error) {
+                console.error('Error fetching user profile images:', error);
+            }
+        }
+    };
     const fetchPlace = async () => {
         try {
             const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}`, {
@@ -41,8 +54,8 @@ const PlaceScreen = ({ route, navigation }) => {
                 if (data.joined) {
                     setJoined('joined');
                 }
-                setParticipants(data.participants);
-
+                setParticipants(data.participants || []);
+                fetchUserProfileImages(data.participants);
             } else {
                 Alert.alert(response.status === 404 ? 'Place not Found.' : 'Unknown error on fetching place.');
             }
@@ -155,6 +168,41 @@ const PlaceScreen = ({ route, navigation }) => {
                                 : ''
                     : ''
                 }
+
+                <Text style={styles.participantTitle}>Participants</Text>
+                <Pressable style={styles.participantsImages}
+                    onPress={() => {
+                        setParticipantsModalVisible(participants.length > 0);
+                    }}
+                >
+                    {(false ? [...Array(5)] : userImages.slice(0, 5)).map((image, index) => {
+                        return (
+                            <View key={index}
+                                style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
+                            >
+                                {true && image.success ?
+                                    <Image
+                                        source={{ uri: `data:image/jpeg;base64,${image.profile_image}` }}
+                                        style={{ width: '100%', height: '100%', borderRadius: 100 }}
+                                        onError={(error) => console.error('Image Error:', error)}
+                                    />
+                                    :
+                                    <Icons name="Profile2" size={width * 0.05} />
+                                }
+                            </View>
+                        )
+                    }
+
+                    )}
+                    {place.participants.length > 5 ? (<Text style={styles.moreText}>+{place.participants.length - 5}</Text>) : ''}
+                    {false ? (<Text style={styles.moreText}>+125</Text>) : ''}
+                    {participants.length > 0 ?
+                        <View style={styles.seeMoreButton}>
+                            <Text style={styles.seeAllText}>See All</Text>
+                        </View> :
+                        <Text style={styles.moreText}>There is still no participants.</Text>
+                    }
+                </Pressable>
 
                 <View style={styles.infoBlock}>
                     <Icons name="Watch" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
@@ -286,6 +334,63 @@ const styles = StyleSheet.create({
         marginBottom: width * 0.04,
         fontSize: width * 0.045,
         fontWeight: 'bold',
+    }, participantTitle: {
+        fontSize: width * 0.06,
+        fontWeight: 'bold',
+        color: '#FFF',
+        marginBottom: width * 0.025,
+    },
+    participant: {
+        backgroundColor: '#2D3748',
+        opacity: 0.8,
+        padding: width * 0.025,
+        marginBottom: width * 0.0125,
+        borderRadius: 125,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+        elevation: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    participantName: {
+        fontSize: width * 0.04,
+        color: '#A0AEC0',
+        marginLeft: '3%',
+    },
+    participantsImages: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: width * 0.025,
+    },
+    image: {
+        width: width * 0.1,
+        height: width * 0.1,
+        borderRadius: width * 0.05,
+        borderWidth: 1,
+        borderColor: '#777',
+        backgroundColor: '#AAA',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: -width * 0.055,
+    },
+    moreText: {
+        color: '#FFF',
+        marginLeft: width * 0.025,
+    },
+    seeMoreButton: {
+        padding: width * 0.02,
+        borderRadius: width * 0.02,
+        backgroundColor: 'rgba(100,100,100,0.2)',
+        marginLeft: '3%'
+    },
+    seeAllText: {
+        color: '#FFF',
+        marginLeft: 0,
     },
     buttonText: {
         color: '#FFF',

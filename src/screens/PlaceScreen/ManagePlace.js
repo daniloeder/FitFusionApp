@@ -190,9 +190,8 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('An error occurred:', error);
         }
     };
-    async function handleRequest(approve, placeId, index) {
-        const apiUrl = `http://192.168.0.118:8000/api/places/83/approve-request/${placeId}/?approve=${approve ? 'approve' : 'deny'}`;
-
+    async function handleRequest(approve, userRequestId, index) {
+        const apiUrl = `http://192.168.0.118:8000/api/places/${placeId}/approve-request/${userRequestId}/?approve=${approve ? 'approve' : 'deny'}`;
         const requestOptions = {
             method: 'POST',
             headers: {
