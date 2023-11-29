@@ -377,7 +377,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         style={[styles.createEventButton, { marginTop: width * 0.03 }]}
                     >
                         <Icons name="Edit" size={width * 0.06} />
-                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Event</Text>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Place</Text>
                     </Pressable>
                     : ''
                 }
@@ -455,6 +455,9 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <Icons name="PlayVideo" size={width * 0.25} style={{ backgroundColor: '#DDD' }} />
                             </Pressable>
                         </View>
+                        <TouchableOpacity style={styles.EditInfoIcon} onPress={{}}>
+                            <Icons name="Edit" size={width * 0.1} />
+                        </TouchableOpacity>
                     </View>
                     : ''
                 }

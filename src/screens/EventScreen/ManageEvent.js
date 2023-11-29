@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions, Modal, Pressable, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import ShowMedia from '../../components/ShowMedia/ShowMedia';
+import GradientBackground from '../../components/GradientBackground/GradientBackground.js';
+import UploadPicker from '../../components/UploadPicker/UploadPicker.js';
+import ShowMedia from '../../components/ShowMedia/ShowMedia.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
-import Icons from '../../components/Icons/Icons';
+import Icons from '../../components/Icons/Icons.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 
 const width = Dimensions.get('window').width;
@@ -19,15 +20,18 @@ const EventScreen = ({ route, navigation }) => {
 
   const [userImages, setUserImages] = useState([]);
 
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [editImages, setEditImages] = useState(false);
+
   const [preview, setPreview] = useState(route.params.eventPreview);
 
   const eventId = route.params.eventId;
 
   useFocusEffect(
     useCallback(() => {
-        fetchEvent();
+      fetchEvent();
     }, [])
-);
+  );
   useEffect(() => {
     setEvent(preview);
   }, [preview]);
@@ -72,6 +76,7 @@ const EventScreen = ({ route, navigation }) => {
         setJoined(data.joined);
         setParticipants(data.participants || []);
         fetchUserProfileImages(data.participants);
+        setSelectedImages(data.images)
       } else {
         Alert.alert(response.status === 404 ? 'Event not Found.' : 'Unknown error on fetching event.');
       }
@@ -110,10 +115,68 @@ const EventScreen = ({ route, navigation }) => {
   const toggleVideoModal = () => {
     setVideoModalVisible(!isVideoModalVisible);
   };
+  const updateExistingEventImages = async () => {
+    setEditImages(false); // Assuming you have a state management system
+    const existingImagesData = selectedImages.map((img, index) => ({
+      id: img.id,
+      image_id: index + 1
+    }));
+
+    const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/update-images/`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${userToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ images: existingImagesData })
+    });
+
+    if (response.ok) {
+      uploadEventImages();
+    }
+  };
+  const uploadEventImages = async () => {
+    try {
+      // Filter out already uploaded images and only keep new ones
+      const newImages = selectedImages.filter(img => !img.image);
+
+      for (let i = 0; i < newImages.length; i++) {
+        const img = newImages[i];
+        const imageId = selectedImages.indexOf(img) + 1;
+
+        const formData = new FormData();
+        formData.append('image_id', imageId);
+        formData.append('image', {
+          uri: img.uri,
+          type: img.mimeType,
+          name: img.name,
+        });
+
+        const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/upload-image/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${userToken}`,
+            'Content-Type': 'multipart/form-data',
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Server error response:", errorData);
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    fetchEvent(); // Update to fetch the event data
+  };
+
+
 
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
-  console.log(event.creator)
 
   return (
     <View key={preview ? preview.title : 'loading'} style={styles.gradientContainer}>
@@ -151,14 +214,37 @@ const EventScreen = ({ route, navigation }) => {
         overScrollMode="never"
       >
 
+        {event.creator ?
+          <Pressable
+            onPress={{}}
+            style={[styles.createEventButton, { marginTop: width * 0.03 }]}
+          >
+            <Icons name="ParticipantRequest" size={width * 0.08} />
+            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Requests</Text>
+          </Pressable>
+          : ''
+        }
+
         {event.creator == userId ?
           <Pressable
-            onPress={() => navigation.navigate('Manage Event', { eventId: eventId })}
-            style={styles.createEventButton}
+            onPress={() => {
+              navigation.navigate('Create Place', {
+                preview: {
+                  placeId: placeId,
+                  name: place.name,
+                  description: place.description,
+                  location: place.location,
+                  sportType: place.sport_types_keys,
+                  coordinates: { "latitude": latitude, "longitude": longitude },
+                }
+              })
+            }}
+            style={[styles.createEventButton, { marginTop: width * 0.03 }]}
           >
-            <Icons name="Settings" size={width * 0.08} />
-            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Manage Event</Text>
-          </Pressable> : ''
+            <Icons name="Edit" size={width * 0.06} />
+            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Event</Text>
+          </Pressable>
+          : ''
         }
 
         <View style={styles.infoBlock}>
@@ -252,7 +338,8 @@ const EventScreen = ({ route, navigation }) => {
           : ''
         }
 
-        {event.images && event.images.length ?
+
+        {!editImages && event.images && event.images.length ?
           <View
             style={styles.userImagesContainer}
           >
@@ -268,9 +355,21 @@ const EventScreen = ({ route, navigation }) => {
                 </View>
               )
             })}
+            <TouchableOpacity style={styles.EditInfoIcon} onPress={() => setEditImages(true)}>
+              <Icons name="Edit" size={width * 0.1} />
+            </TouchableOpacity>
           </View>
-          : ''
+          :
+          <UploadPicker
+            selectedImages={selectedImages}
+            setSelectedImages={setSelectedImages}
+            max={5}
+            upload={updateExistingEventImages}
+            setEditImages={setEditImages}
+            cancel
+          />
         }
+
         {(event.place_videos && event.place_videos.length) || (preview && event.videos) ?
           <View
             style={styles.userImagesContainer}
@@ -281,6 +380,9 @@ const EventScreen = ({ route, navigation }) => {
                 <Icons name="PlayVideo" size={width * 0.25} style={{ backgroundColor: '#DDD' }} />
               </Pressable>
             </View>
+            <TouchableOpacity style={styles.EditInfoIcon} onPress={{}}>
+              <Icons name="Edit" size={width * 0.1} />
+            </TouchableOpacity>
           </View>
           : ''
         }
@@ -451,17 +553,6 @@ const styles = StyleSheet.create({
     marginLeft: 0,
   },
 
-  createEventButton: {
-    height: width * 0.12,
-    paddingHorizontal: width * 0.05,
-    borderRadius: width * 0.06,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    marginLeft: 'auto',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // PARTICIPANTS MODAL
 
   modalBackground: {
@@ -510,6 +601,17 @@ const styles = StyleSheet.create({
   },
 
 
+  createEventButton: {
+    height: width * 0.12,
+    paddingHorizontal: width * 0.05,
+    borderRadius: width * 0.06,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    marginLeft: 'auto',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
   userImagesContainer: {
     width: '100%',
     paddingVertical: width * 0.01,
@@ -526,6 +628,18 @@ const styles = StyleSheet.create({
     height: width * 0.26,
     margin: width * 0.02,
     position: 'relative',
+  },
+  EditInfoIcon: {
+    position: 'absolute',
+    right: 0,
+    bottom: -width * 0.08,
+    padding: width * 0.01,
+    backgroundColor: '#DDD',
+    borderWidth: 2,
+    borderColor: '#FFF',
+    borderRadius: width * 0.03,
+    alignItems: 'center',
+    opacity: 0.7,
   },
 });
 

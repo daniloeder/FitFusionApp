@@ -14,6 +14,7 @@ import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
 import ManagePlace from '../screens/PlaceScreen/ManagePlace'
 import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
 import EventScreen from '../screens/EventScreen/EventScreen';
+import ManageEvent from '../screens/EventScreen/ManageEvent';
 import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
 import Map from '../screens/Map/Map';
 import ChatListScreen from '../screens/ChatScreen/ChatListScreen';
@@ -178,7 +179,6 @@ const TabNavigator = () => {
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
         }}
       />
-
       <Tab.Screen
         name="Event"
         component={EventScreen}
@@ -188,7 +188,15 @@ const TabNavigator = () => {
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
         }}
       />
-
+      <Tab.Screen
+        name="Manage Event"
+        component={ManageEvent}
+        initialParams={{ userId, userToken }}
+        options={{
+          tabBarButton: () => null,
+          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+        }}
+      />
       <Tab.Screen
         name="Create Event"
         component={CreateEventScreen}

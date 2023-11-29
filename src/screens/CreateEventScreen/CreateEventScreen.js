@@ -92,50 +92,6 @@ const CreateEventScreen = ({ route, navigation }) => {
         formData.append(key, value);
     };
 
-    const updateEvent = async (eventId) => {
-        try {
-            const formData = new FormData();
-
-            selectedImages.filter(item => item !== null).forEach((img, index) => {
-                const imageType = img.mimeType.split("/")[1];
-                const imgData = {
-                    uri: img.uri,
-                    type: img.mimeType,
-                    name: `photo_${index}.${imageType}`,
-                };
-                formData.append('photos[]', imgData);
-            });
-
-            if (selectedVideo.length) {
-                const videoType = selectedVideo[0].mimeType.split("/")[1];
-                const videoData = {
-                    uri: selectedVideo[0].uri,
-                    type: selectedVideo[0].mimeType,
-                    name: `video.${videoType}`,
-                };
-                formData.append('videos[]', videoData);
-            }
-
-            const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Token ${userToken}`,
-                },
-                body: formData
-            });
-
-            if (response.ok) {
-                const responseData = await response.json();
-                navigation.navigate('Event', { eventId: responseData.id })
-            } else {
-                const errorData = await response.json();
-                console.error("Server error response:", errorData);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    };
-
     const createEvent = async () => {
         const eventFormData = new FormData();
         logAndAppend(eventFormData, 'title', title);
@@ -154,6 +110,26 @@ const CreateEventScreen = ({ route, navigation }) => {
         });
         logAndAppend(eventFormData, 'coordinates', coordinatesString);
 
+        selectedImages.filter(item => item !== null).forEach((img, index) => {
+            const imageType = img.mimeType.split("/")[1];
+            const imgData = {
+                uri: img.uri,
+                type: img.mimeType,
+                name: `image_${index}.${imageType}`,
+            };
+            eventFormData.append('images[]', imgData);
+        });
+
+        if (selectedVideo.length) {
+            const videoType = selectedVideo[0].mimeType.split("/")[1];
+            const videoData = {
+                uri: selectedVideo[0].uri,
+                type: selectedVideo[0].mimeType,
+                name: `video.${videoType}`,
+            };
+            eventFormData.append('videos[]', videoData);
+        }
+
         try {
             const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
                 method: 'POST',
@@ -163,12 +139,10 @@ const CreateEventScreen = ({ route, navigation }) => {
                 },
                 body: eventFormData
             });
-
+            
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
-                if (eventData.id && (selectedImages.some(item => item !== null && item !== undefined) || selectedVideo)) {
-                    await updateEvent(eventData.id);
-                }
+                navigation.navigate('Event', { eventId: eventData.id })
             } else {
                 const rawText = await eventResponse.text();
                 console.error("Raw server response:", rawText);
