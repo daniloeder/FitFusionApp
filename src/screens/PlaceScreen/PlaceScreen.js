@@ -5,6 +5,7 @@ import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
+import PaymentCard from '../../components/Management/PaimentCard.js';
 import Icons from '../../components/Icons/Icons';
 
 const width = Dimensions.get('window').width;
@@ -12,7 +13,7 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const { userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
-    const placeId = route.params.placeId;
+    const placeId = 123//route.params.placeId;
     const [joined, setJoined] = useState('none');
     const [participants, setParticipants] = useState([]);
     const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
@@ -63,11 +64,7 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('Error fetching place:', error);
         }
     };
-    const onJoinLeaveEvent = async () => {
-        if (false) {
-            setJoined(!joined)
-            return
-        }
+    const onJoinLeavePlace = async () => {
         try {
             const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
                 method: 'POST',
@@ -94,9 +91,6 @@ const PlaceScreen = ({ route, navigation }) => {
         } catch (error) {
             console.error('An error occurred:', error);
         }
-    };
-    const toggleVideoModal = () => {
-        setVideoModalVisible(!isVideoModalVisible);
     };
 
     if (!place || !place.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
@@ -134,29 +128,35 @@ const PlaceScreen = ({ route, navigation }) => {
                 {place.created_by != userId ?
                     joined === "joined" ?
                         <>
-                            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
-                                <Text style={styles.buttonText}>Leave Event</Text>
+                            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeavePlace}>
+                                <Text style={styles.buttonText}>Leave Place</Text>
                             </TouchableOpacity>
                             <View>
                                 <Text style={[styles.joinText, { color: '#22AA00' }]}>
-                                    You joined this event.
+                                    You joined this place.
                                 </Text>
                             </View>
+
+                            {place.payments && (
+                                <PaymentCard
+                                    paymentData={place.payments}
+                                />
+                            )}
                         </>
                         : joined === "none" ?
                             <>
-                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeaveEvent}>
-                                    <Text style={styles.buttonText}>{place.is_privated ? "Request to Join Event" : "Join Event"}</Text>
+                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeavePlace}>
+                                    <Text style={styles.buttonText}>{place.is_privated ? "Request to Join Place" : "Join Place"}</Text>
                                 </TouchableOpacity>
                                 <View>
                                     <Text style={[styles.joinText, { color: '#AAA' }]}>
-                                        You are not at this event.{place.is_privated ? " (Privated)" : ""}
+                                        You are not at this place.{place.is_privated ? " (Privated)" : ""}
                                     </Text>
                                 </View>
                             </>
                             : joined === "requested" ?
                                 <>
-                                    <TouchableOpacity style={[styles.button, { backgroundColor: '#CCC' }]} onPress={onJoinLeaveEvent}>
+                                    <TouchableOpacity style={[styles.button, { backgroundColor: '#CCC' }]} onPress={onJoinLeavePlace}>
                                         <Text style={styles.buttonText}>Remove Request</Text>
                                     </TouchableOpacity>
                                     <View>
@@ -239,7 +239,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     >
                         <View style={[styles.infoBlock, { justifyContent: 'center' }]}>
                             <Icons name="Images" size={width * 0.07} style={[styles.infoIcons, { position: 'absolute', left: 0, top: 0 }]} />
-                            <Pressable onPress={toggleVideoModal} >
+                            <Pressable onPress={() => setVideoModalVisible(!isVideoModalVisible)} >
                                 <Icons name="PlayVideo" size={width * 0.25} style={{ backgroundColor: '#DDD' }} />
                             </Pressable>
                         </View>
@@ -252,7 +252,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         animationType="slide"
                         transparent={false}
                         visible={isVideoModalVisible}
-                        onRequestClose={toggleVideoModal}
+                        onRequestClose={() => setVideoModalVisible(!isVideoModalVisible)}
                         style={{ width: '100%', backgroundColor: '#000' }}
                     >
                         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%', backgroundColor: '#000' }}>
@@ -275,6 +275,7 @@ const PlaceScreen = ({ route, navigation }) => {
         </View>
     );
 };
+
 
 const styles = StyleSheet.create({
     gradientContainer: {
@@ -334,7 +335,8 @@ const styles = StyleSheet.create({
         marginBottom: width * 0.04,
         fontSize: width * 0.045,
         fontWeight: 'bold',
-    }, participantTitle: {
+    },
+    participantTitle: {
         fontSize: width * 0.06,
         fontWeight: 'bold',
         color: '#FFF',

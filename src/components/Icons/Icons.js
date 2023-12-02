@@ -70,6 +70,7 @@ import Swimming from './../../../assets/icons/sports/Swimming.svg';
 
 import SendMessage from './../../../assets/icons/sendMessage.svg';
 import ParticipantRequest from './../../../assets/icons/participantRequest.svg';
+import ParticipantEdit from './../../../assets/icons/participantEdit.svg';
 
 const Icons = ({
   name,
@@ -152,6 +153,7 @@ const Icons = ({
 
     SendMessage: SendMessage,
     ParticipantRequest: ParticipantRequest,
+    ParticipantEdit: ParticipantEdit,
 
   }[name];
 

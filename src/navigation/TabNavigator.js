@@ -157,7 +157,7 @@ const TabNavigator = () => {
         component={PlaceScreen}
         initialParams={{ userId, userToken }}
         options={{
-          tabBarButton: () => null,
+          //tabBarButton: () => null,
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
         }}
       />

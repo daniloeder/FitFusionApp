@@ -8,19 +8,20 @@ import OpenTimes from '../../components/Forms/OpenTimes.js';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
+import ManageUsers from '../../components/Management/ManageUsers.js';
 import Icons from '../../components/Icons/Icons.js';
 
 const width = Dimensions.get('window').width;
 
 const PlaceScreen = ({ route, navigation }) => {
     const { placeId, userId, userToken } = route.params;
-    //const placeId = 122;
     const [place, setPlace] = useState(null);
     const [participantStatus, setParticipantStatus] = useState('none');
 
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
     const [isParticipantRequestsModalVisible, setParticipantRequestsModalVisible] = useState(false);
+    const [isParticipantManagerModalVisible, setParticipantManagerModalVisible] = useState(false);
     const [participantRequests, setParticipantRequests] = useState([]);
 
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
@@ -70,13 +71,10 @@ const PlaceScreen = ({ route, navigation }) => {
     const toggleVideoModal = () => {
         setVideoModalVisible(!isVideoModalVisible);
     };
-    const handleParticipantRequests = () => {
-        setParticipantRequestsModalVisible(true);
-    };
-    const fetchUserProfileImages = async (participants) => {
-        if (participants.length) {
+    const fetchUserProfileImages = async (participantsIds) => {
+        if (participantsIds.length) {
             try {
-                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participantsIds.join()}`);
                 if (response.ok) {
                     const data = await response.json();
                     const profileImageMap = {};
@@ -216,18 +214,17 @@ const PlaceScreen = ({ route, navigation }) => {
     const ParticipantRequestsModal = () => {
         return (
             <Modal
-                animationType="slide"
                 transparent={true}
                 visible={isParticipantRequestsModalVisible}
                 onRequestClose={() => setParticipantRequestsModalVisible(false)}
             >
-                <View style={styles.modalContainer}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Participant Requests</Text>
+                <View style={styles.participantRequestsModalContainer}>
+                    <View style={styles.participantRequestsModalContent}>
+                        <Text style={styles.participantRequestsModalTitle}>Participant Requests</Text>
                         <ScrollView>
                             {participantRequests.map((request, index) => {
                                 return (
-                                    <View key={index} style={styles.requestItem}>
+                                    <View key={index} style={styles.participantRequestItem}>
                                         <View style={[styles.userBall, { borderColor: request.user.sex === 'M' ? '#0033FF' : request.user.sex === 'F' ? '#FF3399' : '#DDD' }]}>
                                             {request.user.profile_image ?
                                                 <Image style={styles.userBallImageProfile}
@@ -240,15 +237,15 @@ const PlaceScreen = ({ route, navigation }) => {
                                         </View>
                                         <View style={{ alignItems: 'center', marginLeft: '5%' }}>
                                             <Text style={styles.requestUsername}>{request.user.name}</Text>
-                                            <View style={styles.requestButtons}>
+                                            <View style={styles.participantparticipantparticipantparticipantRequestButtons}>
                                                 <TouchableOpacity
-                                                    style={[styles.requestButton, styles.approveButton]}
+                                                    style={[styles.participantRequestButton, styles.approveButton]}
                                                     onPress={() => handleRequest(true, request.user.id, index)}
                                                 >
                                                     <Text style={styles.buttonText}>Approve</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
-                                                    style={[styles.requestButton, styles.denyButton]}
+                                                    style={[styles.participantRequestButton, styles.denyButton]}
                                                     onPress={() => handleRequest(false, request.user.id, index)}
                                                 >
                                                     <Text style={styles.buttonText}>Deny</Text>
@@ -260,8 +257,35 @@ const PlaceScreen = ({ route, navigation }) => {
                             })}
                         </ScrollView>
                         <TouchableOpacity
-                            style={[styles.requestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                            style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
                             onPress={() => setParticipantRequestsModalVisible(false)}
+                        >
+                            <Text style={styles.buttonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        );
+    };
+    const ParticipantManagerModal = () => {
+        return (
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={isParticipantManagerModalVisible}
+                onRequestClose={() => setParticipantManagerModalVisible(false)}
+            >
+                <View style={styles.participantManagerModalContainer}>
+                    <View style={styles.participantManagerModalContent}>
+                        <Text style={styles.participantManagerModalTitle}>Participant Management</Text>
+
+                        <ScrollView style={{width:'100%'}}>
+                            <ManageUsers userToken={userToken} userIds={place.participants} placeId={placeId} />
+                        </ScrollView>
+
+                        <TouchableOpacity
+                            style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                            onPress={() => setParticipantManagerModalVisible(false)}
                         >
                             <Text style={styles.buttonText}>Close</Text>
                         </TouchableOpacity>
@@ -340,7 +364,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 {place.created_by == userId ?
                     <Pressable
                         onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
-                        style={styles.createEventButton}
+                        style={[styles.createEventButton, {minWidth: width*0.6}]}
                     >
                         <Icons name="Events" size={width * 0.08} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>
@@ -348,10 +372,20 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
 
+                {place.created_by == userId ?
+                    <Pressable
+                        onPress={() => setParticipantManagerModalVisible(true)}
+                        style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width*0.6 }]}
+                    >
+                        <Icons name="ParticipantEdit" size={width * 0.08} />
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Manager</Text>
+                    </Pressable>
+                    : ''
+                }
                 {place.created_by == userId && (participantStatus === 'requested' || participantStatus === 'owner') ?
                     <Pressable
-                        onPress={handleParticipantRequests}
-                        style={[styles.createEventButton, { marginTop: width * 0.03 }]}
+                        onPress={() => setParticipantRequestsModalVisible(true)}
+                        style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width*0.6 }]}
                     >
                         <Icons name="ParticipantRequest" size={width * 0.08} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Requests</Text>
@@ -373,13 +407,14 @@ const PlaceScreen = ({ route, navigation }) => {
                                 }
                             })
                         }}
-                        style={[styles.createEventButton, { marginTop: width * 0.03 }]}
+                        style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width*0.6 }]}
                     >
                         <Icons name="Edit" size={width * 0.06} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Place</Text>
                     </Pressable>
                     : ''
                 }
+                <ParticipantManagerModal />
                 <ParticipantRequestsModal />
 
                 <Text style={styles.title}>{place.name}</Text>
@@ -430,7 +465,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 </View>
                             )
                         })}
-                        <TouchableOpacity style={styles.EditInfoIcon} onPress={()=>setEditImages(true)}>
+                        <TouchableOpacity style={styles.EditInfoIcon} onPress={() => setEditImages(true)}>
                             <Icons name="Edit" size={width * 0.1} />
                         </TouchableOpacity>
                     </View>
@@ -579,16 +614,22 @@ const styles = StyleSheet.create({
         margin: width * 0.02,
         position: 'relative',
     },
+    participantRequestButton: {
+        paddingVertical: 5,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        marginHorizontal: 5,
+    },
 
 
     // Styles for Participant Requests Modal
-    modalContainer: {
+    participantRequestsModalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    modalContent: {
+    participantRequestsModalContent: {
         width: '80%',
         maxHeight: '90%',
         backgroundColor: '#FFF',
@@ -596,16 +637,49 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
-    modalTitle: {
+    participantRequestsModalTitle: {
         fontSize: width * 0.05,
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    requestItem: {
+    participantRequestItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
     },
+    participantManagerButton: {
+        paddingVertical: 5,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        marginHorizontal: 5,
+    },
+
+    // Styles for Participant Manager Modal
+    participantManagerModalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    participantManagerModalContent: {
+        width: '96%',
+        maxHeight: '90%',
+        backgroundColor: '#FFF',
+        padding: 20,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    participantManagerModalTitle: {
+        fontSize: width * 0.05,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    participantManagerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+
     requestUsername: {
         fontSize: width * 0.03,
     },
@@ -623,14 +697,8 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: width * 0.05
     },
-    requestButtons: {
+    participantparticipantparticipantparticipantRequestButtons: {
         flexDirection: 'row',
-    },
-    requestButton: {
-        paddingVertical: 5,
-        paddingHorizontal: 20,
-        borderRadius: 5,
-        marginHorizontal: 5,
     },
     approveButton: {
         backgroundColor: '#4CAF50',
