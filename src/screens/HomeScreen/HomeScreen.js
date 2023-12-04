@@ -12,6 +12,7 @@ const HomeScreen = ({ route, navigation }) => {
   const [data, setData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
+  const [joinedPlaces, setJoinedPlaces] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [closerUsers, setCloserUsers] = useState(null);
   const [closerUsersPicture, setCloserUsersPicture] = useState(null);
@@ -107,6 +108,7 @@ const HomeScreen = ({ route, navigation }) => {
     if (data) {
       setPlaces(data.places);
       setJoinedEvents(data.joined_events);
+      setJoinedPlaces(data.joined_places);
     }
   }, [data]);
 
@@ -160,6 +162,24 @@ const HomeScreen = ({ route, navigation }) => {
                   <Text style={styles.joinedEventTitle}>{event.title}</Text>
                   <Text style={styles.eventDate}>Date: {event.date}</Text>
                   <Text style={styles.eventDate}>Time: {event.time}</Text>
+                  <Text style={[styles.eventDate, {fontSize:width*0.03}]}>Location: {event.location}</Text>
+                  {event.payments && !event.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>{`Late payment by ${-event.payments.days_until_next} days`}</Text>}
+                </Pressable>
+              </View>
+            ))}
+
+            {joinedPlaces.length ? <Text style={styles.subtitle}>Places I've Joined:</Text> : ''}
+            {joinedPlaces.map((place) => (
+              <View key={place.id} style={styles.joinedEventItem}>
+                <Pressable
+                  style={styles.joinedEventButton}
+                  onPress={() => {
+                    navigation.navigate('Place', { placeId: place.id });
+                  }}
+                >
+                  <Text style={styles.joinedEventTitle}>{place.name}</Text>
+                  <Text style={[styles.eventDate, {fontSize:width*0.03}]}>Location: {place.location}</Text>
+                  {place.payments && !place.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>{`Late payment by ${-place.payments.days_until_next} days`}</Text>}
                 </Pressable>
               </View>
             ))}
@@ -198,7 +218,7 @@ const HomeScreen = ({ route, navigation }) => {
                     onPress={() => {
                       navigation.navigate('User Profile', { id: user.id })
                     }}
-                    style={[styles.userCardInner, {borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD'}]}
+                    style={[styles.userCardInner, { borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD' }]}
                   >
                     {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
                       <Image
@@ -274,8 +294,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: width * 0.06,
     fontWeight: '600',
-    marginBottom: width * 0.05,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   placeItem: {
     padding: width * 0.04,
@@ -312,7 +331,6 @@ const styles = StyleSheet.create({
   },
   eventDate: {
     fontSize: width * 0.04,
-    marginBottom: width * 0.03,
     color: 'rgba(255, 255, 255, 0.7)',
   },
   viewPlaceButton: {

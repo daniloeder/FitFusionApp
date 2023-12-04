@@ -13,7 +13,7 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const { userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
-    const placeId = 123//route.params.placeId;
+    const placeId = 1//route.params.placeId;
     const [joined, setJoined] = useState('none');
     const [participants, setParticipants] = useState([]);
     const [participantsModalVisible, setParticipantsModalVisible] = useState(false);

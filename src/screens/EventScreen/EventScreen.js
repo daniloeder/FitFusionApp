@@ -4,8 +4,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
-import Icons from '../../components/Icons/Icons';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
+import PaymentCard from '../../components/Management/PaimentCard.js';
+import Icons from '../../components/Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
@@ -21,13 +22,13 @@ const EventScreen = ({ route, navigation }) => {
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
-  const eventId = route.params.eventId;
+  const eventId = 1//route.params.eventId;
 
   useFocusEffect(
     useCallback(() => {
-        fetchEvent();
+      fetchEvent();
     }, [])
-);
+  );
   useEffect(() => {
     setEvent(preview);
   }, [preview]);
@@ -200,6 +201,12 @@ const EventScreen = ({ route, navigation }) => {
                 You joined this event.
               </Text>
             </View>
+
+            {event.payments && (
+              <PaymentCard
+                paymentData={event.payments}
+              />
+            )}
           </>
           :
           <>

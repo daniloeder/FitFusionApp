@@ -5,18 +5,27 @@ const width = Dimensions.get('window').width;
 
 const PaymentCard = ({ paymentData }) => {
     const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+    if (!paymentData.latest) {
+        return
+    }
     return (
         <>
-            {paymentData.latest && (
+            <View
+                style={[styles.paymentCard, { backgroundColor: paymentData.regular ? 'rgba(144, 238, 144, 0.5)' : 'rgba(250, 128, 114, 0.5)' }]}
+            >
+                {paymentData.days_until_next > 0 ? <Text style={{color:'#FFF', marginLeft:'auto'}}>`Days Left to Next Payment: ${paymentData.days_until_next}`</Text> : <Text style={{color:'red', fontWeight:'bold', marginLeft:'auto'}}>{`Late payment by ${-paymentData.days_until_next} days`}</Text> }
+                <Text style={styles.paymentTitle}>Last Due Payment:</Text>
+                <Text style={styles.paymentInfoText}>Amount: ${paymentData.latest.amount}</Text>
+                <Text style={styles.paymentInfoText}>Payment Status: {paymentData.latest.status}</Text>
                 <TouchableOpacity
                     onPress={() => setPaymentModalVisible(true)}
-                    style={[styles.paymentCard, {backgroundColor: paymentData.regular? 'rgba(144, 238, 144, 0.5)' : 'rgba(250, 128, 114, 0.5)'}]}
+                    style={styles.detailsButton}
                 >
-                    <Text style={styles.paymentTitle}>Last Payment</Text>
-                    <Text style={styles.paymentInfoText}>Amount: ${paymentData.latest.amount}</Text>
-                    <Text style={styles.paymentInfoText}>Payment Status: {paymentData.latest.status}</Text>
+                    <Text>
+                        See Payment Details
+                    </Text>
                 </TouchableOpacity>
-            )}
+            </View>
 
             <Modal
                 animationType="slide"
@@ -55,6 +64,8 @@ const styles = {
         padding: 10,
         borderTopLeftRadius: width * 0.07,
         borderBottomLeftRadius: width * 0.07,
+        borderTopRightRadius: width * 0.01,
+        borderBottomRightRadius: width * 0.01,
         marginLeft: 'auto',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
@@ -64,16 +75,24 @@ const styles = {
         marginBottom: 20,
     },
     paymentTitle: {
-        fontSize: 20,
+        fontSize: width * 0.04,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginBottom: 5,
         color: '#DDD',
     },
     paymentInfoText: {
-        fontSize: 16,
-        marginBottom: 8,
+        fontSize: width * 0.03,
+        marginBottom: 2,
         fontWeight: 'bold',
         color: '#DDD',
+    },
+    detailsButton: {
+        padding: width * 0.02,
+        borderRadius: width * 0.015,
+        backgroundColor: 'lightblue',
+        alignItems: 'center',
+        marginHorizontal: width * 0.1,
+        marginTop: width * 0.02,
     },
     modalContainer: {
         width: '90%',
