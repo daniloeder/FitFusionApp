@@ -10,6 +10,7 @@ import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
 import { SportsNames, SportsTypes } from '../../utils/sports';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -39,7 +40,7 @@ const ProfileScreen = ({ route }) => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/users/profile/', {
+      const response = await fetch(BASE_URL + '/api/users/profile/', {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -58,7 +59,7 @@ const ProfileScreen = ({ route }) => {
         }
       }
       if (data.profile_image && data.profile_image.image) {
-        setCurrentImage('http://192.168.0.118:8000/' + data.profile_image.image);
+        setCurrentImage(BASE_URL + '/' + data.profile_image.image);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -83,7 +84,7 @@ const ProfileScreen = ({ route }) => {
       image_id: index + 1
     }));
 
-    const response = await fetch('http://192.168.0.118:8000/api/users/update-existing-images/', {
+    const response = await fetch(BASE_URL + '/api/users/update-existing-images/', {
       method: 'POST',
       headers: {
         'Authorization': `Token ${userToken}`,
@@ -116,7 +117,7 @@ const ProfileScreen = ({ route }) => {
           name: img.name,
         });
 
-        const response = await fetch('http://192.168.0.118:8000/api/users/upload-image/', {
+        const response = await fetch(BASE_URL + '/api/users/upload-image/', {
           method: 'POST',
           headers: {
             'Authorization': `Token ${userToken}`,
@@ -161,7 +162,7 @@ const ProfileScreen = ({ route }) => {
       requestBody.favorite_sports = favoriteSports.map(sport => sport.id || sport);
     }
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/users/update/', {
+      const response = await fetch(BASE_URL + '/api/users/update/', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -207,7 +208,7 @@ const ProfileScreen = ({ route }) => {
       });
 
       const uploadResponse = await fetch(
-        'http://192.168.0.118:8000/api/users/upload-and-set-profile-image/',
+        BASE_URL + '/api/users/upload-and-set-profile-image/',
         {
           method: 'POST',
           headers: {
@@ -459,7 +460,7 @@ const ProfileScreen = ({ route }) => {
                     <View key={index}
                       style={styles.userImagesItems}
                     >
-                      <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                      <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
                     </View>
                   )
                 })}

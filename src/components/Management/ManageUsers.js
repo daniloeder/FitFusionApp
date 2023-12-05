@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import DatePicker from '../Forms/DatePicker';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -22,7 +23,7 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
             status: status,
         };
 
-        fetch(`http://192.168.0.118:8000/api/payments/${payment.id}/`, {
+        fetch(BASE_URL + `/api/payments/${payment.id}/`, {
             method: 'PATCH',
             headers: {
                 Authorization: `Token ${userToken}`,
@@ -38,7 +39,7 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
     };
 
     const handleDelete = () => {
-        fetch(`http://192.168.0.118:8000/api/payments/${payment.id}/`, {
+        fetch(BASE_URL + `/api/payments/${payment.id}/`, {
             method: 'DELETE',
             headers: {
                 Authorization: `Token ${userToken}`,
@@ -54,7 +55,7 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
             status: payment.status === "Paid" ? "Pending" : "Paid",
         };
 
-        fetch(`http://192.168.0.118:8000/api/payments/${payment.id}/`, {
+        fetch(BASE_URL + `/api/payments/${payment.id}/`, {
             method: 'PATCH',
             headers: {
                 Authorization: `Token ${userToken}`,
@@ -178,7 +179,7 @@ const ManageUsers = ({ userToken, userIds, placeId }) => {
     useEffect(() => {
         const fetchUserProfileImages = async (participants) => {
             try {
-                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
                 const data = await response.json();
                 setUserImages(data);
             } catch (error) {
@@ -189,7 +190,7 @@ const ManageUsers = ({ userToken, userIds, placeId }) => {
             const fetchedPayments = [];
             try {
                 const response = await fetch(
-                    `http://192.168.0.118:8000/api/payments/by_users/?place_id=${placeId}&user_ids=${participants.join()}`,
+                    BASE_URL + `/api/payments/by_users/?place_id=${placeId}&user_ids=${participants.join()}`,
                     {
                         method: 'GET',
                         headers: {

@@ -7,6 +7,7 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
 import Icons from '../../components/Icons/Icons';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -32,7 +33,7 @@ const PlaceScreen = ({ route, navigation }) => {
     const fetchUserProfileImages = async (participants) => {
         if (participants.length) {
             try {
-                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
                 const data = await response.json();
                 setUserImages(data);
             } catch (error) {
@@ -42,7 +43,7 @@ const PlaceScreen = ({ route, navigation }) => {
     };
     const fetchPlace = async () => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -66,7 +67,7 @@ const PlaceScreen = ({ route, navigation }) => {
     };
     const onJoinLeavePlace = async () => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -226,7 +227,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                                    <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}
@@ -260,7 +261,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
                             >
                                 <ShowMedia
-                                    media={`http://192.168.0.118:8000/${place.place_videos[0].video}`}
+                                    media={BASE_URL + `/${place.place_videos[0].video}`}
                                     isVideo={true}
                                     style={{ width: width, height: width * (9 / 16) }}
                                 />

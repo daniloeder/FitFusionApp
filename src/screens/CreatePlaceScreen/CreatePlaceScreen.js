@@ -7,6 +7,7 @@ import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import CustomInput from '../../components/Forms/CustomInput.js';
 import OpenTimes from '../../components/Forms/OpenTimes.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -125,7 +126,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         }
 
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${preview ? preview.placeId + '/' : ''}`, {
+            const response = await fetch(BASE_URL + `/api/places/${preview ? preview.placeId + '/' : ''}`, {
                 method: preview ? 'PATCH' : 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,

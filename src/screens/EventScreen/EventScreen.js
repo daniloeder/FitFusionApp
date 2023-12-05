@@ -7,6 +7,7 @@ import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
 import Icons from '../../components/Icons/Icons';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -50,7 +51,7 @@ const EventScreen = ({ route, navigation }) => {
   const fetchUserProfileImages = async (participants) => {
     if (participants.length) {
       try {
-        const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
         const data = await response.json();
         setUserImages(data);
       } catch (error) {
@@ -61,7 +62,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}`, {
+      const response = await fetch(BASE_URL + `/api/events/${eventId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -87,7 +88,7 @@ const EventScreen = ({ route, navigation }) => {
       return
     }
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
+      const response = await fetch(BASE_URL + `/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -270,7 +271,7 @@ const EventScreen = ({ route, navigation }) => {
                 <View key={index}
                   style={styles.userImagesItems}
                 >
-                  <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                  <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
                 </View>
               )
             })}
@@ -304,7 +305,7 @@ const EventScreen = ({ route, navigation }) => {
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
               >
                 <ShowMedia
-                  media={preview ? event.videos : `http://192.168.0.118:8000/${event.place_videos[0].video}`}
+                  media={preview ? event.videos : BASE_URL + `/${event.place_videos[0].video}`}
                   isVideo={true}
                   style={{ width: width, height: width * (9 / 16) }}
                 />

@@ -5,6 +5,8 @@ import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 import { storeAuthToken, fetchAuthToken, storeData } from '../../store/store';
+import { BASE_URL } from '@env';
+
 const { width, height } = Dimensions.get('window');
 
 function LoginScreen() {
@@ -29,7 +31,7 @@ function LoginScreen() {
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/users/login/', {
+            const response = await fetch(BASE_URL + '/api/users/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

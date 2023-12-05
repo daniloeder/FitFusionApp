@@ -10,6 +10,7 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import ManageUsers from '../../components/Management/ManageUsers.js';
 import Icons from '../../components/Icons/Icons.js';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -50,7 +51,7 @@ const PlaceScreen = ({ route, navigation }) => {
     }, [place]);
     const fetchPlace = async () => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -74,7 +75,7 @@ const PlaceScreen = ({ route, navigation }) => {
     const fetchUserProfileImages = async (participantsIds) => {
         if (participantsIds.length) {
             try {
-                const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participantsIds.join()}`);
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participantsIds.join()}`);
                 if (response.ok) {
                     const data = await response.json();
                     const profileImageMap = {};
@@ -105,7 +106,7 @@ const PlaceScreen = ({ route, navigation }) => {
     };
     const fetchParticipantRequests = async () => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/owner-requests/`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/owner-requests/`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -143,7 +144,7 @@ const PlaceScreen = ({ route, navigation }) => {
         };
         placeFormData.append('opening_times', JSON.stringify(openingTimes));
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -168,7 +169,7 @@ const PlaceScreen = ({ route, navigation }) => {
             return
         }
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
+            const response = await fetch(BASE_URL + `/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -189,7 +190,7 @@ const PlaceScreen = ({ route, navigation }) => {
         }
     };
     async function handleRequest(approve, userRequestId, index) {
-        const apiUrl = `http://192.168.0.118:8000/api/places/${placeId}/approve-request/${userRequestId}/?approve=${approve ? 'approve' : 'deny'}`;
+        const apiUrl = BASE_URL + `/api/places/${placeId}/approve-request/${userRequestId}/?approve=${approve ? 'approve' : 'deny'}`;
         const requestOptions = {
             method: 'POST',
             headers: {
@@ -301,7 +302,7 @@ const PlaceScreen = ({ route, navigation }) => {
             image_id: index + 1
         }));
 
-        const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/update-images/`, {
+        const response = await fetch(BASE_URL + `/api/places/${placeId}/update-images/`, {
             method: 'POST',
             headers: {
                 'Authorization': `Token ${userToken}`,
@@ -331,7 +332,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     name: img.name,
                 });
 
-                const response = await fetch(`http://192.168.0.118:8000/api/places/${placeId}/upload-image/`, {
+                const response = await fetch(BASE_URL + `/api/places/${placeId}/upload-image/`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Token ${userToken}`,
@@ -461,7 +462,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                                    <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}
@@ -509,7 +510,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
                             >
                                 <ShowMedia
-                                    media={`http://192.168.0.118:8000/${place.place_videos[0].video}`}
+                                    media={BASE_URL + `/${place.place_videos[0].video}`}
                                     isVideo={true}
                                     style={{ width: width, height: width * (9 / 16) }}
                                 />

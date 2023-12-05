@@ -2,11 +2,12 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Linking, Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { storeData } from '../../store/store';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
 async function updateCoordinates(userToken, location) {
-    const apiUrl = 'http://192.168.0.118:8000/api/users/update-coordinates/';
+    const apiUrl = BASE_URL + '/api/users/update-coordinates/';
 
     try {
         const response = await fetch(apiUrl, {

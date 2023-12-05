@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Pressable, Image, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import Icons from '../Icons/Icons';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -63,7 +64,7 @@ const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages
         <View style={styles.container}>
             {selectedImages && selectedImages.map((media, index) => (
                 <View key={index} style={[styles.imageContainer, { width: size, height: size }]}>
-                    <Image source={{ uri: media.image_id ? `http://192.168.0.118:8000/${media.image}` : media.uri }} style={styles.image} />
+                    <Image source={{ uri: media.image_id ? BASE_URL + `/${media.image}` : media.uri }} style={styles.image} />
                     <Pressable
                         style={[styles.closeIcon, styles.icons]}
                         onPress={() => onDeleteImage(index)}

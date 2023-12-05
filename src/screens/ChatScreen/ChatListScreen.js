@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
 
@@ -12,7 +13,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
   const fetchChatRooms = async () => {
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/chatrooms/', {
+      const response = await fetch(BASE_URL + '/api/chatrooms/', {
         headers: {
           'Authorization': `Token ${userToken}`,
         },
@@ -63,7 +64,7 @@ const ChatListScreen = ({ route, navigation }) => {
               >
                 {chatImage && !isGroupChat && (
                   <Image
-                    source={{ uri: `http://192.168.0.118:8000${chatImage}` }}
+                    source={{ uri: BASE_URL + `${chatImage}` }}
                     style={styles.chatImage}
                   />
                 )}

@@ -5,6 +5,7 @@ import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 import { storeAuthToken, storeData } from '../../store/store';
+import { BASE_URL } from '@env';
 
 const { width, height } = Dimensions.get('window');
 
@@ -28,7 +29,7 @@ function RegisterScreen({ navigation }) {
 
     const ActivateAccount = async () => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/users/activate/`, {
+            const response = await fetch(BASE_URL + `/api/users/activate/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -70,7 +71,7 @@ function RegisterScreen({ navigation }) {
                 return;
             }
 
-            const response = await fetch(`http://192.168.0.118:8000/api/users/update/`, {
+            const response = await fetch(BASE_URL + `/api/users/update/`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,7 +107,7 @@ function RegisterScreen({ navigation }) {
                 return;
             }
 
-            const response = await fetch('http://192.168.0.118:8000/api/users/register/', {
+            const response = await fetch(BASE_URL + '/api/users/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -146,7 +147,7 @@ function RegisterScreen({ navigation }) {
     };
     const checkUsername = async () => {
         try {
-            const url = `http://192.168.0.118:8000/api/users/check-username/?username=${encodeURIComponent(username)}`;
+            const url = BASE_URL + `/api/users/check-username/?username=${encodeURIComponent(username)}`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {

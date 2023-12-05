@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Text, StyleSheet, Alert, Dimensions, ScrollView
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
+import { BASE_URL } from '@env';
 
 const { width, height } = Dimensions.get('window');
 
@@ -12,7 +13,7 @@ function ForgotPasswordScreen() {
 
     const handleForgotPassword = async () => {
         try {
-            const response = await fetch('http://192.168.0.118:8000/api/password/reset/', {
+            const response = await fetch(BASE_URL + '/api/password/reset/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, Keyboard
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
+import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
 
@@ -15,7 +16,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`http://192.168.0.118:8000/api/chatrooms/${chatId}/messages/`, {
+      const response = await fetch(BASE_URL + `/api/chatrooms/${chatId}/messages/`, {
         headers: {
           'Authorization': `Token ${userToken}`,
         },
@@ -33,7 +34,7 @@ const ChatListScreen = ({ route, navigation }) => {
     try {
       let endpoint;
       let requestBody;
-      endpoint = 'http://192.168.0.118:8000/api/chatrooms/';
+      endpoint = BASE_URL + '/api/chatrooms/';
       requestBody = {
         participant_id: participantId,
         text: input,
@@ -103,7 +104,7 @@ const ChatListScreen = ({ route, navigation }) => {
             <View style={styles.onlineDot}></View>
           )}
           <Image
-            source={{ uri: `http://192.168.0.118:8000${chatImage}` }}
+            source={{ uri: BASE_URL + `${chatImage}` }}
             style={styles.chatImage}
           />
           <Text style={styles.chatName}>{chatName}</Text>

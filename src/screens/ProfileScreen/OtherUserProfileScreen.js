@@ -5,6 +5,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import Icons from '../../components/Icons/Icons';
 import { SportsNames } from '../../utils/sports';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -19,7 +20,7 @@ const ProfileScreen = ({ route }) => {
 
     const fetchProfile = async (id) => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/users/user/${id}/`, {
+            const response = await fetch(BASE_URL + `/api/users/user/${id}/`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Token ${userToken}`,
@@ -37,7 +38,7 @@ const ProfileScreen = ({ route }) => {
     };
     const startChat = async (participantId) => {
         try {
-            const response = await fetch(`http://192.168.0.118:8000/api/chatrooms/fetch/?user_id=${participantId}`, {
+            const response = await fetch(BASE_URL + `/api/chatrooms/fetch/?user_id=${participantId}`, {
                 method: 'GET',
                 headers: {
                     Authorization: `Token ${userToken}`,
@@ -87,7 +88,7 @@ const ProfileScreen = ({ route }) => {
                         <View style={styles.profileHeader}>
                             <Image
                                 style={styles.avatar}
-                                source={{ uri: profile.profile_image ? 'http://192.168.0.118:8000/' + profile.profile_image.image : 'https://via.placeholder.com/150' }}
+                                source={{ uri: profile.profile_image ? BASE_URL + '/' + profile.profile_image.image : 'https://via.placeholder.com/150' }}
                             />
                             <Text style={styles.username}>@{profile.username}</Text>
                             <Text style={styles.name}>{profile.name}</Text>
@@ -146,7 +147,7 @@ const ProfileScreen = ({ route }) => {
                                         <View key={index}
                                             style={styles.userImagesItems}
                                         >
-                                            <ShowMedia media={`http://192.168.0.118:8000/${image.image}`} size={width * 0.26} />
+                                            <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
                                         </View>
                                     )
                                 })}

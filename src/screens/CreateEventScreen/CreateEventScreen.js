@@ -6,6 +6,7 @@ import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DatePicker from '../../components/Forms/DatePicker';
 import { SportsNames, SportsTypes } from '../../utils/sports';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -41,7 +42,7 @@ const CreateEventScreen = ({ route, navigation }) => {
 
     const fetchPlaces = async () => {
         try {
-            const response = await fetch('http://192.168.0.118:8000/api/places/', {
+            const response = await fetch(BASE_URL + '/api/places/', {
               method: 'GET',
               headers: {
                 Authorization: `Token ${userToken}`,
@@ -131,7 +132,7 @@ const CreateEventScreen = ({ route, navigation }) => {
         }
 
         try {
-            const eventResponse = await fetch('http://192.168.0.118:8000/api/events/', {
+            const eventResponse = await fetch(BASE_URL + '/api/events/', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,

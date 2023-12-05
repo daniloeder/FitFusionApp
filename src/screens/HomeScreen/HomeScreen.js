@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
 import Icons from '../../components/Icons/Icons.js';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
@@ -22,7 +23,7 @@ const HomeScreen = ({ route, navigation }) => {
   const fetchUserProfileImages = async (participants) => {
     if (participants.length) {
       try {
-        const response = await fetch(`http://192.168.0.118:8000/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
         const data = await response.json();
         if (response.ok) {
           setCloserUsersPicture(data)
@@ -38,7 +39,7 @@ const HomeScreen = ({ route, navigation }) => {
       const extendSearch = true;
       const distance = 1000 * 2;
       const max_users = 8;
-      const response = await fetch(`http://192.168.0.118:8000/api/users/nearby-users/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}&extend=${extendSearch}&max_users=${max_users}`, {
+      const response = await fetch(BASE_URL + `/api/users/nearby-users/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}&extend=${extendSearch}&max_users=${max_users}`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -58,7 +59,7 @@ const HomeScreen = ({ route, navigation }) => {
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('http://192.168.0.118:8000/api/users/home', {
+      const response = await fetch(BASE_URL + '/api/users/home', {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
