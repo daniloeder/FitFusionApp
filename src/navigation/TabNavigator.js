@@ -3,9 +3,9 @@ import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { fetchAuthToken, fetchData, storeAuthToken, storeData } from '../store/store';
+import { fetchAuthToken, fetchData } from '../store/store';
 import { useNavigation } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import * as Notifications from 'expo-notifications';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
@@ -19,15 +19,13 @@ import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
 import Map from '../screens/Map/Map';
 import ChatListScreen from '../screens/ChatScreen/ChatListScreen';
 import ChatScreen from '../screens/ChatScreen/ChatScreen';
-import Notifications from '../screens/NotificationScreen/NotificationScreen';
+import NotificationsScreen from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
-import { saveToLibraryAsync } from 'expo-media-library';
 
 const width = Dimensions.get('window').width;
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
 const GradientHeader = () => (
   <Svg style={StyleSheet.absoluteFill}>
     <Defs>
@@ -80,6 +78,29 @@ const HeaderIcon = ({ icon, onPress }) => {
   );
 };
 
+async function registerForPushNotificationsAsync() {
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') {
+    alert('Permissions to show notifications were not granted!');
+    return;
+  }
+
+  const token = (await Notifications.getExpoPushTokenAsync()).data;
+  
+
+  // Here you could also send the token to your backend to store it
+  // ...
+
+  return token;
+}
+
 const TabNavigator = () => {
   const navigation = useNavigation();
   const [userId, setUserId] = useState(null);
@@ -92,6 +113,7 @@ const TabNavigator = () => {
         fetchAuthToken()
           .then((token) => {
             setUserToken(token);
+            registerForPushNotificationsAsync();
           })
           .catch((error) => {
             console.error('Error fetching user token:', error);
@@ -101,6 +123,39 @@ const TabNavigator = () => {
         console.error('Error fetching user token:', error);
       });
   }, [userToken, navigation]);
+
+  useEffect(() => {
+    registerForPushNotificationsAsync();
+
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+
+    // This listener is fired whenever a notification is received while the app is foregrounded
+    Notifications.addNotificationReceivedListener(notification => {
+      //console.log('Notification Received:', notification);
+    });
+
+    // This listener is fired whenever a user taps on or interacts with a notification
+    Notifications.addNotificationResponseReceivedListener(response => {
+      //console.log('Notification Response:', response);
+    });
+
+    return () => {
+      Notifications.removeNotificationSubscription();
+    };
+  }, []);
 
   if (!userToken) {
     return null; // Return null or loading indicator if userToken is not available yet
@@ -248,7 +303,7 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Notifications"
         initialParams={{ userId, userToken }}
-        component={Notifications}
+        component={NotificationsScreen}
         options={{
           tabBarIcon: ({ focused }) => <Icons name="Notifications" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
           headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
