@@ -14,6 +14,74 @@ const ChatListScreen = ({ route, navigation }) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
+  const [webSocket, setWebSocket] = useState(null);
+  useFocusEffect(
+    useCallback(() => {
+      setMessages([]);
+      if (chatId || messages.length) {
+        fetchMessages();
+        // Establish WebSocket connection
+        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/chat/${chatId}/?token=${userToken}`);
+        ws.onopen = () => {
+          setWebSocket(ws);
+        };
+        ws.onmessage = (e) => {
+          // Handle incoming messages
+          const message = JSON.parse(e.data);
+          setMessages(previousMessages => [message, ...previousMessages]);
+        };
+        ws.onerror = (e) => {
+          console.error('WebSocket Error', e.message);
+        };
+        ws.onclose = (e) => {
+          setWebSocket(null);
+        };
+        return () => {
+          // Close WebSocket connection when component loses focus
+          if (ws) {
+            setMessages([]);
+            ws.close();
+          }
+        };
+      }
+    }, [chatId, userToken])
+  );
+  const sendMessage = async () => {
+    if (input.trim() === '') return;
+    try {
+      // Send message via WebSocket
+      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
+        webSocket.send(JSON.stringify({ text: input }));
+        setInput('');
+      } else {
+        try {
+          const response = await fetch('http://192.168.0.118:8000/api/chatrooms/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Token ${userToken}`,
+            },
+            body: JSON.stringify({
+              participant_id: participantId,
+              text: input,
+            }),
+          });
+          const newMessage = await response.json();
+          if (response.ok) {
+            setMessages(previousMessages => [newMessage, ...previousMessages]);
+            setInput('');
+          } else {
+            console.error('Error in response:', newMessage);
+          }
+        } catch (error) {
+          console.error('Error sending message:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
   const fetchMessages = async () => {
     try {
       const response = await fetch(BASE_URL + `/api/chatrooms/${chatId}/messages/`, {
@@ -25,39 +93,6 @@ const ChatListScreen = ({ route, navigation }) => {
       setMessages(data.reverse());
     } catch (error) {
       console.error('Error fetching messages:', error);
-    }
-  };
-
-
-  const sendMessage = async () => {
-    if (input.trim() === '') return;
-    try {
-      let endpoint;
-      let requestBody;
-      endpoint = BASE_URL + '/api/chatrooms/';
-      requestBody = {
-        participant_id: participantId,
-        text: input,
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Token ${userToken}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const newMessage = await response.json();
-      if (response.ok) {
-        setMessages(previousMessages => [newMessage, ...previousMessages]);
-        setInput('');
-      } else {
-        console.error('Error in response:', newMessage);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
     }
   };
 
@@ -111,10 +146,10 @@ const ChatListScreen = ({ route, navigation }) => {
         </View>
         <FlatList
           data={messages}
-          ListFooterComponent={<View style={{marginTop:width*0.12}}></View>}
+          ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <View style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
+            <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
             </View>
           )}
