@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
@@ -6,6 +7,7 @@ import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { fetchAuthToken, fetchData } from '../store/store';
 import { useNavigation } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
+import { BASE_URL } from '@env';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
@@ -78,7 +80,7 @@ const HeaderIcon = ({ icon, onPress }) => {
   );
 };
 
-async function registerForPushNotificationsAsync() {
+async function registerForPushNotificationsAsync(userToken) {
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
 
@@ -88,15 +90,32 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (finalStatus !== 'granted') {
-    alert('Permissions to show notifications were not granted!');
+    Alert.alert('Permissions to show notifications were not granted!');
     return;
   }
 
   const token = (await Notifications.getExpoPushTokenAsync()).data;
-  
 
-  // Here you could also send the token to your backend to store it
-  // ...
+
+  try {
+    const response = await fetch(BASE_URL + '/api/users/update/', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Token ${userToken}`,
+      },
+      body: JSON.stringify({push_token: token}),
+    });
+
+    if (response.ok) {
+      //console.log('Success, push token updated successfully!');
+    } else {
+      //console.log('Error on update push token.');
+    }
+  } catch (error) {
+    console.error('There was an error:', error);
+    Alert.alert('Error', 'There was an error with the update process. Please try again.');
+  }
 
   return token;
 }
@@ -113,7 +132,7 @@ const TabNavigator = () => {
         fetchAuthToken()
           .then((token) => {
             setUserToken(token);
-            registerForPushNotificationsAsync();
+            registerForPushNotificationsAsync(token);
           })
           .catch((error) => {
             console.error('Error fetching user token:', error);
@@ -122,10 +141,9 @@ const TabNavigator = () => {
       .catch((error) => {
         console.error('Error fetching user token:', error);
       });
-  }, [userToken, navigation]);
+  }, [navigation]);
 
   useEffect(() => {
-    registerForPushNotificationsAsync();
 
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
@@ -149,7 +167,8 @@ const TabNavigator = () => {
 
     // This listener is fired whenever a user taps on or interacts with a notification
     Notifications.addNotificationResponseReceivedListener(response => {
-      //console.log('Notification Response:', response);
+      const data = response.notification.request.trigger.remoteMessage.data.body;
+      navigation.navigate('Chat List')
     });
 
     return () => {
