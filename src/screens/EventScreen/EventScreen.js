@@ -23,7 +23,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
-  const eventId = 1//route.params.eventId;
+  const eventId = route.params.eventId;
 
   useFocusEffect(
     useCallback(() => {

@@ -3,8 +3,8 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, Dimensions } from 'rea
 
 const width = Dimensions.get('window').width;
 
-const PaymentCard = ({ paymentData }) => {
-    const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+const PaymentCard = ({ paymentData, startVisible=false }) => {
+    const [paymentModalVisible, setPaymentModalVisible] = useState(startVisible);
     if (!paymentData.latest) {
         return
     }
@@ -13,7 +13,7 @@ const PaymentCard = ({ paymentData }) => {
             <View
                 style={[styles.paymentCard, { backgroundColor: paymentData.regular ? 'rgba(144, 238, 144, 0.5)' : 'rgba(250, 128, 114, 0.5)' }]}
             >
-                {paymentData.days_until_next > 0 ? <Text style={{color:'#FFF', marginLeft:'auto'}}>`Days Left to Next Payment: ${paymentData.days_until_next}`</Text> : <Text style={{color:'red', fontWeight:'bold', marginLeft:'auto'}}>{`Late payment by ${-paymentData.days_until_next} days`}</Text> }
+                {paymentData.days_until_next > 0 ? <Text style={{color:'#FFF', marginLeft:'auto'}}>Days Left to Next Payment: {paymentData.days_until_next}</Text> : <Text style={{color:'red', fontWeight:'bold', marginLeft:'auto'}}>Late payment by {-paymentData.days_until_next} days</Text> }
                 <Text style={styles.paymentTitle}>Last Due Payment:</Text>
                 <Text style={styles.paymentInfoText}>Amount: ${paymentData.latest.amount}</Text>
                 <Text style={styles.paymentInfoText}>Payment Status: {paymentData.latest.status}</Text>

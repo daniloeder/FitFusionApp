@@ -1,65 +1,194 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import React, { useEffect, useState , useCallback} from 'react';
+import { View, Text, StyleSheet, FlatList, Pressable, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { BASE_URL } from '@env';
 
-const Notifications = () => {
-  return (
-    <View style={styles.gradientContainer}>
-      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+const { width } = Dimensions.get('window');
 
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Notifications</Text>
-        <Icon name="notifications" size={30} color="#000" />
-      </View>
+function timeAgo(timestamp) {
+  const currentDate = new Date();
+  const pastDate = new Date(timestamp);
 
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        overScrollMode="never"
-      >
-        {/* Sample notification */}
-        <View style={styles.notificationCard}>
-          <Text style={styles.notificationText}>
-            This is a sample notification. Check it out!
-          </Text>
-          <Text style={styles.notificationDate}>5 minutes ago</Text>
-        </View>
+  const timeDifference = currentDate - pastDate;
+  const seconds = Math.floor(timeDifference / 1000);
 
-        {/* You can duplicate the above View component for more sample notifications */}
-      </ScrollView>
-    </View>
-  );
+  if (seconds < 60) {
+    return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
+  }
+
+  const minutes = Math.floor(seconds / 60);
+
+  if (minutes < 60) {
+    return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+
+  if (days < 7) {
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  }
+
+  const weeks = Math.floor(days / 7);
+  return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
 }
 
 
+const Notifications = ({ route, navigation }) => {
+  const { userToken } = route.params;
+
+  const [notifications, setNotifications] = useState([
+    { id: 1, type: 'PlaceRequestApproved', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
+    { id: 2, type: 'NewNearUser', item_id: 11, text: 'There is a new Soccer player next you. Michael.', date: '10 minutes ago' },
+    { id: 3, type: 'EventComming', item_id: 1, text: 'You have a joined event Today at 15:00 PM.', date: '15 minutes ago' },
+    { id: 4, type: 'PaymentDayComming', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
+    { id: 5, type: 'NewNearUser', item_id: 11, text: 'There is a new Soccer player next you. Michael.', date: '10 minutes ago' },
+    { id: 6, type: 'EventComming', item_id: 1, text: 'You have a joined event Today at 15:00 PM.', date: '15 minutes ago' },
+    { id: 7, type: 'PaymentDayComming', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
+    { id: 8, type: 'NewNearUser', item_id: 11, text: 'There is a new Soccer player next you. Michael.', date: '10 minutes ago' },
+    { id: 9, type: 'EventComming', item_id: 1, text: 'You have a joined event Today at 15:00 PM.', date: '15 minutes ago' },
+    { id: 10, type: 'PaymentDayComming', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
+    { id: 11, type: 'NewNearUser', item_id: 11, text: 'There is a new Soccer player next you. Michael.', date: '10 minutes ago' },
+    { id: 12, type: 'EventComming', item_id: 1, text: 'You have a joined event Today at 15:00 PM.', date: '15 minutes ago' },
+  ]);
+
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [isDeleteModalVisible, setDeleteModalVisible] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/api/notifications/', {
+        headers: {
+          'Authorization': `Token ${userToken}`,
+        },
+      });
+      const data = await response.json();
+      setNotifications(data.reverse());
+      await fetch(BASE_URL + '/api/notifications/mark_all_as_read/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${userToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+
+  const handleDelete = () => {
+    if (selectedNotification) {
+      setNotifications((prevNotifications) =>
+        prevNotifications.filter((notification) => notification.id !== selectedNotification.id)
+      );
+    }
+    setDeleteModalVisible(false);
+  };
+
+  const showDeleteModal = (notification) => {
+    setSelectedNotification(notification);
+    setDeleteModalVisible(true);
+  };
+
+  const hideDeleteModal = () => {
+    setSelectedNotification(null);
+    setDeleteModalVisible(false);
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, [])
+  );
+
+  return (
+    <View style={styles.container}>
+      <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+
+      <FlatList
+        data={notifications}
+        renderItem={({ item }) => (
+          <Pressable
+            key={item.id}
+            onLongPress={() => showDeleteModal(item)}
+            onPress={() => {
+              console.log(item);
+              if (item.type === 'PaymentDayPlaceComming') {
+                navigation.navigate('Place', { placeId: item.item_id, paymentCardVisibel: true });
+              } else if (item.type === 'PlaceRequestApproved') {
+                navigation.navigate('Place', { placeId: item.item_id });
+              } else if (item.type === 'PaymentDayEventComming') {
+                navigation.navigate('Event', { eventId: item.item_id, paymentCardVisibel: true });
+              } else if (item.type === 'NewNearPlace') {
+                navigation.navigate('Event', { eventId: item.item_id });
+              } else if (item.type === 'NewNearEvent') {
+                navigation.navigate('Place', { placeId: item.item_id });
+              } else if (item.type === 'EventComming') {
+                navigation.navigate('Event', { eventId: item.item_id });
+              } else if (item.type === 'NewNearUser') {
+                navigation.navigate('User Profile', { id: item.item_id });
+              } else {
+                // Handle the case when 'item.type' is not recognized
+              }
+            }}
+          >
+            <View
+              style={[
+                styles.notificationCard,
+                {
+                  backgroundColor: `rgba(255, 255, 255, ${item.is_read ? 0.6 : 0.9})`,
+                },
+              ]}
+            >
+              <Text style={styles.notificationText}>{item.message}</Text>
+              <Text style={[styles.notificationDate, {color: item.is_read ? '#CCC' : '#555' }]}>
+                {timeAgo(item.timestamp)}
+              </Text>
+            </View>
+          </Pressable>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+        showsVerticalScrollIndicator={false}
+        showsHorizontalScrollIndicator={false}
+        overScrollMode="never"
+        contentContainerStyle={styles.scrollView}
+      />
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isDeleteModalVisible}
+      >
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalText}>Do you want to delete this notification?</Text>
+          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.cancelButton} onPress={hideDeleteModal}>
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
-  gradientContainer: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    padding: 10,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  headerText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
   },
   notificationCard: {
-    backgroundColor: 'white',
     opacity: 0.8,
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
+    borderRadius: width * 0.03,
+    padding: width * 0.04,
+    marginBottom: width * 0.025,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -70,12 +199,46 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   notificationText: {
-    fontSize: 16,
+    fontSize: width * 0.04,
   },
   notificationDate: {
-    fontSize: 12,
-    color: 'gray',
-    marginTop: 5,
+    fontSize: width * 0.03,
+    marginTop: width * 0.0125,
+  },
+  scrollView: {
+    padding: width * 0.025,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#DDD',
+    marginHorizontal: '10%',
+    marginVertical: '50%',
+    borderRadius: width * 0.025,
+    padding: width * 0.05,
+  },
+  modalText: {
+    fontSize: width * 0.045,
+    marginBottom: width * 0.05,
+    fontWeight: 'bold',
+  },
+  deleteButton: {
+    backgroundColor: 'red',
+    borderRadius: width * 0.02,
+    padding: width * 0.03,
+    alignItems: 'center',
+    marginBottom: width * 0.02,
+  },
+  cancelButton: {
+    backgroundColor: 'gray',
+    borderRadius: width * 0.02,
+    padding: width * 0.03,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: width * 0.04,
+    color: 'white',
   },
 });
 
