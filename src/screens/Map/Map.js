@@ -365,7 +365,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
                     onError={(error) => console.error('Image Error:', error)}
                   />
                   :
-                  <Icons name="Profile" size={width * 0.08} />
+                  <Icons name="Profile" size={width * 0.07} fill={'#1C274C'} />
                 }
               </View>
               <View

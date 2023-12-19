@@ -96,10 +96,15 @@ const ChatScreen = ({ route, navigation }) => {
           {onlineStatus && (
             <View style={styles.onlineDot}></View>
           )}
-          <Image
-            source={{ uri: BASE_URL + `${chatImage}` }}
-            style={styles.chatImage}
-          />
+          {chatImage ?
+            <Image
+              source={{ uri: BASE_URL + `${chatImage}` }}
+              style={styles.chatImage}
+            /> :
+            <View style={{ width: width * 0.09, height: width * 0.09, borderRadius: width * 0.1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.3)' }} >
+              <Icons name="Profile" size={width * 0.085} fill={'#1C274C'} />
+            </View>
+          }
           <Text style={styles.chatName}>{chatName}</Text>
         </View>
         {chats[chatId] && chats[chatId].messages && <FlatList
@@ -169,6 +174,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textShadowColor: '#000',
     textShadowRadius: 10,
+    marginHorizontal: width*0.02,
   },
   messageBox: {
     minWidth: '18%',

@@ -53,7 +53,7 @@ const ProfileScreen = ({ route }) => {
                     if (data.exists) {
                         navigation.navigate('Chat', { chatId: data.id, chatImage: data.participant.profile_image.image, chatName: data.participand_name });
                     } else {
-                        navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image.image, chatName: profile.name });
+                        navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image ? profile.profile_image.image : null, chatName: profile.name });
                     }
                 }
             } else {

@@ -5,6 +5,7 @@ import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { formatDate } from './../../utils/helpers';
 import { BASE_URL } from '@env';
+import Icons from '../../components/Icons/Icons';
 
 const { width } = Dimensions.get('window');
 
@@ -101,12 +102,15 @@ const ChatListScreen = ({ route, navigation }) => {
                   navigation.navigate('Chat', { chatId: chat.id, participantId: chat.participant.id, chatImage: chatImage, chatName: chatName })
                 }}
               >
-                {chatImage && !isGroupChat && (
+                {chatImage ?
                   <Image
                     source={{ uri: BASE_URL + `${chatImage}` }}
                     style={styles.chatImage}
-                  />
-                )}
+                  /> :
+                  <View style={{width:width*0.105,height:width*0.105,borderRadius:width*0.1,alignItems:'center',justifyContent:'center',backgroundColor:'rgba(255,255,255,0.3)'}} >
+                    <Icons name="Profile" size={width * 0.085} fill={'#1C274C'} />
+                  </View>
+                  }
                 {chats[chat.id] && chats[chat.id].unread > 0 && <UnreadMessagesNumber number={chats[chat.id].unread} />}
                 <View style={styles.chatTextContainer}>
                   <Text style={styles.chatRoomText}>{chatName}</Text>
