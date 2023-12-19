@@ -2,43 +2,10 @@ import React, { useEffect, useState , useCallback} from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { timeAgo } from './../../utils/helpers';
 import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
-
-function timeAgo(timestamp) {
-  const currentDate = new Date();
-  const pastDate = new Date(timestamp);
-
-  const timeDifference = currentDate - pastDate;
-  const seconds = Math.floor(timeDifference / 1000);
-
-  if (seconds < 60) {
-    return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
-  }
-
-  const minutes = Math.floor(seconds / 60);
-
-  if (minutes < 60) {
-    return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-
-  if (hours < 24) {
-    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-
-  if (days < 7) {
-    return `${days} day${days === 1 ? '' : 's'} ago`;
-  }
-
-  const weeks = Math.floor(days / 7);
-  return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
-}
-
 
 const Notifications = ({ route, navigation }) => {
   const { userToken } = route.params;
@@ -119,7 +86,6 @@ const Notifications = ({ route, navigation }) => {
             key={item.id}
             onLongPress={() => showDeleteModal(item)}
             onPress={() => {
-              console.log(item);
               if (item.type === 'PaymentDayPlaceComming') {
                 navigation.navigate('Place', { placeId: item.item_id, paymentCardVisibel: true });
               } else if (item.type === 'PlaceRequestApproved') {

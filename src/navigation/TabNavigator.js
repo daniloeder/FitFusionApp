@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Alert } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Alert, View, Text } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
@@ -24,6 +25,9 @@ import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import NotificationsScreen from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
+
+import { WebSocketProvider } from '../services/WebSocketsContext';
+import { useChat } from '../utils/chats';
 
 const width = Dimensions.get('window').width;
 
@@ -104,7 +108,7 @@ async function registerForPushNotificationsAsync(userToken) {
         'Content-Type': 'application/json',
         Authorization: `Token ${userToken}`,
       },
-      body: JSON.stringify({push_token: token}),
+      body: JSON.stringify({ push_token: token }),
     });
 
     if (response.ok) {
@@ -124,6 +128,8 @@ const TabNavigator = () => {
   const navigation = useNavigation();
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
+
+  const { chats } = useChat();
 
   useEffect(() => {
     fetchData('user_id')
@@ -176,187 +182,199 @@ const TabNavigator = () => {
     };
   }, []);
 
+  const [messages, setMessages] = useState(0);
+
   if (!userToken) {
     return null; // Return null or loading indicator if userToken is not available yet
   }
 
+  const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
+
   return (
-    <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={{
-        headerStyle: {
-          height: width * 0.2,
-          backgroundColor: 'transparent',
-          elevation: 0,
-          shadowOpacity: 0,
-        },
-        headerTintColor: '#FFF',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-        headerBackground: () => <GradientHeader />,
-        tabBarBackground: () => <NavGradientBackground />,
-        tabBarActiveTintColor: '#FFF',
-        tabBarInactiveTintColor: '#000',
-        tabBarLabelStyle: {
-          marginBottom: 3,
-        },
-        tabBarStyle: [
-          {
-            paddingTop: width * 0.05,
-            height: width * 0.15,
-            borderTopWidth: 0,
+    <WebSocketProvider userToken={userToken}>
+      <Tab.Navigator
+        initialRouteName="Home"
+        screenOptions={{
+          headerStyle: {
+            height: width * 0.2,
+            backgroundColor: 'transparent',
             elevation: 0,
             shadowOpacity: 0,
           },
-          null
-        ]
-      }}
-    >
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        initialParams={{ userId, userToken }}
-        options={({ navigation, route }) => ({
-          tabBarIcon: ({ focused }) => <Icons name="Home" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => {
-            return route.state?.index > 0 ? (
-              <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-            ) : null;
+          headerTintColor: '#FFF',
+          headerTitleStyle: {
+            fontWeight: 'bold',
           },
-        })}
-      />
-      <Tab.Screen
-        name="Place"
-        component={PlaceScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          headerBackground: () => <GradientHeader />,
+          tabBarBackground: () => <NavGradientBackground />,
+          tabBarActiveTintColor: '#FFF',
+          tabBarInactiveTintColor: '#000',
+          tabBarLabelStyle: {
+            marginBottom: 3,
+          },
+          tabBarStyle: [
+            {
+              paddingTop: width * 0.05,
+              height: width * 0.15,
+              borderTopWidth: 0,
+              elevation: 0,
+              shadowOpacity: 0,
+            },
+            null
+          ]
         }}
-      />
-      <Tab.Screen
-        name="Manage Place"
-        component={ManagePlace}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Create Place"
-        component={CreatePlaceScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Event"
-        component={EventScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Manage Event"
-        component={ManageEvent}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Create Event"
-        component={CreateEventScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Chat List"
-        component={ChatListScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Chat"
-        component={ChatScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarButton: () => null,
-          tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.navigate('Chat List')} />,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="Map"
-        component={Map}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarIcon: () => <Icons name="Map" size={width * 0.085} fill="#CCC" />,
-          headerShown: false,
-          tabBarStyle: { display: 'none' },
-        }}
-      />
-      <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        initialParams={{ userId, userToken }}
-        options={{
-          tabBarIcon: ({ focused }) => <Icons name="Search" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Notifications"
-        initialParams={{ userId, userToken }}
-        component={NotificationsScreen}
-        options={{
-          tabBarIcon: ({ focused }) => <Icons name="Notifications" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Settings"
-        initialParams={{ userId, userToken }}
-        component={SettingsScreen}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        initialParams={{ userToken, id: false }}
-        component={ProfileScreen}
-        options={({ navigation }) => ({
-          tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        })
-        }
-      />
-      <Tab.Screen
-        name="User Profile"
-        initialParams={{ userId, userToken }}
-        component={OtherUserProfileScreen}
-        options={{
-          tabBarButton: () => null,
-          headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-        }}
-      />
-    </Tab.Navigator>
+      >
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          initialParams={{ userId, userToken }}
+          options={({ navigation, route }) => ({
+            tabBarIcon: ({ focused }) => <Icons name="Home" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => {
+              return route.state?.index > 0 ? (
+                <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+              ) : null;
+            },
+          })}
+        />
+        <Tab.Screen
+          name="Place"
+          component={PlaceScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Manage Place"
+          component={ManagePlace}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Create Place"
+          component={CreatePlaceScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Event"
+          component={EventScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Manage Event"
+          component={ManageEvent}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Create Event"
+          component={CreateEventScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Chat List"
+          component={ChatListScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarIcon: ({ focused }) =>
+              <>
+                <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />
+                {unreadMessagesNumber > 0 && <View style={{ paddingHorizontal: 2, borderRadius: 4, backgroundColor: 'red', position: 'absolute', top: -4, right: 8 }}>
+                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{unreadMessagesNumber}</Text>
+                </View>}
+              </>,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Chat"
+          component={ChatScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarButton: () => null,
+            tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.navigate('Chat List')} />,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
+        <Tab.Screen
+          name="Map"
+          component={Map}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarIcon: () => <Icons name="Map" size={width * 0.085} fill="#CCC" />,
+            headerShown: false,
+            tabBarStyle: { display: 'none' },
+          }}
+        />
+        <Tab.Screen
+          name="Search"
+          component={SearchScreen}
+          initialParams={{ userId, userToken }}
+          options={{
+            tabBarIcon: ({ focused }) => <Icons name="Search" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Notifications"
+          initialParams={{ userId, userToken }}
+          component={NotificationsScreen}
+          options={{
+            tabBarIcon: ({ focused }) => <Icons name="Notifications" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Settings"
+          initialParams={{ userId, userToken }}
+          component={SettingsScreen}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          initialParams={{ userToken, id: false }}
+          component={ProfileScreen}
+          options={({ navigation }) => ({
+            tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          })
+          }
+        />
+        <Tab.Screen
+          name="User Profile"
+          initialParams={{ userId, userToken }}
+          component={OtherUserProfileScreen}
+          options={{
+            tabBarButton: () => null,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          }}
+        />
+      </Tab.Navigator>
+    </WebSocketProvider>
   )
 };
 

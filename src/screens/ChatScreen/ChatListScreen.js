@@ -1,7 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
+import { formatDate } from './../../utils/helpers';
 import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
@@ -10,6 +12,33 @@ const ChatListScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
   const [chatRooms, setChatRooms] = useState([]);
   const [onlineStatus, setOnlineStatus] = useState({});
+
+  const { chats } = useChat();
+
+  const UnreadMessagesNumber = ({ number }) => {
+    return (
+      <View
+        style={{
+          paddingHorizontal: width * 0.02,
+          borderRadius: width * 0.02,
+          backgroundColor: 'rgba(49, 130, 206, 0.8)',
+          position: 'absolute',
+          left: '2%',
+          bottom: '20%',
+        }}
+      >
+        <Text
+          style={{
+            fontSize: width * 0.03,
+            color: '#FFF',
+            fontWeight: 'bold',
+          }}
+        >
+          {number}
+        </Text>
+      </View>
+    )
+  }
 
   const fetchChatRooms = async () => {
     try {
@@ -22,7 +51,7 @@ const ChatListScreen = ({ route, navigation }) => {
 
       const onlineStatusData = {};
       data.forEach((chat) => {
-        onlineStatusData[chat.id] = Math.floor(Math.random() * (100 - 50)) + 22 < 50 || chat == data[data.length-1] ? true : false//chat.is_online;
+        onlineStatusData[chat.id] = Math.floor(Math.random() * (100 - 50)) + 22 < 50 || chat == data[data.length - 1] ? true : false//chat.is_online;
       });
       setOnlineStatus(onlineStatusData);
 
@@ -35,13 +64,12 @@ const ChatListScreen = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchChatRooms();
-    }, [userToken])
+    }, [userToken, chats])
   );
 
   return (
-    <KeyboardAvoidingView
+    <View
       style={styles.gradientContainer}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
       <View style={styles.container}>
@@ -49,18 +77,29 @@ const ChatListScreen = ({ route, navigation }) => {
         <FlatList
           data={chatRooms}
           keyExtractor={(chat) => chat.id.toString()}
-          renderItem={({ item: chat }) => {
+          renderItem={({ item: chat, index }) => {
             const isGroupChat = chat.is_group_chat;
+            //if(!chat.participant) return;
             const chatImage = isGroupChat ? null : chat.participant.profile_image?.image;
             const chatName = isGroupChat ? 'Group Chat' : chat.participant_name;
-            const lastMessageText = chat.last_message
-              ? ((chat.last_message.text.length > 85 ? chat.last_message.text.slice(0, 85) + '...' : chat.last_message.text) || (chat.last_message.media ? `[${chat.last_message.media}]` : '[Media]'))
+
+            let lastMessageText = ""
+            if (chats[chat.id] && chats[chat.id].messages) {
+              lastMessageText = chats[chat.id].messages[chats[chat.id].messages.length - 1].text;
+            } else {
+              lastMessageText = chat.last_message.text;
+            }
+
+            lastMessageText = lastMessageText.length
+              ? ((lastMessageText.length > 85 ? lastMessageText.slice(0, 85) + '...' : lastMessageText) || (lastMessageText.media ? `[${lastMessageText.media}]` : '[Media]'))
               : 'No messages yet';
             const isOnline = onlineStatus[chat.id];
             return (
               <TouchableOpacity
                 style={styles.chatRoomBox}
-                onPress={() => navigation.navigate('Chat', { chatId: chat.id, participantId: chat.participant.id, chatImage: chatImage, chatName: chatName })}
+                onPress={() => {
+                  navigation.navigate('Chat', { chatId: chat.id, participantId: chat.participant.id, chatImage: chatImage, chatName: chatName })
+                }}
               >
                 {chatImage && !isGroupChat && (
                   <Image
@@ -68,20 +107,26 @@ const ChatListScreen = ({ route, navigation }) => {
                     style={styles.chatImage}
                   />
                 )}
+                {chats[chat.id] && chats[chat.id].unread > 0 && <UnreadMessagesNumber number={chats[chat.id].unread} />}
                 <View style={styles.chatTextContainer}>
                   <Text style={styles.chatRoomText}>{chatName}</Text>
                   <Text style={styles.chatRoomDetailText}>{lastMessageText}</Text>
                 </View>
 
-                {isOnline && (
-                  <View style={styles.onlineDot}></View>
-                )}
+                <View
+                  style={styles.chatRoomRightBlock}
+                >
+                  <Text style={styles.chatRoomDetailLastMessageTime}>{formatDate(chat.last_message.created_at)}</Text>
+                  {isOnline && (
+                    <View style={styles.onlineDot}></View>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           }}
         />
       </View>
-    </KeyboardAvoidingView>
+    </View>
   );
 };
 
@@ -120,12 +165,23 @@ const styles = StyleSheet.create({
     height: width * 0.11,
     borderRadius: 25,
   },
+  chatRoomRightBlock: {
+    minWidth: width * 0.1,
+    height: width * 0.1,
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  chatRoomDetailLastMessageTime: {
+    color: '#FFF',
+    fontSize: width*0.028,
+    marginRight: 5,
+  },
   onlineDot: {
     width: 10,
     height: 10,
+    marginLeft: 'auto',
     backgroundColor: 'green',
     borderRadius: 5,
-    marginRight: 10,
   },
 });
 

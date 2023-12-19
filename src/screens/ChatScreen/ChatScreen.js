@@ -1,84 +1,34 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useWebSocket } from './../../services/WebSocketsContext';
+import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
+import { formatDate } from './../../utils/helpers';
 import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
 
-const ChatListScreen = ({ route, navigation }) => {
-  const { userToken, userId, chatId, participantId, chatImage, chatName } = route.params;
-  const [messages, setMessages] = useState([]);
+const ChatScreen = ({ route, navigation }) => {
+  const { chats, markMessagesAsRead, handleNewMessage } = useChat();
+  const { userToken, userId, participantId, chatImage, chatName } = route.params;
+  const [chatId, setChatId] = useState(false);
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const [webSocket, setWebSocket] = useState(null);
-  useFocusEffect(
-    useCallback(() => {
-      setMessages([]);
-      if (chatId || messages.length) {
-        fetchMessages();
-        // Establish WebSocket connection
-        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/chat/${chatId}/?token=${userToken}`);
-        ws.onopen = () => {
-          setWebSocket(ws);
-        };
-        ws.onmessage = (e) => {
-          // Handle incoming messages
-          const message = JSON.parse(e.data);
-          setMessages(previousMessages => [message, ...previousMessages]);
-        };
-        ws.onerror = (e) => {
-          console.error('WebSocket Error', e.message);
-        };
-        ws.onclose = (e) => {
-          setWebSocket(null);
-        };
-        return () => {
-          // Close WebSocket connection when component loses focus
-          if (ws) {
-            setMessages([]);
-            ws.close();
-          }
-        };
-      }
-    }, [chatId, userToken])
-  );
-  const sendMessage = async () => {
-    if (input.trim() === '') return;
+  const { webSocket, sendMessage } = useWebSocket();
+
+  webSocket.onmessage = (e) => {
     try {
-      // Send message via WebSocket
-      if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-        webSocket.send(JSON.stringify({ text: input }));
-        setInput('');
-      } else {
-        try {
-          const response = await fetch('http://192.168.0.118:8000/api/chatrooms/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Token ${userToken}`,
-            },
-            body: JSON.stringify({
-              participant_id: participantId,
-              text: input,
-            }),
-          });
-          const newMessage = await response.json();
-          if (response.ok) {
-            setMessages(previousMessages => [newMessage, ...previousMessages]);
-            setInput('');
-          } else {
-            console.error('Error in response:', newMessage);
-          }
-        } catch (error) {
-          console.error('Error sending message:', error);
-        }
+      const message = JSON.parse(e.data);
+      if (!chatId && !Object.keys(chats).includes(message.chat_room)) {
+        setChatId(message.chat_room);
       }
+      handleNewMessage(message);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error parsing WebSocket message:', error);
     }
   };
 
@@ -90,14 +40,19 @@ const ChatListScreen = ({ route, navigation }) => {
         },
       });
       const data = await response.json();
-      setMessages(data.reverse());
+      //console.log(data)
+      //setMessages(data.reverse());
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
   };
 
+  useEffect(() => {
+    setChatId(route.params.chatId || false);
+  }, [route.params.chatId]);
 
   useEffect(() => {
+
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
       () => setKeyboardVisible(true),
@@ -123,12 +78,15 @@ const ChatListScreen = ({ route, navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      setMessages([]);
       if (chatId) {
         fetchMessages();
       }
+      return () => {
+        markMessagesAsRead(chatId);
+      };
     }, [chatId])
   );
+
 
   return (
     <KeyboardAvoidingView style={styles.gradientContainer}>
@@ -144,17 +102,20 @@ const ChatListScreen = ({ route, navigation }) => {
           />
           <Text style={styles.chatName}>{chatName}</Text>
         </View>
-        <FlatList
-          data={messages}
+        {chats[chatId] && chats[chatId].messages && <FlatList
+          data={[...chats[chatId].messages].reverse()}
           ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
+              <Text style={{ color: item.sender === userId ? '#BBB' : '#888', position: 'absolute', right: 5, bottom: 1, fontSize: 7 }}>
+                {formatDate(item.created_at)}
+              </Text>
             </View>
           )}
           inverted
-        />
+        />}
       </View>
       <View style={styles.inputContainer}>
         <TextInput
@@ -164,7 +125,12 @@ const ChatListScreen = ({ route, navigation }) => {
           placeholder="Type a message"
           placeholderTextColor="#A0AEC0"
         />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+        <TouchableOpacity style={styles.sendButton} onPress={() => {
+          if (input.trim() !== '') {
+            sendMessage(chatId ? { text: input, chat_room_id: chatId } : { text: input, participant_id: participantId });
+            setInput('');
+          }
+        }}>
           <Icons name="SendMessage" size={width * 0.07} />
         </TouchableOpacity>
       </View>
@@ -205,7 +171,10 @@ const styles = StyleSheet.create({
     textShadowRadius: 10,
   },
   messageBox: {
-    padding: 10,
+    minWidth: '18%',
+    padding: 5,
+    paddingBottom: 10,
+    paddingHorizontal: 10,
     marginVertical: 3,
     borderRadius: 10,
     maxWidth: '70%',
@@ -271,4 +240,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatListScreen;
+export default ChatScreen;
