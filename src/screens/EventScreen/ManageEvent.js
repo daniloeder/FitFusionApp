@@ -6,6 +6,7 @@ import UploadPicker from '../../components/UploadPicker/UploadPicker.js';
 import ShowMedia from '../../components/ShowMedia/ShowMedia.js';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons.js';
+import QRScanner from '../../components/QRScanner/QRScanner.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import { BASE_URL } from '@env';
 
@@ -17,6 +18,7 @@ const EventScreen = ({ route, navigation }) => {
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
   const [userImages, setUserImages] = useState([]);
@@ -27,6 +29,9 @@ const EventScreen = ({ route, navigation }) => {
   const [preview, setPreview] = useState(route.params.eventPreview);
 
   const eventId = route.params.eventId;
+
+  const [userPayments, setUserPayments] = useState(false);
+  const [scannedUserData, setScannedUserData] = useState(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,6 +141,55 @@ const EventScreen = ({ route, navigation }) => {
       uploadEventImages();
     }
   };
+
+  const ScannedUserModal = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={scannedUserModalVisible}
+        onRequestClose={() => {
+          setScannedUserModalVisible(false);
+          setScannedUserData(null);
+          setUserPayments(null);
+        }}
+      >
+        <View style={styles.participantManagerModalContainer}>
+          <View style={[styles.participantManagerModalContent, { backgroundColor: userPayments && userPayments.payments ? userPayments.regular ? '#98FB98' : '#B22222' : "#FFF" }]}>
+            <Text style={styles.participantManagerModalTitle}>Participant Data</Text>
+
+            <View style={{ width: '100%', minHeight: width }}>
+              {scannedUserData ?
+                <ScrollView style={{ width: '100%' }}>
+
+                  {!userPayments || userPayments.participant || (userPayments.payments) ?
+                    <ManageUsers userToken={userToken} userIds={[scannedUserData.id]} placeId={placeId} setUserPayments={!userPayments ? setUserPayments : undefined} />
+                    :
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a participant of this Place.</Text>
+                  }
+
+                </ScrollView>
+                :
+                <QRScanner setScannedUserData={setScannedUserData} />
+              }
+            </View>
+
+            <TouchableOpacity
+              style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+              onPress={() => {
+                setScannedUserModalVisible(false);
+                setScannedUserData(null);
+                setUserPayments(null);
+              }}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const uploadEventImages = async () => {
     try {
       // Filter out already uploaded images and only keep new ones
@@ -215,10 +269,36 @@ const EventScreen = ({ route, navigation }) => {
         overScrollMode="never"
       >
 
+        <View style={{ flexDirection: 'row' }}>
+          {event.creator == userId ?
+            <Pressable
+              onPress={() => {
+                setScannedUserModalVisible(true);
+                //fetchPayments(33);
+              }}
+              style={[styles.createEventButton, { height: 'auto', width: width * 0.3, position: 'absolute', maxWidth: width * 0.3, flexDirection: 'column', padding: width * 0.05, marginTop: width * 0.03 }]}
+            >
+              <Icons name="Camera" size={width * 0.08} />
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Scan User</Text>
+            </Pressable>
+            : ''
+          }
+          {event.creator == userId ?
+            <Pressable
+              onPress={() => setParticipantManagerModalVisible(true)}
+              style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
+            >
+              <Icons name="ParticipantEdit" size={width * 0.08} />
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Manager</Text>
+            </Pressable>
+            : ''
+          }
+        </View>
+
         {event.creator ?
           <Pressable
             onPress={{}}
-            style={[styles.createEventButton, { marginTop: width * 0.03 }]}
+            style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
           >
             <Icons name="ParticipantRequest" size={width * 0.08} />
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Requests</Text>
@@ -226,6 +306,7 @@ const EventScreen = ({ route, navigation }) => {
           : ''
         }
 
+        <ScannedUserModal />
         {event.creator == userId ?
           <Pressable
             onPress={() => {
@@ -240,7 +321,7 @@ const EventScreen = ({ route, navigation }) => {
                 }
               })
             }}
-            style={[styles.createEventButton, { marginTop: width * 0.03 }]}
+            style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
           >
             <Icons name="Edit" size={width * 0.06} />
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Event</Text>
@@ -518,6 +599,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+
+  // Styles for Participant Manager Modal
+  participantManagerModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  participantManagerModalContent: {
+    width: '96%',
+    maxHeight: '90%',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  participantManagerModalTitle: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
   participantName: {
     fontSize: width * 0.04,
     color: '#A0AEC0',

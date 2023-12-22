@@ -71,6 +71,8 @@ import Swimming from './../../../assets/icons/sports/Swimming.svg';
 import SendMessage from './../../../assets/icons/sendMessage.svg';
 import ParticipantRequest from './../../../assets/icons/participantRequest.svg';
 import ParticipantEdit from './../../../assets/icons/participantEdit.svg';
+import Camera from './../../../assets/icons/camera.svg';
+import QRCode from './../../../assets/icons/qrcode.svg';
 
 const Icons = ({
   name,
@@ -154,6 +156,8 @@ const Icons = ({
     SendMessage: SendMessage,
     ParticipantRequest: ParticipantRequest,
     ParticipantEdit: ParticipantEdit,
+    Camera: Camera,
+    QRCode: QRCode,
 
   }[name];
 

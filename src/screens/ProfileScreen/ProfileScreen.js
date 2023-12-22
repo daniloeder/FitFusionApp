@@ -9,6 +9,7 @@ import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import * as DocumentPicker from 'expo-document-picker';
+import QRGenerator from '../../components/QRScanner/QRGenerator';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
 
@@ -37,6 +38,7 @@ const ProfileScreen = ({ route }) => {
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [editImages, setEditImages] = useState(false);
+  const [showQRCode, setShowQRCode] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -257,6 +259,31 @@ const ProfileScreen = ({ route }) => {
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showQRCode}
+        onRequestClose={() => setShowQRCode(false)}
+      >
+        <View style={styles.QRCodeModalContainer}>
+          <View style={styles.QRCodeModalContent}>
+            <Text style={styles.QRCodeModalTitle}>@{profile.username} QR Code</Text>
+
+            <QRGenerator object={{ type: 'fit_fusion_user', id: profile.id }} />
+
+            <TouchableOpacity
+              style={{ backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }}
+              onPress={() => {
+                setShowQRCode(false);
+              }}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView
         style={styles.contentContainer}
         showsVerticalScrollIndicator={false}
@@ -271,10 +298,30 @@ const ProfileScreen = ({ route }) => {
         </Pressable>
 
         <View style={styles.profileHeader}>
-          <Image
-            style={styles.avatar}
-            source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
-          />
+          <View style={{ width: '100%', alignItems: 'center' }}>
+            <Image
+              style={styles.avatar}
+              source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
+            />
+            <TouchableOpacity
+              style={{
+                width: width * 0.15,
+                height: width * 0.15,
+                borderRadius: 4,
+                backgroundColor: '#FFF',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'absolute',
+                left: 0,
+                bottom: width * 0.08,
+              }}
+              onPress={() => {
+                setShowQRCode(true);
+              }}
+            >
+              <Icons name="QRCode" size={width * 0.15} />
+            </TouchableOpacity>
+          </View>
           {editProfile ? (
             <>
               <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
@@ -649,6 +696,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     textAlign: 'left',
+  },
+
+  //QR Modal
+  QRCodeModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  QRCodeModalContent: {
+    width: '80%',
+    maxHeight: '90%',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  QRCodeModalTitle: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 });
 

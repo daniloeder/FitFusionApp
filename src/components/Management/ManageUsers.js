@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Dimensions, Image } from 'react-native';
 import DatePicker from '../Forms/DatePicker';
+import Icons from '../Icons/Icons';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
@@ -157,7 +158,7 @@ const UserPayments = ({ userToken, payments }) => {
             })
             }
 
-            {payments.length ?
+            {payments && payments.length ?
                 <TouchableOpacity
                     style={styles.editButton}
                     onPress={() => setShowPayment(!showPayment)}
@@ -172,7 +173,7 @@ const UserPayments = ({ userToken, payments }) => {
     );
 };
 
-const ManageUsers = ({ userToken, userIds, placeId }) => {
+const ManageUsers = ({ userToken, userIds, placeId, setUserPayments }) => {
     const [payments, setPayments] = useState([]);
     const [usersImages, setUserImages] = useState([]);
 
@@ -204,6 +205,11 @@ const ManageUsers = ({ userToken, userIds, placeId }) => {
             } catch (error) {
                 console.error('Error:', error);
             }
+
+            print('setUserPayments && payments.length === 0 && fetchedPayments.length', setUserPayments && payments.length === 0 && fetchedPayments.length)
+            if(setUserPayments && payments.length === 0 && fetchedPayments.length){
+                setUserPayments(fetchedPayments[0]);
+            }
             setPayments(fetchedPayments);
         };
 
@@ -227,10 +233,16 @@ const ManageUsers = ({ userToken, userIds, placeId }) => {
                     >
                         <View style={styles.row}>
 
-                            {usersImages.length > index && usersImages[index].success && <Image style={{ width: 35, height: 35, marginRight: 5 }}
+                            {usersImages.length > index && usersImages[index].success ?
+                            <Image style={{ width: 35, height: 35, marginRight: 5 }}
                                 source={{ uri: `data:image/jpeg;base64,${usersImages[index].profile_image}` }}
                                 onError={(error) => console.error('Image Error:', error)}
-                            />}
+                            />
+                            :
+                            <View>
+                                <Icons name="Profile" size={40} fill={'#1C274C'} />
+                            </View>
+                        }
                             <Text style={styles.label}>{usersImages[index].name}</Text>
                             <TouchableOpacity
                                 onPress={() => {}}
