@@ -64,7 +64,7 @@ const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages
         <View style={styles.container}>
             {selectedImages && selectedImages.map((media, index) => (
                 <View key={index} style={[styles.imageContainer, { width: size, height: size }]}>
-                    <Image source={{ uri: media.image_id ? BASE_URL + `/${media.image}` : media.uri }} style={styles.image} />
+                    <Image source={{ uri: media.image_id ? BASE_URL + `${media.image}` : media.uri }} style={styles.image} />
                     <Pressable
                         style={[styles.closeIcon, styles.icons]}
                         onPress={() => onDeleteImage(index)}

@@ -8,6 +8,7 @@ import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
+import CustomPicker from '../../components/CustomPicker/CustomPicker';
 import * as DocumentPicker from 'expo-document-picker';
 import QRGenerator from '../../components/QRScanner/QRGenerator';
 import { SportsNames, SportsTypes } from '../../utils/sports';
@@ -61,7 +62,7 @@ const ProfileScreen = ({ route }) => {
         }
       }
       if (data.profile_image && data.profile_image.image) {
-        setCurrentImage(BASE_URL + '/' + data.profile_image.image);
+        setCurrentImage(BASE_URL + data.profile_image.image);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -303,24 +304,15 @@ const ProfileScreen = ({ route }) => {
               style={styles.avatar}
               source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
             />
+            { !editProfile &&
             <TouchableOpacity
-              style={{
-                width: width * 0.15,
-                height: width * 0.15,
-                borderRadius: 4,
-                backgroundColor: '#FFF',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'absolute',
-                left: 0,
-                bottom: width * 0.08,
-              }}
+              style={styles.QRButton}
               onPress={() => {
                 setShowQRCode(true);
               }}
             >
               <Icons name="QRCode" size={width * 0.15} />
-            </TouchableOpacity>
+            </TouchableOpacity>}
           </View>
           {editProfile ? (
             <>
@@ -507,7 +499,7 @@ const ProfileScreen = ({ route }) => {
                     <View key={index}
                       style={styles.userImagesItems}
                     >
-                      <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                      <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                     </View>
                   )
                 })}
@@ -543,6 +535,17 @@ const styles = StyleSheet.create({
     height: width * 0.4,
     borderRadius: width * 0.2,
     marginBottom: width * 0.08,
+  },
+  QRButton: {
+    width: width * 0.15,
+    height: width * 0.15,
+    borderRadius: 4,
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    left: 0,
+    bottom: width * 0.08,
   },
   name: {
     fontSize: width * 0.06,
