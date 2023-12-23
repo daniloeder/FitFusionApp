@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useReducer } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Dimensions, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
+import SportsItems from '../../components/SportsItems/SportsItems.js';
 import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
 
@@ -17,6 +18,8 @@ const HomeScreen = ({ route, navigation }) => {
   const [userLocation, setUserLocation] = useState(null);
   const [closerUsers, setCloserUsers] = useState(null);
   const [closerUsersPicture, setCloserUsersPicture] = useState(null);
+  const [closerPlaces, setCloserPlaces] = useState(null);
+  const [closerEvents, setCloserEvents] = useState(null);
 
   const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
@@ -57,7 +60,47 @@ const HomeScreen = ({ route, navigation }) => {
     return null;
   };
 
-  const fetchProfile = async () => {
+  const fetchNearbyPlaces = async (userToken, location) => {
+    try {
+      const distance = 1000 * 2;
+      const response = await fetch(BASE_URL + `/api/places/nearby-places/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${userToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setCloserPlaces(data);
+      }
+    } catch (error) {
+      console.error('Error fetching nearby users:', error);
+    }
+    return null;
+  };
+
+  const fetchNearbyEvents = async (userToken, location) => {
+    try {
+      const distance = 1000 * 2;
+      const response = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Token ${userToken}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setCloserEvents(data);
+      }
+    } catch (error) {
+      console.error('Error fetching nearby users:', error);
+    }
+    return null;
+  };
+
+  const fetchHome = async () => {
     try {
       const response = await fetch(BASE_URL + '/api/users/home', {
         method: 'GET',
@@ -83,7 +126,7 @@ const HomeScreen = ({ route, navigation }) => {
     fetchAuthToken()
       .then((userToken) => {
         if (userToken) {
-          fetchProfile();
+          fetchHome();
 
           fetchData('@userLocation')
             .then((fetchedLocation) => {
@@ -102,6 +145,8 @@ const HomeScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (userLocation) {
       fetchNearbyUsers(userToken, userLocation);
+      fetchNearbyPlaces(userToken, userLocation);
+      fetchNearbyEvents(userToken, userLocation);
     }
   }, [data]);
 
@@ -128,7 +173,7 @@ const HomeScreen = ({ route, navigation }) => {
                 <Text style={styles.placeTitle}>{place.name}</Text>
                 {place.events.map((event) => (
                   <View key={event.id}>
-                    <Pressable
+                    <TouchableOpacity
                       style={styles.eventButton}
                       onPress={() => {
                         navigation.navigate('Event', { eventId: event.id });
@@ -137,24 +182,24 @@ const HomeScreen = ({ route, navigation }) => {
                       <Text style={styles.buttonText}>{event.title}</Text>
                       <Text style={styles.eventDate}>Date: {event.date}</Text>
                       <Text style={styles.eventDate}>Time: {event.time}</Text>
-                    </Pressable>
+                    </TouchableOpacity>
                   </View>
                 ))}
-                <Pressable
+                <TouchableOpacity
                   style={styles.viewPlaceButton}
                   onPress={() => {
                     navigation.navigate('Place', { placeId: place.id });
                   }}
                 >
                   <Text style={styles.buttonText}>View Place</Text>
-                </Pressable>
+                </TouchableOpacity>
               </View>
             ))}
 
             {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
             {joinedEvents.map((event) => (
               <View key={event.id} style={styles.joinedEventItem}>
-                <Pressable
+                <TouchableOpacity
                   style={styles.joinedEventButton}
                   onPress={() => {
                     navigation.navigate('Event', { eventId: event.id });
@@ -163,25 +208,25 @@ const HomeScreen = ({ route, navigation }) => {
                   <Text style={styles.joinedEventTitle}>{event.title}</Text>
                   <Text style={styles.eventDate}>Date: {event.date}</Text>
                   <Text style={styles.eventDate}>Time: {event.time}</Text>
-                  <Text style={[styles.eventDate, {fontSize:width*0.03}]}>Location: {event.location}</Text>
+                  <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {event.location}</Text>
                   {event.payments && !event.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>{`Late payment by ${-event.payments.days_until_next} days`}</Text>}
-                </Pressable>
+                </TouchableOpacity>
               </View>
             ))}
 
             {joinedPlaces.length ? <Text style={styles.subtitle}>Places I've Joined:</Text> : ''}
             {joinedPlaces.map((place) => (
               <View key={place.id} style={styles.joinedEventItem}>
-                <Pressable
+                <TouchableOpacity
                   style={styles.joinedEventButton}
                   onPress={() => {
                     navigation.navigate('Place', { placeId: place.id });
                   }}
                 >
                   <Text style={styles.joinedEventTitle}>{place.name}</Text>
-                  <Text style={[styles.eventDate, {fontSize:width*0.03}]}>Location: {place.location}</Text>
+                  <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
                   {place.payments && !place.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>{`Late payment by ${-place.payments.days_until_next} days`}</Text>}
-                </Pressable>
+                </TouchableOpacity>
               </View>
             ))}
           </>
@@ -197,13 +242,13 @@ const HomeScreen = ({ route, navigation }) => {
                 <Text style={styles.updatesMessageText}>
                   You Can Now See The Updates Around You:
                 </Text>
-                <Pressable
+                <TouchableOpacity
                   style={styles.mapButton}
                   onPress={() => navigation.navigate('Map')}
                 >
                   <Text style={styles.mapButtonText}>Check on Map</Text>
                   <Icons name="Map" size={width * 0.06} />
-                </Pressable>
+                </TouchableOpacity>
               </>
               : ''
             }
@@ -211,68 +256,136 @@ const HomeScreen = ({ route, navigation }) => {
         }
 
         {closerUsers ?
-          <View style={styles.closerUsersContainer}>
-            {closerUsers.slice(0, 8).map((user, index) => {
-              return (
-                <View key={index} style={styles.userCard}>
-                  <Pressable
-                    onPress={() => {
-                      navigation.navigate('User Profile', { id: user.id })
-                    }}
-                    style={[styles.userCardInner, { borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD' }]}
-                  >
-                    {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
-                      <Image
-                        source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
-                        style={styles.userImage}
-                        onError={(error) => console.error('Image Error:', error)}
-                      />
-                      :
-                      <Icons name="Profile" size={width * 0.14} />
-                    }
+          <>
+            {places.length ? <Text style={styles.subtitle}>Near Users:</Text> : ''}
+            <View style={styles.closerUsersContainer}>
+              {closerUsers.slice(0, 8).map((user, index) => {
+                return (
+                  <View key={index} style={styles.userCard}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        navigation.navigate('User Profile', { id: user.id })
+                      }}
+                      style={[styles.userCardInner, { borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD' }]}
+                    >
+                      {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
+                        <Image
+                          source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
+                          style={styles.userImage}
+                          onError={(error) => console.error('Image Error:', error)}
+                        />
+                        :
+                        <Icons name="Profile" size={width * 0.14} />
+                      }
 
-                    <View style={styles.userCardIcons}>
-                      {user.favorite_sports.slice(0, 3).map((sport, index) => {
-                        return (
-                          <View key={sport} style={[styles.favoriteSportIcon, index === 1 ? styles.favoriteSportIconSpecial : {}]}>
-                            <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
-                          </View>
-                        )
-                      })}
-                    </View>
-                  </Pressable>
-                  <Text style={styles.usernameText}>{user.username}</Text>
-                </View>
-              )
-            })}
-          </View>
+                      <View style={styles.userCardIcons}>
+                        {user.favorite_sports.slice(0, 3).map((sport, index) => {
+                          return (
+                            <View key={sport} style={[styles.favoriteSportIcon, index === 1 ? styles.favoriteSportIconSpecial : {}]}>
+                              <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
+                            </View>
+                          )
+                        })}
+                      </View>
+                    </TouchableOpacity>
+                    <Text style={styles.usernameText}>{user.username}</Text>
+                  </View>
+                )
+              })}
+            </View>
+          </>
           : ''
         }
 
-        <Pressable
+        {closerPlaces && closerPlaces.length ? <Text style={styles.subtitle}>Near Places:</Text> : ''}
+        <View style={styles.nearPlacesContainer}>
+          {closerPlaces &&
+            closerPlaces.slice(0, 4).map((place, index) => {
+              return (
+                <TouchableOpacity key={index}
+                  onPress={() => navigation.navigate('Place', { placeId: place.id })}
+                  style={styles.nearPlacesItem}
+                >
+                  <Text style={styles.nearPlacesNameText}>
+                    {place.name}
+                  </Text>
+                  <Text style={styles.nearPlacesDescriptionText}>
+                    {place.description}
+                  </Text>
+                  <Text style={styles.nearPlacesLocationText}>
+                    Location: {place.location}
+                  </Text>
+                  {place.sport_types_keys && place.sport_types_keys.length ? (
+                    <View>
+                      <Text style={styles.nearPlacesSportTypesText}>
+                        Favorite Sports:
+                      </Text>
+                      <SportsItems
+                        favoriteSports={place.sport_types_keys}
+                      />
+                    </View>
+                  ) : (
+                    ''
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+        </View>
+
+        {closerEvents && closerEvents.length ? <Text style={styles.subtitle}>Near Events:</Text> : ''}
+        <View style={styles.nearPlacesContainer}>
+          {closerEvents &&
+            closerEvents.slice(0, 4).map((event, index) => {
+              return (
+                <View key={event.id}>
+                  <TouchableOpacity
+                    style={styles.eventButton}
+                    onPress={() => {
+                      navigation.navigate('Event', { eventId: event.id });
+                    }}
+                  >
+                    <Text style={styles.buttonText}>{event.title}</Text>
+                    <Text style={styles.eventDate}>Date: {event.date}</Text>
+                    <Text style={styles.eventDate}>Time: {event.time}</Text>
+
+                    <View style={{alignSelf:'flex-start',marginLeft:10,marginRight:0}}>
+                      <Text style={[styles.nearPlacesSportTypesText, {marginRight:10}]}>
+                        Sports:
+                      </Text>
+                      <SportsItems
+                        favoriteSports={event.sport_types_keys}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+        </View>
+
+        <TouchableOpacity
           style={styles.createButton}
           onPress={() => {
             navigation.navigate('Create Event');
           }}
         >
           <Text style={styles.createButtonText}>Create Event</Text>
-        </Pressable>
-        <Pressable
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.createButton}
           onPress={() => {
             navigation.navigate('Create Place');
           }}
         >
           <Text style={styles.createButtonText}>Create Place</Text>
-        </Pressable>
-        <Pressable
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.viewProfileButton}
           onPress={() => {
             navigation.navigate('Profile');
           }}
         >
           <Text style={styles.viewProfileButtonText}>View Profile</Text>
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -320,7 +433,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.03,
     marginBottom: '4%',
     marginLeft: '8%',
-    backgroundColor: 'rgba(50, 50, 50, 0.6)',
+    backgroundColor: 'rgba(0, 128, 128, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -468,6 +581,42 @@ const styles = StyleSheet.create({
   usernameText: {
     color: '#FFF',
     fontWeight: 'bold',
+    marginBottom: 'auto',
+  },
+
+  nearPlacesContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    padding: width * 0.02,
+    paddingBottom: 0,
+    borderRadius: width * 0.02,
+  },
+  nearPlacesItem: {
+    width: '100%',
+    marginBottom: width * 0.025,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: width * 0.02,
+    padding: width * 0.02,
+  },
+  nearPlacesNameText: {
+    color: 'white',
+    fontSize: width * 0.04,
+    fontWeight: 'bold',
+  },
+  nearPlacesDescriptionText: {
+    color: 'white',
+    fontSize: width * 0.03,
+    marginTop: 2,
+  },
+  nearPlacesLocationText: {
+    color: 'white',
+    fontSize: width * 0.03,
+    marginTop: 8,
+  },
+  nearPlacesSportTypesText: {
+    color: 'white',
+    fontSize: width * 0.03,
+    marginTop: 8,
   },
 });
 
