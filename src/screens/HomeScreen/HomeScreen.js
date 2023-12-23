@@ -299,7 +299,7 @@ const HomeScreen = ({ route, navigation }) => {
 
         {closerPlaces && closerPlaces.length ? <Text style={styles.subtitle}>Near Places:</Text> : ''}
         <View style={styles.nearPlacesContainer}>
-          {closerPlaces &&
+          {closerPlaces && closerPlaces.length &&
             closerPlaces.slice(0, 4).map((place, index) => {
               return (
                 <TouchableOpacity key={index}
@@ -334,7 +334,7 @@ const HomeScreen = ({ route, navigation }) => {
 
         {closerEvents && closerEvents.length ? <Text style={styles.subtitle}>Near Events:</Text> : ''}
         <View style={styles.nearPlacesContainer}>
-          {closerEvents &&
+          {closerEvents && closerEvents.length &&
             closerEvents.slice(0, 4).map((event, index) => {
               return (
                 <View key={event.id}>
@@ -344,11 +344,11 @@ const HomeScreen = ({ route, navigation }) => {
                       navigation.navigate('Event', { eventId: event.id });
                     }}
                   >
-                    <Text style={styles.buttonText}>{event.title}</Text>
+                    <Text style={[styles.buttonText, {alignSelf:'center',maxWidth:width*0.7}]}>{event.title}</Text>
                     <Text style={styles.eventDate}>Date: {event.date}</Text>
                     <Text style={styles.eventDate}>Time: {event.time}</Text>
 
-                    <View style={{alignSelf:'flex-start',marginLeft:10,marginRight:0}}>
+                    <View>
                       <Text style={[styles.nearPlacesSportTypesText, {marginRight:10}]}>
                         Sports:
                       </Text>
@@ -429,12 +429,12 @@ const styles = StyleSheet.create({
   },
   eventButton: {
     width: '100%',
+    padding: width*0.02,
     minHeight: width * 0.05,
     borderRadius: width * 0.03,
     marginBottom: '4%',
     marginLeft: '8%',
     backgroundColor: 'rgba(0, 128, 128, 0.35)',
-    alignItems: 'center',
     justifyContent: 'center',
   },
   buttonText: {
