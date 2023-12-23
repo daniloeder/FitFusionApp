@@ -88,7 +88,7 @@ const ProfileScreen = ({ route }) => {
                         <View style={styles.profileHeader}>
                             <Image
                                 style={styles.avatar}
-                                source={{ uri: profile.profile_image ? BASE_URL + '/' + profile.profile_image.image : 'https://via.placeholder.com/150' }}
+                                source={{ uri: profile.profile_image ? BASE_URL + profile.profile_image.image : 'https://via.placeholder.com/150' }}
                             />
                             <Text style={styles.username}>@{profile.username}</Text>
                             <Text style={styles.name}>{profile.name}</Text>
@@ -147,7 +147,7 @@ const ProfileScreen = ({ route }) => {
                                         <View key={index}
                                             style={styles.userImagesItems}
                                         >
-                                            <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                                            <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                                         </View>
                                     )
                                 })}
