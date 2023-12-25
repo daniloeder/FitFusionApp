@@ -27,6 +27,9 @@ const EventScreen = ({ route, navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
+      setEvent(null);
+      setJoined(false);
+      setParticipants([]);
       fetchEvent();
     }, [])
   );
@@ -271,7 +274,7 @@ const EventScreen = ({ route, navigation }) => {
                 <View key={index}
                   style={styles.userImagesItems}
                 >
-                  <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                  <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                 </View>
               )
             })}
@@ -305,7 +308,7 @@ const EventScreen = ({ route, navigation }) => {
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
               >
                 <ShowMedia
-                  media={preview ? event.videos : BASE_URL + `/${event.place_videos[0].video}`}
+                  media={preview ? event.videos : BASE_URL + `${event.place_videos[0].video}`}
                   isVideo={true}
                   style={{ width: width, height: width * (9 / 16) }}
                 />

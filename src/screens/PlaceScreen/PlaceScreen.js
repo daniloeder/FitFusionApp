@@ -14,7 +14,7 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const { userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
-    const placeId = 1//route.params.placeId;
+    const placeId = route.params.placeId;
     const [joined, setJoined] = useState('none');
     const [participants, setParticipants] = useState([]);
     const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
@@ -227,7 +227,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                                    <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}
@@ -261,7 +261,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
                             >
                                 <ShowMedia
-                                    media={BASE_URL + `/${place.place_videos[0].video}`}
+                                    media={BASE_URL + `${place.place_videos[0].video}`}
                                     isVideo={true}
                                     style={{ width: width, height: width * (9 / 16) }}
                                 />
