@@ -74,6 +74,8 @@ import ParticipantEdit from './../../../assets/icons/participantEdit.svg';
 import Camera from './../../../assets/icons/camera.svg';
 import QRCode from './../../../assets/icons/qrcode.svg';
 
+import GradientCircle from './../../../assets/icons/gradientCircle.svg';
+
 const Icons = ({
   name,
   size = 15,
@@ -158,6 +160,8 @@ const Icons = ({
     ParticipantEdit: ParticipantEdit,
     Camera: Camera,
     QRCode: QRCode,
+
+    GradientCircle: GradientCircle,
 
   }[name];
 

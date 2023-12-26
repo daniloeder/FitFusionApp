@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
-import MapView, { Marker, Callout, Circle } from 'react-native-maps';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
+import Svg, { Circle, RadialGradient, Stop } from 'react-native-svg';
 import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
 import { SportsNames } from '../../utils/sports';
 import Icons from '../../components/Icons/Icons';
@@ -49,17 +50,6 @@ const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
     </View>
   )
 }
-
-const CircleOverlay = ({ centerCoordinates, radius }) => {
-  return (
-    <Circle
-      center={centerCoordinates}
-      radius={radius}
-      fillColor="rgba(0, 0, 255, 0.1)" // You can customize the circle color and opacity here
-      strokeColor="rgba(0, 0, 255, 1)" // You can customize the circle border color and opacity here
-    />
-  );
-};
 
 const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   return (
@@ -319,14 +309,31 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
           const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
           return (
-            <Marker key={place.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Gym" size={width * 0.08} />
+            <Marker key={place.id} coordinate={{ latitude, longitude }} style={{ width: width * 0.1, height: width * 0.08, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{
+                alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
+                flexWrap: 'wrap',
+              }}>
+                <Icons name="GradientCircle" size={width * 0.08} style={{ position: 'absolute' }} fill="#1C274C" />
+                {place.sport_types_keys.slice(0, 3).map((sport) =>
+                  <Icons key={sport} name={iconNamesByIndex[(sport - 1)]} size={width * (0.035 + (place.sport_types_keys.length > 2 ? 0 : place.sport_types_keys.length > 1 ? 0.006 : 0.02))} style={{ margin: '2%' }} />
+                )}
+              </View>
               <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
                 navigation.navigate('Place', { placeId: place.id })
               }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{place.name}</Text>
                   <Text style={styles.calloutSubtitle}>Location: {place.location}</Text>
+                  <Text style={styles.calloutSubtitle}>Sports:</Text>
+                  {place.sport_types_keys.slice(0, 3).map((sport, index) =>
+                    <View key={sport} style={styles.userSportsList}>
+                      <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
+                      <Text style={[styles.calloutSubtitle, { marginLeft: '5%' }]}>
+                        {SportsNames([sport])}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </Callout>
             </Marker>
@@ -336,16 +343,32 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
           const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
           return (
-            <Marker key={event.id} coordinate={{ latitude, longitude }}>
-              <Icons name="Events" size={width * 0.08} />
+            <Marker key={event.id} coordinate={{ latitude, longitude }} style={{ width: width * 0.08, height: width * 0.08, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{
+                alignItems: 'center', justifyContent: 'center', flexDirection: 'row',
+                flexWrap: 'wrap',
+              }}>
+                <Icons name="GradientCircle" size={width * 0.08} style={{ position: 'absolute' }} fill="#991B1B" />
+                {event.sport_types_keys.slice(0, 3).map((sport) =>
+                  <Icons key={sport} name={iconNamesByIndex[(sport - 1)]} size={width * (0.035 + (event.sport_types_keys.length > 2 ? 0 : event.sport_types_keys.length > 1 ? 0.006 : 0.02))} style={{ margin: '2%' }} />
+                )}
+              </View>
               <Callout tooltip={true} style={styles.calloutContainer} onPress={() => {
                 navigation.navigate('Event', { eventId: event.id })
               }}>
                 <View style={styles.calloutView}>
                   <Text style={styles.calloutTitle}>{event.title}</Text>
                   <Text style={styles.calloutSubtitle}>Location: {event.location}</Text>
-                  <Text style={styles.calloutSubtitle}>Date & Time: {event.date_time}</Text>
-                  <Text style={styles.calloutSubtitle}>Sport Type: {event.sport_type}</Text>
+                  <Text style={styles.calloutSubtitle}>Date & Time: {event.date} {event.time}</Text>
+                  <Text style={styles.calloutSubtitle}>Sports:</Text>
+                  {event.sport_types_keys.slice(0, 3).map((sport, index) =>
+                    <View key={sport} style={styles.userSportsList}>
+                      <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
+                      <Text style={[styles.calloutSubtitle, { marginLeft: '5%' }]}>
+                        {SportsNames([sport])}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </Callout>
             </Marker>
@@ -414,11 +437,13 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       <View style={styles.inputContainer}>
         <GoogleAutocompletePicker setCoordinates={setPickerCoordinates} />
       </View>
+      {/*}
       <View style={styles.toggleButtonContainer}>
         <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
         <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
         <OnOffButton icon="Profile" isLocalEnabled={isUserEnabled} setIsLocalEnabled={setIsUserEnabled} />
       </View>
+        {*/}
 
       <Pressable onPress={() => {
         navigation.navigate('Tabs', { screen: 'Home', params: { userToken: userToken } });
@@ -531,7 +556,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.04,
     position: 'absolute',
     left: width * 0.05,
-    bottom: width * 0.2,
+    bottom: width * 0.1,
     backgroundColor: 'rgba(153, 27, 27, 0.8)',
     alignItems: 'center',
     justifyContent: 'center'
