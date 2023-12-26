@@ -299,7 +299,7 @@ const HomeScreen = ({ route, navigation }) => {
 
         {closerPlaces && closerPlaces.length ? <Text style={styles.subtitle}>Near Places:</Text> : ''}
         <View style={styles.nearPlacesContainer}>
-          {closerPlaces && closerPlaces.length &&
+          {closerPlaces && closerPlaces.length ?
             closerPlaces.slice(0, 4).map((place, index) => {
               return (
                 <TouchableOpacity key={index}
@@ -329,12 +329,12 @@ const HomeScreen = ({ route, navigation }) => {
                   )}
                 </TouchableOpacity>
               );
-            })}
+            }) : ''}
         </View>
 
         {closerEvents && closerEvents.length ? <Text style={styles.subtitle}>Near Events:</Text> : ''}
         <View style={styles.nearPlacesContainer}>
-          {closerEvents && closerEvents.length &&
+          {closerEvents && closerEvents.length ?
             closerEvents.slice(0, 4).map((event, index) => {
               return (
                 <View key={event.id}>
@@ -359,7 +359,7 @@ const HomeScreen = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
               );
-            })}
+            }) : ''}
         </View>
 
         <TouchableOpacity
