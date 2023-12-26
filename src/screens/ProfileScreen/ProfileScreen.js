@@ -254,267 +254,266 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  if (isLoading) return <ActivityIndicator size="large" color="#991B1B" />;
-
   return (
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-
-
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showQRCode}
-        onRequestClose={() => setShowQRCode(false)}
-      >
-        <View style={styles.QRCodeModalContainer}>
-          <View style={styles.QRCodeModalContent}>
-            <Text style={styles.QRCodeModalTitle}>@{profile.username} QR Code</Text>
-
-            <QRGenerator object={{ type: 'fit_fusion_user', id: profile.id }} />
-
-            <TouchableOpacity
-              style={{ backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }}
-              onPress={() => {
-                setShowQRCode(false);
-              }}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      <ScrollView
-        style={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        overScrollMode="never"
-      >
-        <Pressable
-          onPress={() => navigation.navigate('Settings')}
-          style={styles.settingsButton}
+      {isLoading ? <ActivityIndicator size="large" color="#FFF" />
+        :
+        <ScrollView
+          style={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          showsHorizontalScrollIndicator={false}
+          overScrollMode="never"
         >
-          <Icons name="Settings" size={width * 0.1} />
-        </Pressable>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showQRCode}
+            onRequestClose={() => setShowQRCode(false)}
+          >
+            <View style={styles.QRCodeModalContainer}>
+              <View style={styles.QRCodeModalContent}>
+                <Text style={styles.QRCodeModalTitle}>@{profile.username} QR Code</Text>
 
-        <View style={styles.profileHeader}>
-          <View style={{ width: '100%', alignItems: 'center' }}>
-            <Image
-              style={styles.avatar}
-              source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
-            />
-            { !editProfile &&
-            <TouchableOpacity
-              style={styles.QRButton}
-              onPress={() => {
-                setShowQRCode(true);
-              }}
-            >
-              <Icons name="QRCode" size={width * 0.15} />
-            </TouchableOpacity>}
-          </View>
-          {editProfile ? (
-            <>
-              <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
-                <Icons name="Edit" />
-              </TouchableOpacity>
-              {selectedProfileImage.length > 0 && (
-                <TouchableOpacity style={styles.setProfileImageButton} onPress={onSetProfileImage}>
-                  <Text style={styles.setProfileImageButtonText}>Set Profile Image</Text>
+                <QRGenerator object={{ type: 'fit_fusion_user', id: profile.id }} />
+
+                <TouchableOpacity
+                  style={{ backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }}
+                  onPress={() => {
+                    setShowQRCode(false);
+                  }}
+                >
+                  <Text style={styles.buttonText}>Close</Text>
                 </TouchableOpacity>
-              )}
-
-              <Text style={styles.inputTitles}>Date of birth</Text>
-              <DatePicker date={dateOfBirth} setDate={setDateOfBirth} mode="date" dateType="DD/MM/YYYY" customStyle={styles.timePicker} />
-
-              <Text style={styles.inputTitles}>Gender</Text>
-              <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
-                <Text style={styles.pickerTriggerText}>
-                  {sex
-                    ? `Selected: ${sex == 'M' ? 'Male' : sex == 'F' ? 'Female' : 'Other'}`
-                    : 'Select Sex'}
-                </Text>
-              </Pressable>
-              <Modal
-                transparent={true}
-                animationType="slide"
-                visible={isModalVisible}
-                onRequestClose={() => setModalVisible(false)}
-              >
-                <View style={styles.modalOverlay}>
-                  <View style={styles.modalContent}>
-                    <Pressable
-                      style={styles.option}
-                      onPress={() => {
-                        setSex('M');
-                        setModalVisible(false);
-                      }}
-                    >
-                      <Text style={styles.optionText}>Male</Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={styles.option}
-                      onPress={() => {
-                        setSex('F');
-                        setModalVisible(false);
-                      }}
-                    >
-                      <Text style={styles.optionText}>Female</Text>
-                    </Pressable>
-
-                    <Pressable
-                      style={styles.option}
-                      onPress={() => {
-                        setSex('O');
-                        setModalVisible(false);
-                      }}
-                    >
-                      <Text style={styles.optionText}>Other</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </Modal>
-
-              <Text style={styles.inputTitles}>Username</Text>
-              <CustomInput
-                placeholder="Username"
-                placeholderTextColor="#656565"
-                onChangeText={setUsername}
-                value={username}
-              />
-
-              <Text style={styles.sectionTitle}>Bio</Text>
-              <Text style={styles.inputTitles}>Bio Description</Text>
-              <CustomInput
-                placeholder="Bio"
-                placeholderTextColor="#656565"
-                onChangeText={setBio}
-                value={bio}
-              />
-
-              <Text style={styles.inputTitles}>Favorite Sports</Text>
-              <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
-
-              {!profile.social ?
-                <>
-                  <Text style={styles.sectionTitle}>Change Password</Text>
-                  <CustomInput
-                    placeholder="New Password"
-                    placeholderTextColor="#656565"
-                    onChangeText={setPassword}
-                    value={password}
-                    secureTextEntry={true}
-                  />
-                  <CustomInput
-                    placeholder="Confirm Password"
-                    placeholderTextColor="#656565"
-                    onChangeText={setPassword2}
-                    value={password2}
-                    secureTextEntry={true}
-                  />
-                </> : ''
-              }
-
-            </>
-          ) : (
-            <>
-              <Text style={styles.username}>@{profile.username}</Text>
-              <Text style={styles.name}>{profile.name}</Text>
-
-              <View style={styles.profileInfo}>
-
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Age</Text>
-                  <Text style={styles.infoData}>{profile.age}</Text>
-                </View>
-
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Date of Birth</Text>
-                  <Text style={styles.infoData}>{profile.date_of_birth}</Text>
-                </View>
-
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Sex</Text>
-                  <Text style={styles.infoData}>{profile.sex == 'M' ? "Male" : profile.sex == 'F' ? "Female" : "Other"}</Text>
-                </View>
-
               </View>
+            </View>
+          </Modal>
 
-              {profile.favorite_sports && profile.favorite_sports.length ?
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Favorite Sports</Text>
-                  <SportsItems favoriteSports={profile.favorite_sports} />
-                </View> : ''
-              }
+          <Pressable
+            onPress={() => navigation.navigate('Settings')}
+            style={styles.settingsButton}
+          >
+            <Icons name="Settings" size={width * 0.1} />
+          </Pressable>
 
-              {profile.bio ?
-                <View style={styles.infoItem}>
-                  <Text style={styles.infoTitle}>Bio</Text>
-                  <Text style={styles.bio}>{profile.bio}</Text>
-                </View>
-                : ''}
-            </>
-          )}
-        </View>
+          <View style={styles.profileHeader}>
+            <View style={{ width: '100%', alignItems: 'center' }}>
+              <Image
+                style={styles.avatar}
+                source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
+              />
+              {!editProfile &&
+                <TouchableOpacity
+                  style={styles.QRButton}
+                  onPress={() => {
+                    setShowQRCode(true);
+                  }}
+                >
+                  <Icons name="QRCode" size={width * 0.15} />
+                </TouchableOpacity>}
+            </View>
+            {editProfile ? (
+              <>
+                <TouchableOpacity style={styles.setProfileImageIcon} onPress={pickDocument}>
+                  <Icons name="Edit" />
+                </TouchableOpacity>
+                {selectedProfileImage.length > 0 && (
+                  <TouchableOpacity style={styles.setProfileImageButton} onPress={onSetProfileImage}>
+                    <Text style={styles.setProfileImageButtonText}>Set Profile Image</Text>
+                  </TouchableOpacity>
+                )}
 
-        {editProfile ?
-          <>
-            <TouchableOpacity style={styles.editButton} onPress={updateProfile}>
-              <Text style={styles.editButtonText}>Save Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => setEditProfile(false)}>
-              <Text style={styles.editButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </>
-          :
-          <>
-            <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
-              <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => navigation.navigate('Settings')}>
-              <Text style={styles.editButtonText}>Settings</Text>
-            </TouchableOpacity>
-          </>
-        }
+                <Text style={styles.inputTitles}>Date of birth</Text>
+                <DatePicker date={dateOfBirth} setDate={setDateOfBirth} mode="date" dateType="DD/MM/YYYY" customStyle={styles.timePicker} />
 
-        {editImages ?
-          <UploadPicker
-            selectedImages={selectedImages}
-            setSelectedImages={setSelectedImages}
-            max={5}
-            upload={updateExistingImages}
-            setEditImages={setEditImages}
-            cancel
-          />
-          :
-          <>
-            {profile.user_images && profile.user_images.length ?
-              <View
-                style={styles.userImagesContainer}
-              >
-                {profile.user_images.map((image, index) => {
-                  return (
-                    <View key={index}
-                      style={styles.userImagesItems}
-                    >
-                      <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
+                <Text style={styles.inputTitles}>Gender</Text>
+                <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
+                  <Text style={styles.pickerTriggerText}>
+                    {sex
+                      ? `Selected: ${sex == 'M' ? 'Male' : sex == 'F' ? 'Female' : 'Other'}`
+                      : 'Select Sex'}
+                  </Text>
+                </Pressable>
+                <Modal
+                  transparent={true}
+                  animationType="slide"
+                  visible={isModalVisible}
+                  onRequestClose={() => setModalVisible(false)}
+                >
+                  <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                      <Pressable
+                        style={styles.option}
+                        onPress={() => {
+                          setSex('M');
+                          setModalVisible(false);
+                        }}
+                      >
+                        <Text style={styles.optionText}>Male</Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={styles.option}
+                        onPress={() => {
+                          setSex('F');
+                          setModalVisible(false);
+                        }}
+                      >
+                        <Text style={styles.optionText}>Female</Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={styles.option}
+                        onPress={() => {
+                          setSex('O');
+                          setModalVisible(false);
+                        }}
+                      >
+                        <Text style={styles.optionText}>Other</Text>
+                      </Pressable>
                     </View>
-                  )
-                })}
-              </View>
-              : ''
-            }
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => {
-              setEditImages(true);
-            }}>
-              <Text style={styles.editButtonText}>{profile.user_images && profile.user_images.length ? "Edit Images" : "Add Images"}</Text>
-            </TouchableOpacity>
-          </>
-        }
+                  </View>
+                </Modal>
 
-      </ScrollView>
+                <Text style={styles.inputTitles}>Username</Text>
+                <CustomInput
+                  placeholder="Username"
+                  placeholderTextColor="#656565"
+                  onChangeText={setUsername}
+                  value={username}
+                />
+
+                <Text style={styles.sectionTitle}>Bio</Text>
+                <Text style={styles.inputTitles}>Bio Description</Text>
+                <CustomInput
+                  placeholder="Bio"
+                  placeholderTextColor="#656565"
+                  onChangeText={setBio}
+                  value={bio}
+                />
+
+                <Text style={styles.inputTitles}>Favorite Sports</Text>
+                <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
+
+                {!profile.social ?
+                  <>
+                    <Text style={styles.sectionTitle}>Change Password</Text>
+                    <CustomInput
+                      placeholder="New Password"
+                      placeholderTextColor="#656565"
+                      onChangeText={setPassword}
+                      value={password}
+                      secureTextEntry={true}
+                    />
+                    <CustomInput
+                      placeholder="Confirm Password"
+                      placeholderTextColor="#656565"
+                      onChangeText={setPassword2}
+                      value={password2}
+                      secureTextEntry={true}
+                    />
+                  </> : ''
+                }
+
+              </>
+            ) : (
+              <>
+                <Text style={styles.username}>@{profile.username}</Text>
+                <Text style={styles.name}>{profile.name}</Text>
+
+                <View style={styles.profileInfo}>
+
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoTitle}>Age</Text>
+                    <Text style={styles.infoData}>{profile.age}</Text>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoTitle}>Date of Birth</Text>
+                    <Text style={styles.infoData}>{profile.date_of_birth}</Text>
+                  </View>
+
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoTitle}>Sex</Text>
+                    <Text style={styles.infoData}>{profile.sex == 'M' ? "Male" : profile.sex == 'F' ? "Female" : "Other"}</Text>
+                  </View>
+
+                </View>
+
+                {profile.favorite_sports && profile.favorite_sports.length ?
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoTitle}>Favorite Sports</Text>
+                    <SportsItems favoriteSports={profile.favorite_sports} />
+                  </View> : ''
+                }
+
+                {profile.bio ?
+                  <View style={styles.infoItem}>
+                    <Text style={styles.infoTitle}>Bio</Text>
+                    <Text style={styles.bio}>{profile.bio}</Text>
+                  </View>
+                  : ''}
+              </>
+            )}
+          </View>
+
+          {editProfile ?
+            <>
+              <TouchableOpacity style={styles.editButton} onPress={updateProfile}>
+                <Text style={styles.editButtonText}>Save Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => setEditProfile(false)}>
+                <Text style={styles.editButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </>
+            :
+            <>
+              <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
+                <Text style={styles.editButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => navigation.navigate('Settings')}>
+                <Text style={styles.editButtonText}>Settings</Text>
+              </TouchableOpacity>
+            </>
+          }
+
+          {editImages ?
+            <UploadPicker
+              selectedImages={selectedImages}
+              setSelectedImages={setSelectedImages}
+              max={5}
+              upload={updateExistingImages}
+              setEditImages={setEditImages}
+              cancel
+            />
+            :
+            <>
+              {profile.user_images && profile.user_images.length ?
+                <View
+                  style={styles.userImagesContainer}
+                >
+                  {profile.user_images.map((image, index) => {
+                    return (
+                      <View key={index}
+                        style={styles.userImagesItems}
+                      >
+                        <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
+                      </View>
+                    )
+                  })}
+                </View>
+                : ''
+              }
+              <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => {
+                setEditImages(true);
+              }}>
+                <Text style={styles.editButtonText}>{profile.user_images && profile.user_images.length ? "Edit Images" : "Add Images"}</Text>
+              </TouchableOpacity>
+            </>
+          }
+
+        </ScrollView>
+      }
     </View>
   );
 };

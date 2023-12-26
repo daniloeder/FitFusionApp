@@ -71,8 +71,6 @@ const ProfileScreen = ({ route }) => {
         fetchProfile(id);
     }, [id]);
 
-    if (isLoading) return <ActivityIndicator size="large" color="#991B1B" />;
-
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -155,7 +153,8 @@ const ProfileScreen = ({ route }) => {
                             : ''
                         }
                     </>
-                    : ''
+                    :
+                    <ActivityIndicator size="large" color="#FFF" />
                 }
 
 
