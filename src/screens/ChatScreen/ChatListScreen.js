@@ -79,8 +79,10 @@ const ChatListScreen = ({ route, navigation }) => {
           data={chatRooms}
           keyExtractor={(chat) => chat.id.toString()}
           renderItem={({ item: chat, index }) => {
+            if(!chat.participant){
+              return
+            }
             const isGroupChat = chat.is_group_chat;
-            //if(!chat.participant) return;
             const chatImage = isGroupChat ? null : chat.participant.profile_image?.image;
             const chatName = isGroupChat ? 'Group Chat' : chat.participant_name;
 

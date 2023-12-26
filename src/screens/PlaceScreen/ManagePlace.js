@@ -231,7 +231,7 @@ const PlaceScreen = ({ route, navigation }) => {
                             {participantRequests.map((request, index) => {
                                 return (
                                     <View key={index} style={styles.participantRequestItem}>
-                                        <View style={[styles.userBall, { borderColor: request.user.sex === 'M' ? '#0033FF' : request.user.sex === 'F' ? '#FF3399' : '#DDD' }]}>
+                                        <View style={[styles.userBall, { borderColor: request.user.gender === 'M' ? '#0033FF' : request.user.gender === 'F' ? '#FF3399' : '#DDD' }]}>
                                             {request.user.profile_image ?
                                                 <Image style={styles.userBallImageProfile}
                                                     source={{ uri: `data:image/jpeg;base64,${request.user.profile_image}` }}

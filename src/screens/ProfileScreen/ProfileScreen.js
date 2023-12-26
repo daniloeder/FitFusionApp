@@ -29,7 +29,7 @@ const ProfileScreen = ({ route }) => {
   const [editProfile, setEditProfile] = useState(false);
   const [dateOfBirth, setDateOfBirth] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
-  const [sex, setSex] = useState('');
+  const [gender, setGender] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
   const [username, setUsername] = useState('');
@@ -53,7 +53,7 @@ const ProfileScreen = ({ route }) => {
       if (response.ok) {
         setProfile(data);
         setUsername(data.username);
-        setSex(data.sex);
+        setGender(data.gender);
         setBio(data.bio || '');
         setDateOfBirth(data.date_of_birth);
         setFavoriteSports(data.favorite_sports);
@@ -149,8 +149,8 @@ const ProfileScreen = ({ route }) => {
     if (dateOfBirth) {
       requestBody.date_of_birth = dateOfBirth;
     }
-    if (sex) {
-      requestBody.sex = sex;
+    if (gender) {
+      requestBody.gender = gender;
     }
     if (password) {
       requestBody.password = password;
@@ -329,9 +329,9 @@ const ProfileScreen = ({ route }) => {
                 <Text style={styles.inputTitles}>Gender</Text>
                 <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
                   <Text style={styles.pickerTriggerText}>
-                    {sex
-                      ? `Selected: ${sex == 'M' ? 'Male' : sex == 'F' ? 'Female' : 'Other'}`
-                      : 'Select Sex'}
+                    {gender
+                      ? `Selected: ${gender == 'M' ? 'Male' : gender == 'F' ? 'Female' : 'Other'}`
+                      : 'Select Gender'}
                   </Text>
                 </Pressable>
                 <Modal
@@ -345,7 +345,7 @@ const ProfileScreen = ({ route }) => {
                       <Pressable
                         style={styles.option}
                         onPress={() => {
-                          setSex('M');
+                          setGender('M');
                           setModalVisible(false);
                         }}
                       >
@@ -355,7 +355,7 @@ const ProfileScreen = ({ route }) => {
                       <Pressable
                         style={styles.option}
                         onPress={() => {
-                          setSex('F');
+                          setGender('F');
                           setModalVisible(false);
                         }}
                       >
@@ -365,7 +365,7 @@ const ProfileScreen = ({ route }) => {
                       <Pressable
                         style={styles.option}
                         onPress={() => {
-                          setSex('O');
+                          setGender('O');
                           setModalVisible(false);
                         }}
                       >
@@ -434,8 +434,8 @@ const ProfileScreen = ({ route }) => {
                   </View>
 
                   <View style={styles.infoItem}>
-                    <Text style={styles.infoTitle}>Sex</Text>
-                    <Text style={styles.infoData}>{profile.sex == 'M' ? "Male" : profile.sex == 'F' ? "Female" : "Other"}</Text>
+                    <Text style={styles.infoTitle}>Gender</Text>
+                    <Text style={styles.infoData}>{profile.gender == 'M' ? "Male" : profile.gender == 'F' ? "Female" : "Other"}</Text>
                   </View>
 
                 </View>
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // sex modal picker
+  // gender modal picker
   pickerTrigger: {
     width: '100%',
     borderWidth: 1,

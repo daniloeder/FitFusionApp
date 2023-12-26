@@ -99,8 +99,8 @@ const ProfileScreen = ({ route }) => {
                                 </View>
 
                                 <View style={styles.infoItem}>
-                                    <Text style={styles.infoTitle}>Sex</Text>
-                                    <Text style={styles.infoData}>{profile.sex == 'M' ? "Male" : profile.sex == 'F' ? "Female" : "Other"}</Text>
+                                    <Text style={styles.infoTitle}>Gender</Text>
+                                    <Text style={styles.infoData}>{profile.gender == 'M' ? "Male" : profile.gender == 'F' ? "Female" : "Other"}</Text>
                                 </View>
 
                             </View>

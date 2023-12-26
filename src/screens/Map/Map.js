@@ -380,7 +380,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
           return (
             <Marker key={user.id} coordinate={{ latitude, longitude }}>
 
-              <View style={[styles.userBall, { borderColor: user.sex === 'M' ? '#0033FF' : user.sex === 'F' ? '#FF3399' : '#DDD' }]}>
+              <View style={[styles.userBall, { borderColor: user.gender === 'M' ? '#0033FF' : user.gender === 'F' ? '#FF3399' : '#DDD' }]}>
 
                 {user && user.profile_image ?
                   <Image style={styles.userBallImageProfile}

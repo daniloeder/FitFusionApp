@@ -17,7 +17,7 @@ function RegisterScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [name, setName] = useState('');
-    const [sex, setSex] = useState('');
+    const [gender, setGender] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState(null);
     const [password, setPassword] = useState('');
     const [password2, setPassword2] = useState('');
@@ -35,7 +35,7 @@ function RegisterScreen({ navigation }) {
                     'Content-Type': 'application/json',
                     'Authorization': 'Token ' + accessToken
                 },
-                body: JSON.stringify({ date_of_birth: dateOfBirth, sex })
+                body: JSON.stringify({ date_of_birth: dateOfBirth, gender })
             });
 
             if (response.ok) {
@@ -66,7 +66,7 @@ function RegisterScreen({ navigation }) {
 
     const handleUpdateProfile = async () => {
         try {
-            if (!dateOfBirth || !sex) {
+            if (!dateOfBirth || !gender) {
                 Alert.alert('Input Error', 'Please fill out all fields.');
                 return;
             }
@@ -77,7 +77,7 @@ function RegisterScreen({ navigation }) {
                     'Content-Type': 'application/json',
                     'Authorization': 'Token ' + accessToken
                 },
-                body: JSON.stringify({ date_of_birth: dateOfBirth, sex })
+                body: JSON.stringify({ date_of_birth: dateOfBirth, gender })
             });
 
             const responseData = await response.json();
@@ -116,7 +116,7 @@ function RegisterScreen({ navigation }) {
                 body: JSON.stringify(socialToken ? {
                     social: true, token: socialToken, email: socialData.email, username: socialData.email.split('@')[0], name: socialData.name
                 } : {
-                    social: false, email, password: !socialToken ? password : "", username, name, date_of_birth: dateOfBirth, sex
+                    social: false, email, password: !socialToken ? password : "", username, name, date_of_birth: dateOfBirth, gender
                 })
             });
 
@@ -221,7 +221,7 @@ function RegisterScreen({ navigation }) {
 
                 <Pressable onPress={() => setModalVisible(true)} style={styles.pickerTrigger}>
                     <Text style={styles.pickerTriggerText}>
-                        {sex ? `Selected: ${sex == "M" ? "Male" : sex == "F" ? "Female" : "Other"}` : 'Select Sex'}
+                        {gender ? `Selected: ${gender == "M" ? "Male" : gender == "F" ? "Female" : "Other"}` : 'Select Gender'}
                     </Text>
                 </Pressable>
                 <Modal
@@ -235,7 +235,7 @@ function RegisterScreen({ navigation }) {
                             <Pressable
                                 style={styles.option}
                                 onPress={() => {
-                                    setSex('M');
+                                    setGender('M');
                                     setModalVisible(false);
                                 }}
                             >
@@ -245,7 +245,7 @@ function RegisterScreen({ navigation }) {
                             <Pressable
                                 style={styles.option}
                                 onPress={() => {
-                                    setSex('F');
+                                    setGender('F');
                                     setModalVisible(false);
                                 }}
                             >
@@ -255,7 +255,7 @@ function RegisterScreen({ navigation }) {
                             <Pressable
                                 style={styles.option}
                                 onPress={() => {
-                                    setSex('O');
+                                    setGender('O');
                                     setModalVisible(false);
                                 }}
                             >
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
         fontSize: width * 0.0375,
     },
 
-    // sex modal picker
+    // gender modal picker
 
     pickerTrigger: {
         borderWidth: 1,
