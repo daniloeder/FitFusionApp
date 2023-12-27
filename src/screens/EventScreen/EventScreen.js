@@ -30,7 +30,9 @@ const EventScreen = ({ route, navigation }) => {
       setEvent(null);
       setJoined(false);
       setParticipants([]);
-      fetchEvent();
+      if (eventId) {
+        fetchEvent();
+      }
     }, [])
   );
   useEffect(() => {
@@ -170,18 +172,18 @@ const EventScreen = ({ route, navigation }) => {
         </View>
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
-          <Icons name="Map2" size={width * 0.07} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
+          <Icons name="Map2" size={width * 0.07} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} fill={"#FFF"} />
           <Text style={[styles.location, { fontSize: width * 0.05 }]}>{event.location}</Text>
         </View>
         {event.coordinates ? <ShowOnMap coordinates={{ 'latitude': latitude, 'longitude': longitude }} /> : ''}
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
-          <Icons name="Date" size={width * 0.06} style={[styles.infoIcons, { marginTop: -width * 0.035 }]} />
+          <Icons name="Date" size={width * 0.06} style={[styles.infoIcons, { marginTop: -width * 0.035 }]} fill={"#FFF"} />
           <Text style={styles.dateTime}>{event.date}</Text>
         </View>
 
         <View style={styles.infoBlock}>
-          <Icons name="Watch" size={width * 0.045} style={[styles.infoIcons, { marginLeft: width * 0.1, marginTop: -width * 0.03 }]} />
+          <Icons name="Watch" size={width * 0.045} style={[styles.infoIcons, { marginLeft: width * 0.1, marginTop: -width * 0.03 }]} fill={"#FFF"} />
           <Text style={styles.dateTime}>{event.time}</Text>
         </View>
 

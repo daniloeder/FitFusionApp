@@ -13,7 +13,7 @@ const CustomPicker = ({ options, selectedOptions, setSelectedOptions, max }) => 
         if (optionExists) {
             const newSelectedOptions = selectedOptions.filter(option => option.id !== selectedOption.id);
             setSelectedOptions(newSelectedOptions);
-        } else if (selectedOptions.length < max) { // Check against the max limit
+        } else if (selectedOptions && selectedOptions.length < max) { // Check against the max limit
             setSelectedOptions([...selectedOptions, selectedOption]);
         } else {
             Alert.alert('Maximum Selection Reached', `You can select up to ${max} options.`);
@@ -24,7 +24,7 @@ const CustomPicker = ({ options, selectedOptions, setSelectedOptions, max }) => 
         <View style={styles.container}>
             <Pressable onPress={() => setVisibleInputArea(!visibleInputArea)} style={styles.searchInputBox}>
                 <Text style={{ color: '#999' }}>
-                    {selectedOptions.length ? selectedOptions.map(option => option.name).join(", ") : "Select Options"}
+                    {selectedOptions && selectedOptions.length ? selectedOptions.map(option => option.name).join(", ") : "Select Options"}
                 </Text>
             </Pressable>
 

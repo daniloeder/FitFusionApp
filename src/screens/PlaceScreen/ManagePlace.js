@@ -490,7 +490,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 <Text style={styles.title}>{place.name}</Text>
 
                 <View style={styles.infoBlock}>
-                    <Icons name="Map2" size={width * 0.07} style={styles.infoIcons} />
+                    <Icons name="Map2" size={width * 0.07} style={styles.infoIcons} fill={"#FFF"} />
                     <Text style={styles.location}>{place.location}</Text>
                 </View>
                 {place.coordinates ? <ShowOnMap coordinates={{ 'latitude': latitude, 'longitude': longitude }} /> : null}
@@ -531,7 +531,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                                    <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}
@@ -579,7 +579,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
                             >
                                 <ShowMedia
-                                    media={BASE_URL + `/${place.place_videos[0].video}`}
+                                    media={BASE_URL + `${place.place_videos[0].video}`}
                                     isVideo={true}
                                     style={{ width: width, height: width * (9 / 16) }}
                                 />

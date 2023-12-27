@@ -334,7 +334,7 @@ const EventScreen = ({ route, navigation }) => {
         </View>
 
         <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
-          <Icons name="Map2" size={width * 0.07} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
+          <Icons name="Map2" size={width * 0.07} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} fill={"#FFF"} />
           <Text style={[styles.location, { fontSize: width * 0.05 }]}>{event.location}</Text>
         </View>
         {event.coordinates ? <ShowOnMap coordinates={{ 'latitude': latitude, 'longitude': longitude }} /> : ''}
@@ -345,7 +345,7 @@ const EventScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.infoBlock}>
-          <Icons name="Watch" size={width * 0.045} style={[styles.infoIcons, { marginLeft: width * 0.1, marginTop: -width * 0.03 }]} />
+          <Icons name="Watch" size={width * 0.045} style={[styles.infoIcons, { marginLeft: width * 0.1, marginTop: -width * 0.03 }]} fill={"#FFF"} />
           <Text style={styles.dateTime}>{event.time}</Text>
         </View>
 
@@ -433,7 +433,7 @@ const EventScreen = ({ route, navigation }) => {
                 <View key={index}
                   style={styles.userImagesItems}
                 >
-                  <ShowMedia media={BASE_URL + `/${image.image}`} size={width * 0.26} />
+                  <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
                 </View>
               )
             })}
@@ -482,7 +482,7 @@ const EventScreen = ({ route, navigation }) => {
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
               >
                 <ShowMedia
-                  media={preview ? event.videos : BASE_URL + `/${event.place_videos[0].video}`}
+                  media={preview ? event.videos : BASE_URL + `${event.place_videos[0].video}`}
                   isVideo={true}
                   style={{ width: width, height: width * (9 / 16) }}
                 />

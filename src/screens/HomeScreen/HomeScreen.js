@@ -297,70 +297,76 @@ const HomeScreen = ({ route, navigation }) => {
           : ''
         }
 
-        {closerPlaces && closerPlaces.length ? <Text style={styles.subtitle}>Near Places:</Text> : ''}
-        <View style={styles.nearPlacesContainer}>
-          {closerPlaces && closerPlaces.length ?
-            closerPlaces.slice(0, 4).map((place, index) => {
-              return (
-                <TouchableOpacity key={index}
-                  onPress={() => navigation.navigate('Place', { placeId: place.id })}
-                  style={styles.nearPlacesItem}
-                >
-                  <Text style={styles.nearPlacesNameText}>
-                    {place.name}
-                  </Text>
-                  <Text style={styles.nearPlacesDescriptionText}>
-                    {place.description}
-                  </Text>
-                  <Text style={styles.nearPlacesLocationText}>
-                    Location: {place.location}
-                  </Text>
-                  {place.sport_types_keys && place.sport_types_keys.length ? (
-                    <View>
-                      <Text style={styles.nearPlacesSportTypesText}>
-                        Favorite Sports:
-                      </Text>
-                      <SportsItems
-                        favoriteSports={place.sport_types_keys}
-                      />
-                    </View>
-                  ) : (
-                    ''
-                  )}
-                </TouchableOpacity>
-              );
-            }) : ''}
-        </View>
-
-        {closerEvents && closerEvents.length ? <Text style={styles.subtitle}>Near Events:</Text> : ''}
-        <View style={styles.nearPlacesContainer}>
-          {closerEvents && closerEvents.length ?
-            closerEvents.slice(0, 4).map((event, index) => {
-              return (
-                <View key={event.id}>
-                  <TouchableOpacity
-                    style={styles.eventButton}
-                    onPress={() => {
-                      navigation.navigate('Event', { eventId: event.id });
-                    }}
+        {closerPlaces && closerPlaces.length ?
+          <>
+            <Text style={styles.subtitle}>Near Places:</Text>
+            <View style={styles.nearPlacesContainer}>
+              {closerPlaces.slice(0, 4).map((place, index) => {
+                return (
+                  <TouchableOpacity key={index}
+                    onPress={() => navigation.navigate('Place', { placeId: place.id })}
+                    style={styles.nearPlacesItem}
                   >
-                    <Text style={[styles.buttonText, { alignSelf: 'center', maxWidth: width * 0.7 }]}>{event.title}</Text>
-                    <Text style={styles.eventDate}>Date: {event.date}</Text>
-                    <Text style={styles.eventDate}>Time: {event.time}</Text>
-
-                    <View>
-                      <Text style={[styles.nearPlacesSportTypesText, { marginRight: 10 }]}>
-                        Sports:
-                      </Text>
-                      <SportsItems
-                        favoriteSports={event.sport_types_keys}
-                      />
-                    </View>
+                    <Text style={styles.nearPlacesNameText}>
+                      {place.name}
+                    </Text>
+                    <Text style={styles.nearPlacesDescriptionText}>
+                      {place.description}
+                    </Text>
+                    <Text style={styles.nearPlacesLocationText}>
+                      Location: {place.location}
+                    </Text>
+                    {place.sport_types_keys && place.sport_types_keys.length ? (
+                      <View>
+                        <Text style={styles.nearPlacesSportTypesText}>
+                          Favorite Sports:
+                        </Text>
+                        <SportsItems
+                          favoriteSports={place.sport_types_keys}
+                        />
+                      </View>
+                    ) : (
+                      ''
+                    )}
                   </TouchableOpacity>
-                </View>
-              );
-            }) : ''}
-        </View>
+                );
+              })}
+            </View>
+          </>
+          : ''}
+
+        {closerEvents && closerEvents.length ?
+          <>
+            <Text style={styles.subtitle}>Near Events:</Text>
+            <View style={styles.nearPlacesContainer}>
+              {closerEvents.slice(0, 4).map((event, index) => {
+                return (
+                  <View key={event.id}>
+                    <TouchableOpacity
+                      style={styles.eventButton}
+                      onPress={() => {
+                        navigation.navigate('Event', { eventId: event.id });
+                      }}
+                    >
+                      <Text style={[styles.buttonText, { alignSelf: 'center', maxWidth: width * 0.7 }]}>{event.title}</Text>
+                      <Text style={styles.eventDate}>Date: {event.date}</Text>
+                      <Text style={styles.eventDate}>Time: {event.time}</Text>
+
+                      <View>
+                        <Text style={[styles.nearPlacesSportTypesText, { marginRight: 10 }]}>
+                          Sports:
+                        </Text>
+                        <SportsItems
+                          favoriteSports={event.sport_types_keys}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+          : ''}
 
         <TouchableOpacity
           style={styles.createButton}

@@ -193,7 +193,7 @@ const CreateEventScreen = ({ route, navigation }) => {
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
                 <Text style={styles.inputTitles}>Event Place</Text>
-                <CustomPicker options={places} selectedOptions={eventPlace} setSelectedOptions={setEventPlace} max={1} />
+                <CustomPicker options={places} selectedOptions={eventPlace || []} setSelectedOptions={setEventPlace} max={1} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
