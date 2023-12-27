@@ -51,17 +51,40 @@ function validateOpenTimes(data) {
 const CreatePlaceScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
     const { preview } = route.params;
-    const [name, setName] = useState(preview && preview.name || '');
-    const [description, setDescription] = useState(preview && preview.description || '');
-    const [location, setLocation] = useState(preview && preview.location || '');
-    const [sportsType, setSportsType] = useState(preview && preview.sportType || []);
-    const [coordinates, setCoordinates] = useState(preview && preview.coordinates || '');
+    const [name, setName] = useState('test' || preview && preview.name || '');
+    const [description, setDescription] = useState('test' || preview && preview.description || '');
+    const [location, setLocation] = useState('test' || preview && preview.location || '');
+    const [sportsType, setSportsType] = useState([{"id": 1, "name": "Bodybuilding"}] || preview && preview.sportType || []);
+    const [coordinates, setCoordinates] = useState({"latitude": 36.5499, "longitude": 9.4422664} || preview && preview.coordinates || '');
 
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState([]);
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
 
     const [dates, setDates] = useState([{ "close_time": "18:00", "date": "Sunday", "open": false, "open_time": "07:00" }, { "close_time": "18:00", "date": "Monday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Tuesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Wednesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Thursday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Friday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Saturday", "open": true, "open_time": "07:00" }]);
+
+    const placePreview = {
+        name: name,
+        description: description,
+        location: location,
+        coordinates: coordinates,
+        sport_types_keys: sportsType.map(sport => sport.id || sport),
+        open_times: convertOpenTimes(dates),
+        photos: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
+        videos: selectedVideo.length ? selectedVideo[0].uri : null,
+    }
+
+    function convertOpenTimes(dates) {
+        return {
+            sun: dates[0] && dates[0].open_time && dates[0].close_time ? dates[0] : null,
+            mon: dates[1] && dates[1].open_time && dates[1].close_time ? dates[1] : null,
+            tue: dates[2] && dates[2].open_time && dates[2].close_time ? dates[2] : null,
+            wed: dates[3] && dates[3].open_time && dates[3].close_time ? dates[3] : null,
+            thu: dates[4] && dates[4].open_time && dates[4].close_time ? dates[4] : null,
+            fri: dates[5] && dates[5].open_time && dates[5].close_time ? dates[5] : null,
+            sat: dates[6] && dates[6].open_time && dates[6].close_time ? dates[6] : null,
+        }
+    }
 
     const logAndAppend = (formData, key, value) => {
         formData.append(key, value);
@@ -76,8 +99,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         const placeFormData = new FormData();
         logAndAppend(placeFormData, 'name', name);
         logAndAppend(placeFormData, 'description', description);
-        console.log(privated)
-        if(privated[0].id === 1){
+        if (privated[0].id === 1) {
             logAndAppend(placeFormData, 'is_privated', true);
         }
         logAndAppend(placeFormData, 'location', location);
@@ -113,16 +135,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         }
 
         if (setOpenCloseTime) {
-            const openingTimes = {
-                sun: dates[0] && dates[0].open_time && dates[0].close_time ? dates[0] : null,
-                mon: dates[1] && dates[1].open_time && dates[1].close_time ? dates[1] : null,
-                tue: dates[2] && dates[2].open_time && dates[2].close_time ? dates[2] : null,
-                wed: dates[3] && dates[3].open_time && dates[3].close_time ? dates[3] : null,
-                thu: dates[4] && dates[4].open_time && dates[4].close_time ? dates[4] : null,
-                fri: dates[5] && dates[5].open_time && dates[5].close_time ? dates[5] : null,
-                sat: dates[6] && dates[6].open_time && dates[6].close_time ? dates[6] : null,
-            };
-            placeFormData.append('opening_times', JSON.stringify(openingTimes));
+            placeFormData.append('opening_times', JSON.stringify(convertOpenTimes(dates)));
         }
 
         try {
@@ -146,7 +159,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             Alert.alert('Error', 'An unexpected error occurred.');
         }
     };
-    const [privated, setPrivated] = useState([{id: 1, name: "Private"}]);
+    const [privated, setPrivated] = useState([{ id: 1, name: "Private" }]);
 
     return (
         <View style={styles.gradientContainer}>
@@ -163,7 +176,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = sportsType.map(sport => sport.id || sport), index = true)} setSelectedOptions={setSportsType} max={5} />
 
                 <Text style={styles.inputTitles}>Is Private</Text>
-                <CustomPicker options={[{id: 1, name: "Private"}, {id: 2, name: "Public"}]} selectedOptions={privated} setSelectedOptions={setPrivated} max={1} />
+                <CustomPicker options={[{ id: 1, name: "Private" }, { id: 2, name: "Public" }]} selectedOptions={privated} setSelectedOptions={setPrivated} max={1} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
@@ -197,6 +210,10 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                                 </Text>
                             </TouchableOpacity>
                         }
+
+                        <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { navigation.navigate('Place', { placePreview: placePreview }) }}>
+                            <Text style={styles.buttonText}>Preview Event</Text>
+                        </TouchableOpacity>
 
                         <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
                             <Text style={styles.buttonText}>Create Place</Text>

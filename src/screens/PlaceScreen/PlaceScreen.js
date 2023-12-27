@@ -22,13 +22,25 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [userImages, setUserImages] = useState([]);
 
+    const [preview, setPreview] = useState(route.params);
+
     useEffect(() => {
         if (placeId) {
             fetchPlace();
+        } else if (preview) {
+            setPlace(preview);
         } else {
             Alert.alert('Place error.');
         }
     }, [placeId]);
+
+    useEffect(() => {
+        setPlace(preview);
+    }, [preview]);
+
+    useEffect(() => {
+        setPreview(route.params.placePreview);
+    }, [route.params.eventPreview]);
 
     const fetchUserProfileImages = async (participants) => {
         if (participants.length) {
@@ -66,6 +78,10 @@ const PlaceScreen = ({ route, navigation }) => {
         }
     };
     const onJoinLeavePlace = async () => {
+        if (preview) {
+            setJoined(!joined)
+            return
+        }
         try {
             const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
                 method: 'POST',
@@ -95,7 +111,7 @@ const PlaceScreen = ({ route, navigation }) => {
     };
 
     if (!place || !place.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
-    const [longitude, latitude] = place.coordinates.match(/-?\d+\.\d+/g).map(Number);
+    const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : place.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
     return (
         <View style={styles.gradientContainer}>
@@ -144,7 +160,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 />
                             )}
                         </>
-                        : joined === "none" ?
+                        : joined === "none" || preview ?
                             <>
                                 <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeavePlace}>
                                     <Text style={styles.buttonText}>{place.is_privated ? "Request to Join Place" : "Join Place"}</Text>
@@ -176,32 +192,29 @@ const PlaceScreen = ({ route, navigation }) => {
                         setParticipantsModalVisible(participants.length > 0);
                     }}
                 >
-                    {(false ? [...Array(5)] : userImages.slice(0, 5)).map((image, index) => {
-                        return (
-                            <View key={index}
-                                style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
-                            >
-                                {true && image.success ?
-                                    <Image
-                                        source={{ uri: `data:image/jpeg;base64,${image.profile_image}` }}
-                                        style={{ width: '100%', height: '100%', borderRadius: 100 }}
-                                        onError={(error) => console.error('Image Error:', error)}
-                                    />
-                                    :
-                                    <Icons name="Profile2" size={width * 0.05} />
-                                }
-                            </View>
-                        )
-                    }
-
+                    {(preview ? [...Array(5)] : userImages).map((image, index) =>
+                        <View key={index}
+                            style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
+                        >
+                            {!preview && image.success ?
+                                <Image
+                                    source={{ uri: `data:image/jpeg;base64,${image.profile_image}` }}
+                                    style={{ width: '100%', height: '100%', borderRadius: 100 }}
+                                    onError={(error) => console.error('Image Error:', error)}
+                                />
+                                :
+                                <Icons name="Profile2" size={width * 0.05} />
+                            }
+                        </View>
                     )}
-                    {place.participants.length > 5 ? (<Text style={styles.moreText}>+{place.participants.length - 5}</Text>) : ''}
-                    {false ? (<Text style={styles.moreText}>+125</Text>) : ''}
+
+                    {place.participants && place.participants.length > 5 ? (<Text style={styles.moreText}>+{place.participants.length - 5}</Text>) : ''}
+                    {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
                     {participants.length > 0 ?
                         <View style={styles.seeMoreButton}>
                             <Text style={styles.seeAllText}>See All</Text>
                         </View> :
-                        <Text style={styles.moreText}>There is still no participants.</Text>
+                        !preview && <Text style={styles.moreText}>There is still no participants.</Text>
                     }
                 </Pressable>
 
@@ -234,7 +247,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     </View>
                     : ''
                 }
-                {place.place_videos && place.place_videos.length ?
+                {(place.place_videos && place.place_videos.length) || (preview && place.videos) ?
                     <View
                         style={styles.userImagesContainer}
                     >
@@ -248,7 +261,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
 
-                {place.place_videos && place.place_videos.length ?
+                {(place.place_videos && place.place_videos.length) || (preview && place.videos) ?
                     <Modal
                         animationType="slide"
                         transparent={false}
@@ -261,7 +274,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
                             >
                                 <ShowMedia
-                                    media={BASE_URL + `${place.place_videos[0].video}`}
+                                    media={preview ? place.videos : BASE_URL + `${place.place_videos[0].video}`}
                                     isVideo={true}
                                     style={{ width: width, height: width * (9 / 16) }}
                                 />
@@ -270,7 +283,13 @@ const PlaceScreen = ({ route, navigation }) => {
                     </Modal>
                     : ''
                 }
-
+                {preview ?
+                  <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
+                    navigation.navigate("Create Place")
+                  }}>
+                    <Text style={styles.buttonText}>Back to edition</Text>
+                  </TouchableOpacity> : ''
+                }
                 <View style={{ marginBottom: 100 }}></View>
             </ScrollView>
         </View>

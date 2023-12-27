@@ -50,7 +50,7 @@ const OpenTimesTable = ({openTimes}) => {
                     justifyContent: 'center',
                 }}
             >
-                {openTimes.custom.map((custom) => {
+                {openTimes.custom && openTimes.custom.map((custom) => {
                     return renderCustomTime(custom);
                 })}
             </View>
