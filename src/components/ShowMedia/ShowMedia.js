@@ -48,22 +48,6 @@ const ShowImage = ({ media, size=width*0.4 }) => {
                     >
                         <ImageViewer imageUrls={images} enableSwipeDown={true} onSwipeDown={() => setModalVisible(false)} />
 
-                        <Pressable
-                            onPress={() => setModalVisible(false)}
-                            style={{
-                                padding: '2%',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: 1000,
-                                opacity: 0.8,
-                                position: 'absolute',
-                                left: '5%',
-                                top: '2%',
-                                backgroundColor: '#991B1B',
-                            }}
-                        >
-                            <Icons name="LeftArrow" size={30} />
-                        </Pressable>
                     </TouchableOpacity>
                 </Modal>
             )}

@@ -84,10 +84,17 @@ const ProfileScreen = ({ route }) => {
                 {profile.id == id ?
                     <>
                         <View style={styles.profileHeader}>
-                            <Image
-                                style={styles.avatar}
-                                source={{ uri: profile.profile_image ? BASE_URL + profile.profile_image.image : 'https://via.placeholder.com/150' }}
-                            />
+                            {profile.profile_image ?
+                                <Image
+                                    style={styles.avatar}
+                                    source={{ uri: BASE_URL + profile.profile_image.image }}
+                                />
+                                :
+                                <View style={{padding:width*0.04,borderRadius:width*0.3,backgroundColor:'rgba(255,255,255,0.4)'}}>
+                                    <Icons name="Profile" size={width * 0.4} fill={"#1C274C"} />
+                                </View>
+
+                            }
                             <Text style={styles.username}>@{profile.username}</Text>
                             <Text style={styles.name}>{profile.name}</Text>
 

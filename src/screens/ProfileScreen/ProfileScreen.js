@@ -298,10 +298,17 @@ const ProfileScreen = ({ route }) => {
 
           <View style={styles.profileHeader}>
             <View style={{ width: '100%', alignItems: 'center' }}>
-              <Image
-                style={styles.avatar}
-                source={{ uri: currentImage || 'https://via.placeholder.com/150' }}
-              />
+              {currentImage ?
+                <Image
+                  style={styles.avatar}
+                  source={{ uri: currentImage }}
+                />
+                :
+                <View style={{ padding: width * 0.04, borderRadius: width * 0.3, backgroundColor: 'rgba(255,255,255,0.4)' }}>
+                  <Icons name="Profile" size={width * 0.4} fill={"#1C274C"} />
+                </View>
+
+              }
               {!editProfile &&
                 <TouchableOpacity
                   style={styles.QRButton}

@@ -275,7 +275,7 @@ const HomeScreen = ({ route, navigation }) => {
                           onError={(error) => console.error('Image Error:', error)}
                         />
                         :
-                        <Icons name="Profile" size={width * 0.14} />
+                        <Icons name="Profile" size={width * 0.14} fill={"#1C274C"} />
                       }
 
                       <View style={styles.userCardIcons}>
