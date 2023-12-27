@@ -116,7 +116,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 <Text style={styles.title}>{place.name}</Text>
 
                 <View style={styles.infoBlock}>
-                    <Icons name="Map2" size={width * 0.07} style={styles.infoIcons} />
+                    <Icons name="Map2" size={width * 0.07} style={styles.infoIcons} fill={"#FFF"} />
                     <Text style={styles.location}>{place.location}</Text>
                 </View>
                 {place.coordinates ? <ShowOnMap coordinates={{ 'latitude': latitude, 'longitude': longitude }} /> : null}
@@ -206,12 +206,12 @@ const PlaceScreen = ({ route, navigation }) => {
                 </Pressable>
 
                 <View style={styles.infoBlock}>
-                    <Icons name="Watch" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
+                    <Icons name="Watch" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} fill={"#FFF"} />
                     <OpenTimesTable openTimes={place.open_times} />
                 </View>
 
                 <View style={styles.infoBlock}>
-                    <Icons name="Description" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.07 }]} />
+                    <Icons name="Description" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.07 }]} fill={"#FFF"} />
                     <Text style={styles.description}>{place.description}</Text>
                 </View>
 
