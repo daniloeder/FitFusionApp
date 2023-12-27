@@ -5,7 +5,7 @@ import Icons from '../Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
-const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime, onChangeCloseTime, onChangeOpen }) => {
+const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime, onChangeCloseTime, onChangeOpen, close }) => {
     const [selectedDate, setSelectedDate] = useState(item.date);
     const [selectedOpenTime, setSelectedOpenTime] = useState(item.open_time);
     const [selectedCloseTime, setSelectedCloseTime] = useState(item.close_time);
@@ -25,12 +25,9 @@ const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime,
         onChangeCloseTime(index, newTime);
     };
 
-    const isDayOfWeek = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].includes(item.date);
-
     const handleOpenChange = (newValue) => {
         onChangeOpen(index, newValue);
     };
-
 
     return (
         <View style={[styles.renderItemContainer, { backgroundColor: item.open ? '#D4EFDF' : '#D6DBDF' }]}>
@@ -92,7 +89,7 @@ const RenderItem = ({ item, index, onRemoveDate, onChangeDate, onChangeOpenTime,
                         thumbColor={item.open ? '#007bff' : '#ccc'}
                         trackColor={{ false: '#767577', true: '#81b0ff' }}
                     />
-                    {!isDayOfWeek ? (
+                    {close ? (
                         <Pressable
                             onPress={() => onRemoveDate(index)}
                             style={styles.closeIconContainer}
@@ -175,7 +172,7 @@ const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, update, add = false, 
 
     return (
         <View style={styles.viewContainer}>
-            <Text>Click on <Icons name="Watch" /> to select time:</Text>
+            <Text>Click on <Icons name="Watch" fill={"#1C274C"} /> to select time:</Text>
             <Head title="Days" />
             {dates.slice(0, 7).map((date, index) => (
                 <RenderItem
@@ -200,6 +197,7 @@ const OpenTimes = ({ dates, setDates, setSetOpenCloseTime, update, add = false, 
                     onChangeOpenTime={changeOpenTimeAtIndex}
                     onChangeCloseTime={changeCloseTimeAtIndex}
                     onChangeOpen={changeOpenAtIndex}
+                    close
                 />
             ))}
 

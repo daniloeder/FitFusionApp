@@ -202,7 +202,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                         />
 
                         {setOpenCloseTime ?
-                            <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} cancel />
+                            <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} add cancel />
                             :
                             <TouchableOpacity style={styles.AddWorkingTimeButton} onPress={() => setSetOpenCloseTime(true)}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 16, }}>

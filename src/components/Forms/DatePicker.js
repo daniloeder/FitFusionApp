@@ -47,7 +47,7 @@ const DatePicker = ({ date, setDate, setTime, mode = "datetime", dateType = "DD/
 
     return (
         <Pressable onPress={() => setDatePickerVisibility(true)} style={[selectedDate ? { borderColor: '#21347B' } : {}, customStyle]}>
-            <Icons name={mode==='time'?"Watch":"Calendar"} size={width * 0.07} style={{ padding: width * 0.028, marginTop: width * 0.01 }} />
+            <Icons name={mode==='time'?"Watch":"Calendar"} size={width * 0.07} style={{ padding: width * 0.028, marginTop: width * 0.01 }} fill={"#1C274C"} />
             {showText &&
                 <Text style={{ color: '#656565', fontSize: width * 0.04, marginLeft: width * 0.02 }}>
                     {getFormattedDisplayText()} - {dateType}
