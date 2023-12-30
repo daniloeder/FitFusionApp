@@ -129,6 +129,17 @@ const TabNavigator = () => {
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
 
+  const [notifications, setNotifications] = useState([]);
+  const addNotification = (notification) => {
+    setNotifications(currentNotifications => [...currentNotifications, notification]);
+  };
+  const markAllAsRead = () => {
+    const updatedNotifications = notifications.map(notification => {
+      return { ...notification, is_read: true };
+    });
+    setNotifications(updatedNotifications);
+  };
+
   const { chats } = useChat();
 
   useEffect(() => {
@@ -182,16 +193,15 @@ const TabNavigator = () => {
     };
   }, []);
 
-  const [messages, setMessages] = useState(0);
-
   if (!userToken) {
     return null; // Return null or loading indicator if userToken is not available yet
   }
 
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
+  const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <WebSocketProvider userToken={userToken}>
+    <WebSocketProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
@@ -341,7 +351,13 @@ const TabNavigator = () => {
           initialParams={{ userId, userToken }}
           component={NotificationsScreen}
           options={{
-            tabBarIcon: ({ focused }) => <Icons name="Notifications" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarIcon: ({ focused }) =>
+              <>
+                <Icons name="Notifications" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />
+                {unreadNotificationsNumber > 0 && <View style={{ paddingHorizontal: 2, borderRadius: 4, backgroundColor: 'red', position: 'absolute', top: -4, right: 8 }}>
+                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{unreadNotificationsNumber}</Text>
+                </View>}
+              </>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           }}
         />

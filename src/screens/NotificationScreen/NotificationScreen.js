@@ -1,6 +1,7 @@
 import React, { useEffect, useState , useCallback} from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useWebSocket } from './../../services/WebSocketsContext';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { timeAgo } from './../../utils/helpers';
 import { BASE_URL } from '@env';
@@ -9,6 +10,7 @@ const { width } = Dimensions.get('window');
 
 const Notifications = ({ route, navigation }) => {
   const { userToken } = route.params;
+  const { markAllAsRead } = useWebSocket();
 
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'PlaceRequestApproved', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
@@ -72,6 +74,7 @@ const Notifications = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
+      markAllAsRead();
     }, [])
   );
 

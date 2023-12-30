@@ -3,7 +3,7 @@ import { useChat } from '../utils/chats';
 
 const WebSocketContext = createContext(null);
 
-export const WebSocketProvider = ({ children, userToken }) => {
+export const WebSocketProvider = ({ children, userToken, addNotification, markAllAsRead }) => {
   const [webSocket, setWebSocket] = useState(null);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
   const { handleNewMessage } = useChat();
@@ -18,12 +18,14 @@ export const WebSocketProvider = ({ children, userToken }) => {
   const handleMessage = useCallback((e) => {
     try {
       const message = JSON.parse(e.data);
-      if (message.type === "new_chat_room") {
-        handleNewMessage(message.message_content);
-        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${userToken}`);
-        ws.addEventListener('message', handleMessage);
-      } else {
+      if (message.type === "chat_message") {
         handleNewMessage(message);
+      } else if (message.type === "notification") {
+        addNotification(message);
+      } else if (message.type === "new_chat_room") {
+        handleNewMessage(message.message_content);
+        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
+        ws.addEventListener('message', handleMessage);
       }
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
@@ -35,7 +37,7 @@ export const WebSocketProvider = ({ children, userToken }) => {
       return;
     }
 
-    const ws = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${userToken}`);
+    const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
 
     ws.onopen = () => {
       console.log('WebSocket Connected');
@@ -69,7 +71,7 @@ export const WebSocketProvider = ({ children, userToken }) => {
   }, [connectWebSocket]);
 
   return (
-    <WebSocketContext.Provider value={{ webSocket, sendMessage }}>
+    <WebSocketContext.Provider value={{ webSocket, sendMessage, markAllAsRead }}>
       {children}
     </WebSocketContext.Provider>
   );

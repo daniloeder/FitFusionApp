@@ -132,7 +132,7 @@ const ChatScreen = ({ route, navigation }) => {
         />
         <TouchableOpacity style={styles.sendButton} onPress={() => {
           if (input.trim() !== '') {
-            sendMessage(chatId ? { text: input, chat_room_id: chatId } : { text: input, participant_id: participantId });
+            sendMessage(chatId ? { type: "chat_message", text: input, chat_room_id: chatId } : { type: "chat_message", text: input, participant_id: participantId });
             setInput('');
           }
         }}>
