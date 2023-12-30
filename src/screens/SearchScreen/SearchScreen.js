@@ -16,6 +16,7 @@ const SearchScreen = () => {
       const url = BASE_URL + `/api/common/search/?q=${encodeURIComponent(query)}`;
       const response = await fetch(url);
       const data = await response.json();
+      console.log(data)
       setResults(data);
     } catch (error) {
       console.error('Error during the search:', error);
@@ -52,24 +53,24 @@ const SearchScreen = () => {
         {results.users.length > 0 && (
           <Text style={styles.resultCategory}>Users</Text>
         )}
-        {results.users.map(user => (
-          <View key={user.id.toString()} style={[styles.resultItem, styles.row]}>
-            {user.profile_image ?
-              <Image
-                style={styles.profileImage}
-                source={{ uri: BASE_URL + user.profile_image.image }}
-              />
-              :
-              <View style={{ width: width * 0.12, height: width * 0.12, alignItems:'center',justifyContent:'center' }}>
-                <Icons name="Profile" size={width * 0.1} fill={'#1C274C'} />
+        {results.users.map(user => 
+            <View key={user.id.toString()} style={[styles.resultItem, styles.row]}>
+              {user.profile_image ?
+                <Image
+                  style={styles.profileImage}
+                  source={{ uri: BASE_URL + user.profile_image }}
+                />
+                :
+                <View style={{ width: width * 0.12, height: width * 0.12, alignItems: 'center', justifyContent: 'center' }}>
+                  <Icons name="Profile" size={width * 0.1} fill={'#1C274C'} />
+                </View>
+              }
+              <View style={styles.textContainer}>
+                <Text style={styles.resultTitle}>{user.username}</Text>
+                <Text style={styles.resultDescription}>{truncateText(user.bio, 100)}</Text>
               </View>
-            }
-            <View style={styles.textContainer}>
-              <Text style={styles.resultTitle}>{user.username}</Text>
-              <Text style={styles.resultDescription}>{truncateText(user.bio, 100)}</Text>
             </View>
-          </View>
-        ))}
+        )}
         {results.events.length > 0 && (
           <Text style={styles.resultCategory}>Events</Text>
         )}
@@ -155,8 +156,8 @@ styles = StyleSheet.create({
     flexDirection: 'row',
   },
   profileImage: {
-    width: width * 0.2,
-    height: width * 0.2,
+    width: width * 0.15,
+    height: width * 0.15,
     borderRadius: width * 0.1,
     marginRight: width * 0.05,
   },
