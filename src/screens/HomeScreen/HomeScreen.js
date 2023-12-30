@@ -264,7 +264,7 @@ const HomeScreen = ({ route, navigation }) => {
                   <View key={index} style={styles.userCard}>
                     <TouchableOpacity
                       onPress={() => {
-                        navigation.navigate('User Profile', { id: 32 })
+                        navigation.navigate('User Profile', { id: user.id })
                       }}
                       style={[styles.userCardInner, { borderColor: user.gender === 'M' ? '#0033FF' : user.gender === 'F' ? '#FF3399' : '#DDD' }]}
                     >
