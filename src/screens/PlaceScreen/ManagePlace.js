@@ -38,22 +38,27 @@ const PlaceScreen = ({ route, navigation }) => {
 
     useFocusEffect(
         useCallback(() => {
-            fetchPlace();
+            if (placeId) {
+                fetchPlace();
+            } else {
+                Alert.alert('Place error.');
+            }
         }, [])
     );
+
     useEffect(() => {
-        if (placeId) {
-            fetchPlace();
+        if (route.params.isParticipantManagerModalVisible) {
+            setParticipantRequestsModalVisible(true);
             fetchParticipantRequests();
-        } else {
-            Alert.alert('Place error.');
         }
-    }, [placeId]);
+    }, [route.params.isParticipantManagerModalVisible]);
+
     useEffect(() => {
         if (place && place.participant_status) {
             setParticipantStatus(place.participant_status);
         }
     }, [place]);
+
     const fetchPlace = async () => {
         try {
             const response = await fetch(BASE_URL + `/api/places/${placeId}`, {
@@ -324,7 +329,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                     {!userPayments || userPayments.participant || (userPayments.payments) ?
                                         <ManageUsers userToken={userToken} userIds={[scannedUserData.id]} placeId={placeId} setUserPayments={!userPayments ? setUserPayments : undefined} />
                                         :
-                                        <Text style={{color:'#FFF',fontWeight:'bold',fontSize:30}}>This user is not a participant of this Place.</Text>
+                                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a participant of this Place.</Text>
                                     }
 
                                 </ScrollView>
@@ -348,7 +353,7 @@ const PlaceScreen = ({ route, navigation }) => {
             </Modal>
         );
     };
-    
+
     const updateExistingImages = async () => {
         setEditImages(false);
         const existingImagesData = selectedImages.map((img, index) => ({
@@ -416,16 +421,6 @@ const PlaceScreen = ({ route, navigation }) => {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
             <ScrollView style={styles.container}>
-                {place.created_by == userId ?
-                    <Pressable
-                        onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
-                        style={[styles.createEventButton, { minWidth: width * 0.6 }]}
-                    >
-                        <Icons name="Events" size={width * 0.08} />
-                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>
-                    </Pressable>
-                    : ''
-                }
                 <View style={{ flexDirection: 'row' }}>
                     {place.created_by == userId ?
                         <Pressable
@@ -433,7 +428,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 setScannedUserModalVisible(true);
                                 //fetchPayments(33);
                             }}
-                            style={[styles.createEventButton, { height: 'auto', width: width * 0.3, position: 'absolute', maxWidth: width * 0.3, flexDirection: 'column', padding: width * 0.05, marginTop: width * 0.03 }]}
+                            style={[styles.createEventButton, { height: 'auto', width: width * 0.3, position: 'absolute', maxWidth: width * 0.3, flexDirection: 'column', padding: width * 0.05 }]}
                         >
                             <Icons name="Camera" size={width * 0.08} />
                             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Scan User</Text>
@@ -443,7 +438,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     {place.created_by == userId ?
                         <Pressable
                             onPress={() => setParticipantManagerModalVisible(true)}
-                            style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
+                            style={[styles.createEventButton, { minWidth: width * 0.6 }]}
                         >
                             <Icons name="ParticipantEdit" size={width * 0.08} />
                             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Manager</Text>
@@ -480,6 +475,16 @@ const PlaceScreen = ({ route, navigation }) => {
                     >
                         <Icons name="Edit" size={width * 0.06} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Place</Text>
+                    </Pressable>
+                    : ''
+                }
+                {place.created_by == userId ?
+                    <Pressable
+                        onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
+                        style={[styles.createEventButton, { minWidth: width * 0.6,  marginTop: width * 0.03 }]}
+                    >
+                        <Icons name="Events" size={width * 0.08} />
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>
                     </Pressable>
                     : ''
                 }

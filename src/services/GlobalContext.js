@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useChat } from '../utils/chats';
 
-const WebSocketContext = createContext(null);
+const GlobalContext = createContext(null);
 
-export const WebSocketProvider = ({ children, userToken, addNotification, markAllAsRead }) => {
+export const GlobalProvider = ({ children, userToken, addNotification, markAllAsRead }) => {
   const [webSocket, setWebSocket] = useState(null);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
   const { handleNewMessage } = useChat();
@@ -71,10 +71,10 @@ export const WebSocketProvider = ({ children, userToken, addNotification, markAl
   }, [connectWebSocket]);
 
   return (
-    <WebSocketContext.Provider value={{ webSocket, sendMessage, markAllAsRead }}>
+    <GlobalContext.Provider value={{ userToken, webSocket, sendMessage, markAllAsRead }}>
       {children}
-    </WebSocketContext.Provider>
+    </GlobalContext.Provider>
   );
 };
 
-export const useWebSocket = () => useContext(WebSocketContext);
+export const useGlobalContext = () => useContext(GlobalContext);

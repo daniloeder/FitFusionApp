@@ -1,7 +1,7 @@
 import React, { useEffect, useState , useCallback} from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useWebSocket } from './../../services/WebSocketsContext';
+import { useGlobalContext } from './../../services/GlobalContext';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { timeAgo } from './../../utils/helpers';
 import { BASE_URL } from '@env';
@@ -10,7 +10,7 @@ const { width } = Dimensions.get('window');
 
 const Notifications = ({ route, navigation }) => {
   const { userToken } = route.params;
-  const { markAllAsRead } = useWebSocket();
+  const { markAllAsRead } = useGlobalContext();
 
   const [notifications, setNotifications] = useState([
     { id: 1, type: 'PlaceRequestApproved', item_id: 3, text: 'You have a payment to be paid in 2 days. Check it out!', date: '5 minutes ago' },
@@ -93,6 +93,8 @@ const Notifications = ({ route, navigation }) => {
                 navigation.navigate('Place', { placeId: item.item_id, paymentCardVisibel: true });
               } else if (item.type === 'PlaceRequestApproved') {
                 navigation.navigate('Place', { placeId: item.item_id });
+              } else if (item.type === 'PlaceRequestedJoin') {
+                navigation.navigate('Manage Place', { placeId: item.item_id, isParticipantManagerModalVisible: true });
               } else if (item.type === 'PaymentDayEventComming') {
                 navigation.navigate('Event', { eventId: item.item_id, paymentCardVisibel: true });
               } else if (item.type === 'NewNearPlace') {

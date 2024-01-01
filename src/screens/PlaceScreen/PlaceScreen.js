@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
@@ -24,7 +25,10 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [preview, setPreview] = useState(route.params);
 
-    useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
+        setUserImages([]);
+        setParticipants([]);
         if (placeId) {
             fetchPlace();
         } else if (preview) {
@@ -32,7 +36,8 @@ const PlaceScreen = ({ route, navigation }) => {
         } else {
             Alert.alert('Place error.');
         }
-    }, [placeId]);
+    }, [])
+  );
 
     useEffect(() => {
         setPlace(preview);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useWebSocket } from './../../services/WebSocketsContext';
+import { useGlobalContext } from './../../services/GlobalContext';
 import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
@@ -18,7 +18,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const { webSocket, sendMessage } = useWebSocket();
+  const { webSocket, sendMessage } = useGlobalContext();
 
   webSocket.onmessage = (e) => {
     try {

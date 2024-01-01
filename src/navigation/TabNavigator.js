@@ -26,7 +26,7 @@ import NotificationsScreen from '../screens/NotificationScreen/NotificationScree
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
 
-import { WebSocketProvider } from '../services/WebSocketsContext';
+import { GlobalProvider } from '../services/GlobalContext';
 import { useChat } from '../utils/chats';
 
 const width = Dimensions.get('window').width;
@@ -142,23 +142,29 @@ const TabNavigator = () => {
 
   const { chats } = useChat();
 
-  useEffect(() => {
-    fetchData('user_id')
-      .then((id) => {
-        setUserId(id);
-        fetchAuthToken()
-          .then((token) => {
-            setUserToken(token);
-            registerForPushNotificationsAsync(token);
-          })
-          .catch((error) => {
-            console.error('Error fetching user token:', error);
-          });
-      })
-      .catch((error) => {
-        console.error('Error fetching user token:', error);
-      });
-  }, [navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData('user_id')
+        .then((id) => {
+          setUserId(id);
+          fetchAuthToken()
+            .then((token) => {
+              if(id && token){
+                setUserToken(token);
+                registerForPushNotificationsAsync(token);
+              } else {
+                navigation.navigate('Auth', { screen: 'LoginScreen' });
+              }
+            })
+            .catch((error) => {
+              console.error('Error fetching user token:', error);
+            });
+        })
+        .catch((error) => {
+          console.error('Error fetching user token:', error);
+        });
+    }, [])
+  );
 
   useEffect(() => {
 
@@ -194,14 +200,14 @@ const TabNavigator = () => {
   }, []);
 
   if (!userToken) {
-    return null; // Return null or loading indicator if userToken is not available yet
+    return null;
   }
 
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <WebSocketProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead}>
+    <GlobalProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
@@ -390,7 +396,7 @@ const TabNavigator = () => {
           }}
         />
       </Tab.Navigator>
-    </WebSocketProvider>
+    </GlobalProvider>
   )
 };
 

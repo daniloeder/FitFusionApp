@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Alert, View, Text, StyleSheet, TouchableOpacity, Pressable, Image, ScrollView, Modal, ActivityIndicator, Dimensions } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
+import { useGlobalContext } from './../../services/GlobalContext';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import DatePicker from '../../components/Forms/DatePicker';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
@@ -17,7 +19,7 @@ import { BASE_URL } from '@env';
 const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
-  const { userToken } = route.params;
+  const { userToken } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -71,9 +73,12 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      setProfile([]);
+      fetchProfile();
+    }, [userToken])
+  );
 
   useEffect(() => {
     if (selectedProfileImage.length) {
