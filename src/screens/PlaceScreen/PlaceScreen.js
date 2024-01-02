@@ -17,8 +17,8 @@ const PlaceScreen = ({ route, navigation }) => {
     const [place, setPlace] = useState(null);
     const placeId = route.params.placeId;
     const [joined, setJoined] = useState('none');
-    const [participants, setParticipants] = useState([]);
-    const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+    const [clients, setClients] = useState([]);
+    const [clientsModalVisible, setClientsModalVisible] = useState(false);
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
     const [userImages, setUserImages] = useState([]);
@@ -28,7 +28,7 @@ const PlaceScreen = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
         setUserImages([]);
-        setParticipants([]);
+        setClients([]);
         if (placeId) {
             fetchPlace();
         } else if (preview) {
@@ -47,10 +47,10 @@ const PlaceScreen = ({ route, navigation }) => {
         setPreview(route.params.placePreview);
     }, [route.params.eventPreview]);
 
-    const fetchUserProfileImages = async (participants) => {
-        if (participants.length) {
+    const fetchUserProfileImages = async (clients) => {
+        if (clients.length) {
             try {
-                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${clients.join()}`);
                 const data = await response.json();
                 setUserImages(data);
             } catch (error) {
@@ -73,8 +73,8 @@ const PlaceScreen = ({ route, navigation }) => {
                 if (data.joined) {
                     setJoined('joined');
                 }
-                setParticipants(data.participants || []);
-                fetchUserProfileImages(data.participants);
+                setClients(data.clients || []);
+                fetchUserProfileImages(data.clients);
             } else {
                 Alert.alert(response.status === 404 ? 'Place not Found.' : 'Unknown error on fetching place.');
             }
@@ -191,10 +191,10 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
 
-                <Text style={styles.participantTitle}>Participants</Text>
-                <Pressable style={styles.participantsImages}
+                <Text style={styles.clientTitle}>Clients</Text>
+                <Pressable style={styles.clientsImages}
                     onPress={() => {
-                        setParticipantsModalVisible(participants.length > 0);
+                        setClientsModalVisible(clients.length > 0);
                     }}
                 >
                     {(preview ? [...Array(5)] : userImages).map((image, index) =>
@@ -213,13 +213,13 @@ const PlaceScreen = ({ route, navigation }) => {
                         </View>
                     )}
 
-                    {place.participants && place.participants.length > 5 ? (<Text style={styles.moreText}>+{place.participants.length - 5}</Text>) : ''}
+                    {place.clients && place.clients.length > 5 ? (<Text style={styles.moreText}>+{place.clients.length - 5}</Text>) : ''}
                     {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
-                    {participants.length > 0 ?
+                    {clients.length > 0 ?
                         <View style={styles.seeMoreButton}>
                             <Text style={styles.seeAllText}>See All</Text>
                         </View> :
-                        !preview && <Text style={styles.moreText}>There is still no participants.</Text>
+                        !preview && <Text style={styles.moreText}>There is still no clients.</Text>
                     }
                 </Pressable>
 
@@ -361,13 +361,13 @@ const styles = StyleSheet.create({
         fontSize: width * 0.045,
         fontWeight: 'bold',
     },
-    participantTitle: {
+    clientTitle: {
         fontSize: width * 0.06,
         fontWeight: 'bold',
         color: '#FFF',
         marginBottom: width * 0.025,
     },
-    participant: {
+    client: {
         backgroundColor: '#2D3748',
         opacity: 0.8,
         padding: width * 0.025,
@@ -384,12 +384,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    participantName: {
+    clientName: {
         fontSize: width * 0.04,
         color: '#A0AEC0',
         marginLeft: '3%',
     },
-    participantsImages: {
+    clientsImages: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: width * 0.025,

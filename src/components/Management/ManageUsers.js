@@ -234,7 +234,7 @@ const ManageUsers = ({ userToken, userIds, placeId, setUserPayments }) => {
                         <View style={styles.row}>
 
                             {usersImages.length > index && usersImages[index].success ?
-                            <Image style={{ width: 35, height: 35, marginRight: 5 }}
+                            <Image style={{ width: 35, height: 35, marginRight: 5, borderRadius: 20 }}
                                 source={{ uri: `data:image/jpeg;base64,${usersImages[index].profile_image}` }}
                                 onError={(error) => console.error('Image Error:', error)}
                             />

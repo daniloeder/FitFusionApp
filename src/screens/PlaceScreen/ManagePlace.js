@@ -18,14 +18,14 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const { placeId, userId, userToken } = route.params;
     const [place, setPlace] = useState(null);
-    const [participantStatus, setParticipantStatus] = useState('none');
+    const [clientStatus, setClientStatus] = useState('none');
 
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
-    const [isParticipantRequestsModalVisible, setParticipantRequestsModalVisible] = useState(false);
-    const [isParticipantManagerModalVisible, setParticipantManagerModalVisible] = useState(false);
+    const [isClientRequestsModalVisible, setClientRequestsModalVisible] = useState(false);
+    const [isClientManagerModalVisible, setClientManagerModalVisible] = useState(false);
     const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
-    const [participantRequests, setParticipantRequests] = useState([]);
+    const [clientRequests, setClientRequests] = useState([]);
     const [scannedUserData, setScannedUserData] = useState(null);
 
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
@@ -47,15 +47,15 @@ const PlaceScreen = ({ route, navigation }) => {
     );
 
     useEffect(() => {
-        if (route.params.isParticipantManagerModalVisible) {
-            setParticipantRequestsModalVisible(true);
-            fetchParticipantRequests();
+        if (route.params.isClientManagerModalVisible) {
+            setClientRequestsModalVisible(true);
+            fetchClientRequests();
         }
-    }, [route.params.isParticipantManagerModalVisible]);
+    }, [route.params.isClientManagerModalVisible]);
 
     useEffect(() => {
-        if (place && place.participant_status) {
-            setParticipantStatus(place.participant_status);
+        if (place && place.client_status) {
+            setClientStatus(place.client_status);
         }
     }, [place]);
 
@@ -82,17 +82,17 @@ const PlaceScreen = ({ route, navigation }) => {
     const toggleVideoModal = () => {
         setVideoModalVisible(!isVideoModalVisible);
     };
-    const fetchUserProfileImages = async (participantsIds) => {
-        if (participantsIds.length) {
+    const fetchUserProfileImages = async (clientsIds) => {
+        if (clientsIds.length) {
             try {
-                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participantsIds.join()}`);
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${clientsIds.join()}`);
                 if (response.ok) {
                     const data = await response.json();
                     const profileImageMap = {};
                     data.forEach((user) => {
                         profileImageMap[user.user_id] = user.profile_image;
                     });
-                    setParticipantRequests((prevUsers) => {
+                    setClientRequests((prevUsers) => {
                         return prevUsers.map((user) => {
                             if (profileImageMap.hasOwnProperty(user.user.id)) {
                                 return {
@@ -114,7 +114,7 @@ const PlaceScreen = ({ route, navigation }) => {
             }
         }
     };
-    const fetchParticipantRequests = async () => {
+    const fetchClientRequests = async () => {
         try {
             const response = await fetch(BASE_URL + `/api/places/${placeId}/owner-requests/`, {
                 method: 'GET',
@@ -125,13 +125,13 @@ const PlaceScreen = ({ route, navigation }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                setParticipantRequests(data);
+                setClientRequests(data);
                 fetchUserProfileImages(data.map(request => request.user.id));
             } else {
-                Alert.alert('Error', 'Failed to fetch participant requests.');
+                Alert.alert('Error', 'Failed to fetch client requests.');
             }
         } catch (error) {
-            console.error('Error fetching participant requests:', error);
+            console.error('Error fetching client requests:', error);
         }
     };
     const updateOpeningTimes = async () => {
@@ -214,7 +214,7 @@ const PlaceScreen = ({ route, navigation }) => {
             const data = await response.json();
 
             if (response.ok) {
-                setParticipantRequests(prevRequests => prevRequests.slice(0, index).concat(prevRequests.slice(index + 1)));
+                setClientRequests(prevRequests => prevRequests.slice(0, index).concat(prevRequests.slice(index + 1)));
             } else {
                 console.error('Request failed:', data);
             }
@@ -222,20 +222,20 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('An error occurred:', error);
         }
     }
-    const ParticipantRequestsModal = () => {
+    const ClientRequestsModal = () => {
         return (
             <Modal
                 transparent={true}
-                visible={isParticipantRequestsModalVisible}
-                onRequestClose={() => setParticipantRequestsModalVisible(false)}
+                visible={isClientRequestsModalVisible}
+                onRequestClose={() => setClientRequestsModalVisible(false)}
             >
-                <View style={styles.participantRequestsModalContainer}>
-                    <View style={styles.participantRequestsModalContent}>
-                        <Text style={styles.participantRequestsModalTitle}>Participant Requests</Text>
+                <View style={styles.clientRequestsModalContainer}>
+                    <View style={styles.clientRequestsModalContent}>
+                        <Text style={styles.clientRequestsModalTitle}>Clients Requests</Text>
                         <ScrollView>
-                            {participantRequests.map((request, index) => {
+                            {clientRequests.map((request, index) => {
                                 return (
-                                    <View key={index} style={styles.participantRequestItem}>
+                                    <View key={index} style={styles.clientRequestItem}>
                                         <View style={[styles.userBall, { borderColor: request.user.gender === 'M' ? '#0033FF' : request.user.gender === 'F' ? '#FF3399' : '#DDD' }]}>
                                             {request.user.profile_image ?
                                                 <Image style={styles.userBallImageProfile}
@@ -248,15 +248,15 @@ const PlaceScreen = ({ route, navigation }) => {
                                         </View>
                                         <View style={{ alignItems: 'center', marginLeft: '5%' }}>
                                             <Text style={styles.requestUsername}>{request.user.name}</Text>
-                                            <View style={styles.participantparticipantparticipantparticipantRequestButtons}>
+                                            <View style={styles.clientclientclientclientRequestButtons}>
                                                 <TouchableOpacity
-                                                    style={[styles.participantRequestButton, styles.approveButton]}
+                                                    style={[styles.clientRequestButton, styles.approveButton]}
                                                     onPress={() => handleRequest(true, request.user.id, index)}
                                                 >
                                                     <Text style={styles.buttonText}>Approve</Text>
                                                 </TouchableOpacity>
                                                 <TouchableOpacity
-                                                    style={[styles.participantRequestButton, styles.denyButton]}
+                                                    style={[styles.clientRequestButton, styles.denyButton]}
                                                     onPress={() => handleRequest(false, request.user.id, index)}
                                                 >
                                                     <Text style={styles.buttonText}>Deny</Text>
@@ -268,8 +268,8 @@ const PlaceScreen = ({ route, navigation }) => {
                             })}
                         </ScrollView>
                         <TouchableOpacity
-                            style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
-                            onPress={() => setParticipantRequestsModalVisible(false)}
+                            style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                            onPress={() => setClientRequestsModalVisible(false)}
                         >
                             <Text style={styles.buttonText}>Close</Text>
                         </TouchableOpacity>
@@ -278,25 +278,25 @@ const PlaceScreen = ({ route, navigation }) => {
             </Modal>
         );
     };
-    const ParticipantManagerModal = () => {
+    const ClientManagerModal = () => {
         return (
             <Modal
                 animationType="slide"
                 transparent={true}
-                visible={isParticipantManagerModalVisible}
-                onRequestClose={() => setParticipantManagerModalVisible(false)}
+                visible={isClientManagerModalVisible}
+                onRequestClose={() => setClientManagerModalVisible(false)}
             >
-                <View style={styles.participantManagerModalContainer}>
-                    <View style={styles.participantManagerModalContent}>
-                        <Text style={styles.participantManagerModalTitle}>Participant Management</Text>
+                <View style={styles.clientManagerModalContainer}>
+                    <View style={styles.clientManagerModalContent}>
+                        <Text style={styles.clientManagerModalTitle}>Clients Management</Text>
 
                         <ScrollView style={{ width: '100%' }}>
-                            <ManageUsers userToken={userToken} userIds={place.participants} placeId={placeId} />
+                            <ManageUsers userToken={userToken} userIds={place.clients} placeId={placeId} />
                         </ScrollView>
 
                         <TouchableOpacity
-                            style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
-                            onPress={() => setParticipantManagerModalVisible(false)}
+                            style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                            onPress={() => setClientManagerModalVisible(false)}
                         >
                             <Text style={styles.buttonText}>Close</Text>
                         </TouchableOpacity>
@@ -318,18 +318,18 @@ const PlaceScreen = ({ route, navigation }) => {
                     setUserPayments(null);
                 }}
             >
-                <View style={styles.participantManagerModalContainer}>
-                    <View style={[styles.participantManagerModalContent, { backgroundColor: userPayments && userPayments.payments ? userPayments.regular ? '#98FB98' : '#B22222' : "#FFF" }]}>
-                        <Text style={styles.participantManagerModalTitle}>Participant Data</Text>
+                <View style={styles.clientManagerModalContainer}>
+                    <View style={[styles.clientManagerModalContent, { backgroundColor: userPayments && userPayments.payments ? userPayments.regular ? '#98FB98' : '#B22222' : "#FFF" }]}>
+                        <Text style={styles.clientManagerModalTitle}>Client Data</Text>
 
                         <View style={{ width: '100%', minHeight: width }}>
                             {scannedUserData ?
                                 <ScrollView style={{ width: '100%' }}>
 
-                                    {!userPayments || userPayments.participant || (userPayments.payments) ?
+                                    {!userPayments || userPayments.client || (userPayments.payments) ?
                                         <ManageUsers userToken={userToken} userIds={[scannedUserData.id]} placeId={placeId} setUserPayments={!userPayments ? setUserPayments : undefined} />
                                         :
-                                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a participant of this Place.</Text>
+                                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a client of this Place.</Text>
                                     }
 
                                 </ScrollView>
@@ -339,7 +339,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         </View>
 
                         <TouchableOpacity
-                            style={[styles.participantRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                            style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
                             onPress={() => {
                                 setScannedUserModalVisible(false);
                                 setScannedUserData(null);
@@ -437,22 +437,22 @@ const PlaceScreen = ({ route, navigation }) => {
                     }
                     {place.created_by == userId ?
                         <Pressable
-                            onPress={() => setParticipantManagerModalVisible(true)}
+                            onPress={() => setClientManagerModalVisible(true)}
                             style={[styles.createEventButton, { minWidth: width * 0.6 }]}
                         >
                             <Icons name="ParticipantEdit" size={width * 0.08} />
-                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Manager</Text>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Clients Manager</Text>
                         </Pressable>
                         : ''
                     }
                 </View>
-                {place.created_by == userId && (participantStatus === 'requested' || participantStatus === 'owner') ?
+                {place.created_by == userId && (clientStatus === 'requested' || clientStatus === 'owner') ?
                     <Pressable
-                        onPress={() => setParticipantRequestsModalVisible(true)}
+                        onPress={() => setClientRequestsModalVisible(true)}
                         style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
                     >
                         <Icons name="ParticipantRequest" size={width * 0.08} />
-                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Requests</Text>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Clients Requests</Text>
                     </Pressable>
                     : ''
                 }
@@ -489,8 +489,8 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
                 <ScannedUserModal />
-                <ParticipantManagerModal />
-                <ParticipantRequestsModal />
+                <ClientManagerModal />
+                <ClientRequestsModal />
 
                 <Text style={styles.title}>{place.name}</Text>
 
@@ -594,8 +594,8 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
 
-                {/* Add Join/Leave/Requested button based on participantStatus */}
-                {participantStatus === 'owner' ? '' : (
+                {/* Add Join/Leave/Requested button based on clientStatus */}
+                {clientStatus === 'owner' ? '' : (
                     true ?
                         <>
                             <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
         margin: width * 0.02,
         position: 'relative',
     },
-    participantRequestButton: {
+    clientRequestButton: {
         paddingVertical: 5,
         paddingHorizontal: 20,
         borderRadius: 5,
@@ -697,14 +697,14 @@ const styles = StyleSheet.create({
     },
 
 
-    // Styles for Participant Requests Modal
-    participantRequestsModalContainer: {
+    // Styles for Client Requests Modal
+    clientRequestsModalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    participantRequestsModalContent: {
+    clientRequestsModalContent: {
         width: '80%',
         maxHeight: '90%',
         backgroundColor: '#FFF',
@@ -712,31 +712,31 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
-    participantRequestsModalTitle: {
+    clientRequestsModalTitle: {
         fontSize: width * 0.05,
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    participantRequestItem: {
+    clientRequestItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
     },
-    participantManagerButton: {
+    clientManagerButton: {
         paddingVertical: 5,
         paddingHorizontal: 20,
         borderRadius: 5,
         marginHorizontal: 5,
     },
 
-    // Styles for Participant Manager Modal
-    participantManagerModalContainer: {
+    // Styles for Client Manager Modal
+    clientManagerModalContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    participantManagerModalContent: {
+    clientManagerModalContent: {
         width: '96%',
         maxHeight: '90%',
         backgroundColor: '#FFF',
@@ -744,12 +744,12 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: 'center',
     },
-    participantManagerModalTitle: {
+    clientManagerModalTitle: {
         fontSize: width * 0.05,
         fontWeight: 'bold',
         marginBottom: 10,
     },
-    participantManagerItem: {
+    clientManagerItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 10,
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
         height: '100%',
         borderRadius: width * 0.05
     },
-    participantparticipantparticipantparticipantRequestButtons: {
+    clientclientclientclientRequestButtons: {
         flexDirection: 'row',
     },
     approveButton: {
