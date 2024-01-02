@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.03,
     marginBottom: '4%',
     marginLeft: '8%',
-    backgroundColor: 'rgba(0, 128, 128, 0.35)',
+    backgroundColor: 'rgba(200, 200, 0, 0.2)',
     justifyContent: 'center',
   },
   buttonText: {
