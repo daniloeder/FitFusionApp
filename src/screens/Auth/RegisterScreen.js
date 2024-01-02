@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
+import FacebookLogin from '../../components/FacebookLogin/FacebookLogin';
 import { storeAuthToken, storeData } from '../../store/store';
 import { BASE_URL } from '@env';
 
@@ -190,6 +191,7 @@ function RegisterScreen({ navigation }) {
                 <Text style={styles.title}>Register</Text>
                 {!socialToken || !accessToken ? <>
                     <GoogleLogin title="Register with Google" setGoogleToken={setSocialToken} setGoogleData={setSocialData} registration />
+                    <FacebookLogin title="Register with Facebook" />
                     <CustomInput
                         placeholder="Email"
                         placeholderTextColor="#656565"

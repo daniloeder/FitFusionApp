@@ -31,6 +31,7 @@ import EyeSlash from './../../../assets/icons/eyeSlash.svg';
 import Eye from './../../../assets/icons/eye.svg';
 import Images from './../../../assets/icons/Images.svg';
 import Google from './../../../assets/icons/google.svg';
+import Facebook from './../../../assets/icons/Facebook.svg';
 import Edit from './../../../assets/icons/edit.svg';
 
 import BodyBuilding from './../../../assets/icons/sports/BodyBuilding.svg';
@@ -118,6 +119,7 @@ const Icons = ({
     Images: Images,
     EyeSlash: EyeSlash,
     Google: Google,
+    Facebook: Facebook,
     Edit: Edit,
     
     BodyBuilding: BodyBuilding,

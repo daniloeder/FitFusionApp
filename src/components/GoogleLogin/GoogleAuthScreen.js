@@ -11,15 +11,15 @@ LogBox.ignoreLogs(['The useProxy option is deprecated and will be removed in a f
 
 const GoogleSignInButton = ({ promptAsync, title = "Sign In with Google" }) => (
 
-  <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '15%' }}>
+  <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '15%', marginBottom: 20 }}>
     <TouchableOpacity
-      style={{ backgroundColor: "#4285F4", width: "100%", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center", justifyContent: "center", flexDirection: 'row' }}
+      style={{ backgroundColor: "#FFF", width: "100%", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center", justifyContent: "center", flexDirection: 'row' }}
       onPress={() => promptAsync()}
     >
-      <View style={{ padding: 8, backgroundColor: "#FFF", borderRadius: 20, marginRight: '5%' }}>
+      <View style={{ padding: 8, backgroundColor: "#EEE", borderRadius: 20, marginRight: '5%' }}>
         <Icons name="Google" />
       </View>
-      <Text style={{ fontWeight: "bold", color: "white", fontSize: 17 }}>
+      <Text style={{ fontWeight: "bold", color: "#4285F4", fontSize: 17 }}>
         {title}
       </Text>
     </TouchableOpacity>
@@ -53,7 +53,5 @@ export default function GoogleLogin({ title, setGoogleToken, setGoogleData, regi
 
   if (!authToken) {
     return <GoogleSignInButton promptAsync={promptAsync} title={title} />;
-  } else {
-    return <Button title="Sign Out" onPress={handleSignOut} />;
   }
 }

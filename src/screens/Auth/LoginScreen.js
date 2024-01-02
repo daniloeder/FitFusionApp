@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
+import FacebookLogin from '../../components/FacebookLogin/FacebookLogin';
 import { storeAuthToken, fetchAuthToken, storeData } from '../../store/store';
 import { BASE_URL } from '@env';
 
@@ -106,6 +107,7 @@ function LoginScreen() {
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
                 <GoogleLogin title="Log In with Google" setGoogleToken={setSocialToken} />
+                <FacebookLogin title="Log In with Facebook" />
                 <CustomInput
                     placeholder="Email or Username"
                     placeholderTextColor="#656565"
