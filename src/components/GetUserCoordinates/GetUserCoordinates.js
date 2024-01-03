@@ -78,14 +78,12 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 20,
     },
     button: {
         backgroundColor: '#007bff',
         paddingHorizontal: 20,
         paddingVertical: 10,
         borderRadius: 5,
-        marginTop: 20,
     },
     buttonText: {
         color: 'white',

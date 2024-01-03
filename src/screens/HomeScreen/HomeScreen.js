@@ -165,12 +165,33 @@ const HomeScreen = ({ route, navigation }) => {
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Welcome to Fit Fusion</Text>
 
-        {places.length || joinedEvents.length ?
+        {userLocation ?
+          <>
+            <Text style={styles.updatesMessageText}>
+              You Can Now See The Updates Around You:
+            </Text>
+            <TouchableOpacity
+              style={styles.mapButton}
+              onPress={() => navigation.navigate('Map')}
+            >
+              <Text style={styles.mapButtonText}>Check on Map</Text>
+              <Icons name="Map" size={width * 0.06} />
+            </TouchableOpacity>
+          </>
+          :
+          <Text style={styles.initialMessageText}>
+            Let's start looking for sports places, events and partners near you:
+          </Text>
+        }
+        <GetUserCoordinates userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
+
+        {(places.length || joinedEvents.length) ?
           <>
             {places.length ? <Text style={styles.subtitle}>My Places:</Text> : ''}
             {places.slice(0, 3).map((place) => (
               <View key={place.id.toString()} style={styles.placeItem}>
                 <Text style={styles.placeTitle}>{place.name}</Text>
+                {place.events.length && <Text style={{marginLeft:width*0.075,color:'#FFF'}}>Events in this place:</Text>}
                 {place.events.map((event) => (
                   <View key={event.id}>
                     <TouchableOpacity
@@ -229,30 +250,7 @@ const HomeScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
               </View>
             ))}
-          </>
-          :
-          <>
-            <Text style={styles.initialMessageText}>
-              Let's start looking for sports places, events and partners near you:
-            </Text>
-            <GetUserCoordinates userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
-
-            {userLocation ?
-              <>
-                <Text style={styles.updatesMessageText}>
-                  You Can Now See The Updates Around You:
-                </Text>
-                <TouchableOpacity
-                  style={styles.mapButton}
-                  onPress={() => navigation.navigate('Map')}
-                >
-                  <Text style={styles.mapButtonText}>Check on Map</Text>
-                  <Icons name="Map" size={width * 0.06} />
-                </TouchableOpacity>
-              </>
-              : ''
-            }
-          </>
+          </> : ''
         }
 
         {closerUsers ?
@@ -527,12 +525,12 @@ const styles = StyleSheet.create({
   mapButton: {
     paddingHorizontal: width * 0.03,
     height: width * 0.12,
-    borderRadius: width * 0.05,
+    borderRadius: width * 0.03,
     backgroundColor: '#EEE',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    marginBottom: width * 0.1,
+    marginBottom: width * 0.05,
   },
   mapButtonText: {
     fontSize: width * 0.04,
