@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useGlobalContext } from './../../services/GlobalContext';
 import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { formatDate } from './../../utils/helpers';
@@ -13,6 +14,8 @@ const ChatListScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
   const [chatRooms, setChatRooms] = useState([]);
   const [onlineStatus, setOnlineStatus] = useState({});
+
+  const { setCurrentChat } = useGlobalContext();
 
   const { chats } = useChat();
 
@@ -65,6 +68,7 @@ const ChatListScreen = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       fetchChatRooms();
+      setCurrentChat(0);
     }, [userToken, chats])
   );
 

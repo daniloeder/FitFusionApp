@@ -3,7 +3,7 @@ import { useChat } from '../utils/chats';
 
 const GlobalContext = createContext(null);
 
-export const GlobalProvider = ({ children, userToken, addNotification, markAllAsRead }) => {
+export const GlobalProvider = ({ children, userToken, addNotification, markAllAsRead, setCurrentChat }) => {
   const [webSocket, setWebSocket] = useState(null);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
   const { handleNewMessage } = useChat();
@@ -71,7 +71,7 @@ export const GlobalProvider = ({ children, userToken, addNotification, markAllAs
   }, [connectWebSocket]);
 
   return (
-    <GlobalContext.Provider value={{ userToken, webSocket, sendMessage, markAllAsRead }}>
+    <GlobalContext.Provider value={{ userToken, webSocket, sendMessage, markAllAsRead, setCurrentChat }}>
       {children}
     </GlobalContext.Provider>
   );

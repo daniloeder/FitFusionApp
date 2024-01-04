@@ -18,7 +18,7 @@ const ChatScreen = ({ route, navigation }) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const { webSocket, sendMessage } = useGlobalContext();
+  const { webSocket, sendMessage, setCurrentChat } = useGlobalContext();
 
   webSocket.onmessage = (e) => {
     try {
@@ -49,6 +49,7 @@ const ChatScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     setChatId(route.params.chatId || false);
+    setCurrentChat(route.params.chatId);
   }, [route.params.chatId]);
 
   useEffect(() => {

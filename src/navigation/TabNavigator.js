@@ -129,6 +129,8 @@ const TabNavigator = () => {
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
 
+  const [currentChat, setCurrentChat] = useState(0);
+
   const [notifications, setNotifications] = useState([]);
   const addNotification = (notification) => {
     setNotifications(currentNotifications => [...currentNotifications, notification]);
@@ -149,7 +151,7 @@ const TabNavigator = () => {
           setUserId(id);
           fetchAuthToken()
             .then((token) => {
-              if(id && token){
+              if (id && token) {
                 setUserToken(token);
                 registerForPushNotificationsAsync(token);
               } else {
@@ -167,31 +169,42 @@ const TabNavigator = () => {
   );
 
   useEffect(() => {
-
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowAlert: true,
-        shouldPlaySound: true,
-        shouldSetBadge: true,
-      }),
+      handleNotification: async (notification) => {
+        const chat_id = notification.request.content.data.chat_id;
+        const shouldShow = notification.request.content.data.shouldShow && chat_id != currentChat;
+
+        return {
+          shouldShowAlert: shouldShow,
+          shouldPlaySound: shouldShow,
+          shouldSetBadge: shouldShow,
+        };
+      },
     });
+
+    // This listener is fired whenever a notification is received while the app is foregrounded
+    Notifications.addNotificationReceivedListener(notification => {
+      
+    });
+
+    // This listener is fired whenever a user taps on or interacts with a notification
+    Notifications.addNotificationResponseReceivedListener(notification => {
+      const data = notification.notification.request.content.data
+
+      if (data.type === 'chat_message') {
+        navigation.navigate('Tabs', { screen: 'Chat', params: { chatId: data.chat_id, chatName: data.name, chatImage: data.profile_image } });
+      }
+    });
+
+  }, [currentChat]);
+
+  useEffect(() => {
 
     Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
-    });
-
-    // This listener is fired whenever a notification is received while the app is foregrounded
-    Notifications.addNotificationReceivedListener(notification => {
-      //console.log('Notification Received:', notification);
-    });
-
-    // This listener is fired whenever a user taps on or interacts with a notification
-    Notifications.addNotificationResponseReceivedListener(response => {
-      const data = response.notification.request.trigger.remoteMessage.data.body;
-      navigation.navigate('Chat List')
     });
 
     return () => {
@@ -207,7 +220,7 @@ const TabNavigator = () => {
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <GlobalProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead}>
+    <GlobalProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead} setCurrentChat={setCurrentChat}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
