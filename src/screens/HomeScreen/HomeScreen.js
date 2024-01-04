@@ -191,7 +191,7 @@ const HomeScreen = ({ route, navigation }) => {
             {places.slice(0, 3).map((place) => (
               <View key={place.id.toString()} style={styles.placeItem}>
                 <Text style={styles.placeTitle}>{place.name}</Text>
-                {place.events.length && <Text style={{marginLeft:width*0.075,color:'#FFF'}}>Events in this place:</Text>}
+                {place.events.length && <Text style={{ marginLeft: width * 0.075, color: '#FFF' }}>Events in this place:</Text>}
                 {place.events.map((event) => (
                   <View key={event.id}>
                     <TouchableOpacity
@@ -236,20 +236,22 @@ const HomeScreen = ({ route, navigation }) => {
             )}
 
             {joinedPlaces.length ? <Text style={styles.subtitle}>Places I've Joined:</Text> : ''}
-            {joinedPlaces.map((place) => (
-              <View key={place.id} style={styles.joinedEventItem}>
-                <TouchableOpacity
-                  style={styles.joinedEventButton}
-                  onPress={() => {
-                    navigation.navigate('Place', { placeId: place.id });
-                  }}
-                >
-                  <Text style={styles.joinedEventTitle}>{place.name}</Text>
-                  <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
-                  {place.payments && place.payments.length && !place.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text>}
-                </TouchableOpacity>
-              </View>
-            ))}
+            {joinedPlaces.map((place) => {
+              return (
+                <View key={place.id} style={styles.joinedEventItem}>
+                  <TouchableOpacity
+                    style={styles.joinedPlaceButton}
+                    onPress={() => {
+                      navigation.navigate('Place', { placeId: place.id });
+                    }}
+                  >
+                    <Text style={styles.joinedEventTitle}>{place.name}</Text>
+                    <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
+                    {place.payments && place.payments.length && !place.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text>}
+                  </TouchableOpacity>
+                </View>
+              )
+            })}
           </> : ''
         }
 
@@ -476,6 +478,16 @@ const styles = StyleSheet.create({
     color: '#f39c12',
   },
   joinedEventButton: {
+    width: '100%',
+    minHeight: width * 0.05,
+    borderRadius: width * 0.03,
+    marginVertical: '2%',
+    marginLeft: '-8%',
+    backgroundColor: 'rgba(200, 200, 0, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  joinedPlaceButton: {
     width: '100%',
     minHeight: width * 0.05,
     borderRadius: width * 0.03,
