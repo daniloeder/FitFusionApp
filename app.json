@@ -5,11 +5,11 @@
     "scheme": "FitFusionApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/fit_fusion_icon.png",
     "userInterfaceStyle": "light",
     "useNextNotificationsApi": true,
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/fit_fusion_icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -25,7 +25,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/fit_fusion_icon.png",
         "backgroundColor": "#ffffff"
       },
       "permissions": [
@@ -35,7 +35,7 @@
       "package": "com.daniloeder.FitFusionApp"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/fit_fusion_icon.png"
     },
     "extra": {
       "eas": {
