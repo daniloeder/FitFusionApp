@@ -277,21 +277,6 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
     if (!isTooClose || coodinatesList.length === 0) {
       setCoordinatesList([...coodinatesList, { lat: newRegion.latitude, lng: newRegion.longitude }]);
     }
-
-    if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
-      mapRef.current.animateToRegion({
-        ...newRegion,
-        latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
-        longitudeDelta: MAX_ZOOM_LATITUDE_DELTA * (newRegion.longitudeDelta / newRegion.latitudeDelta),
-      });
-    }
-    if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
-      mapRef.current.animateToRegion({
-        ...newRegion,
-        latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
-        longitudeDelta: MAX_ZOOM_LATITUDE_DELTA * (newRegion.longitudeDelta / newRegion.latitudeDelta),
-      });
-    }
   };
 
   return (
