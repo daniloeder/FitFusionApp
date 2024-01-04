@@ -247,7 +247,7 @@ const HomeScreen = ({ route, navigation }) => {
                   >
                     <Text style={styles.joinedEventTitle}>{place.name}</Text>
                     <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
-                    {place.payments && place.payments.length && !place.payments.regular && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text>}
+                    {place.payments && place.payments.length && !place.payments.regular && place.payments.days_until_next > -1 && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text>}
                   </TouchableOpacity>
                 </View>
               )
