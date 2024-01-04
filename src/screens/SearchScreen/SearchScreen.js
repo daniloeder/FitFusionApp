@@ -6,7 +6,7 @@ import Icons from '../../components/Icons/Icons';
 
 const width = Dimensions.get('window').width;
 
-const SearchScreen = () => {
+const SearchScreen = ({ navigation }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState({ events: [], places: [], users: [] });
   const [searched, setSearched] = useState(false);
@@ -16,7 +16,6 @@ const SearchScreen = () => {
       const url = BASE_URL + `/api/common/search/?q=${encodeURIComponent(query)}`;
       const response = await fetch(url);
       const data = await response.json();
-      console.log(data)
       setResults(data);
     } catch (error) {
       console.error('Error during the search:', error);
@@ -53,41 +52,53 @@ const SearchScreen = () => {
         {results.users.length > 0 && (
           <Text style={styles.resultCategory}>Users</Text>
         )}
-        {results.users.map(user => 
-            <View key={user.id.toString()} style={[styles.resultItem, styles.row]}>
-              {user.profile_image ?
-                <Image
-                  style={styles.profileImage}
-                  source={{ uri: BASE_URL + user.profile_image }}
-                />
-                :
-                <View style={{ width: width * 0.12, height: width * 0.12, alignItems: 'center', justifyContent: 'center' }}>
-                  <Icons name="Profile" size={width * 0.1} fill={'#1C274C'} />
-                </View>
-              }
-              <View style={styles.textContainer}>
-                <Text style={styles.resultTitle}>{user.username}</Text>
-                <Text style={styles.resultDescription}>{truncateText(user.bio, 100)}</Text>
+        {results.users.map(user =>
+          <TouchableOpacity key={user.id.toString()} style={[styles.resultItem, styles.row]}
+            onPress={() => {
+              navigation.navigate('User Profile', { id: user.id })
+            }}
+          >
+            {user.profile_image ?
+              <Image
+                style={styles.profileImage}
+                source={{ uri: BASE_URL + user.profile_image }}
+              />
+              :
+              <View style={{ width: width * 0.12, height: width * 0.12, alignItems: 'center', justifyContent: 'center' }}>
+                <Icons name="Profile" size={width * 0.1} fill={'#1C274C'} />
               </View>
+            }
+            <View style={styles.textContainer}>
+              <Text style={styles.resultTitle}>{user.username}</Text>
+              <Text style={styles.resultDescription}>{truncateText(user.bio, 100)}</Text>
             </View>
+          </TouchableOpacity>
         )}
         {results.events.length > 0 && (
           <Text style={styles.resultCategory}>Events</Text>
         )}
         {results.events.map(event => (
-          <View key={event.id.toString()} style={styles.resultItem}>
+          <TouchableOpacity key={event.id.toString()} style={styles.resultItem}
+            onPress={() => {
+              navigation.navigate('Event', { eventId: event.id })
+            }}
+          >
             <Text style={styles.resultTitle}>{event.title}</Text>
             <Text style={styles.resultDescription}>{truncateText(event.description, 100)}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
         {results.places.length > 0 && (
           <Text style={styles.resultCategory}>Places</Text>
         )}
         {results.places.map(place => (
-          <View key={place.id.toString()} style={styles.resultItem}>
+          <TouchableOpacity key={place.id.toString()} style={styles.resultItem}
+            onPress={() => {
+              navigation.navigate('Place', { placeId: place.id })
+            }}
+          >
             <Text style={styles.resultTitle}>{place.name}</Text>
             <Text style={styles.resultDescription}>{truncateText(place.description, 100)}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
         {results.users.length === 0 && searched && (
           <Text style={styles.notFound}>No users found</Text>
