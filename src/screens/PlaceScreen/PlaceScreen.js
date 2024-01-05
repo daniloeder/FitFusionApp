@@ -13,9 +13,8 @@ import { BASE_URL } from '@env';
 const width = Dimensions.get('window').width;
 
 const PlaceScreen = ({ route, navigation }) => {
-    const { userId, userToken } = route.params;
+    const { userToken, userId, placeId } = route.params;
     const [place, setPlace] = useState(null);
-    const placeId = route.params.placeId;
     const [joined, setJoined] = useState('none');
     const [clients, setClients] = useState([]);
     const [clientsModalVisible, setClientsModalVisible] = useState(false);
@@ -23,12 +22,13 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [userImages, setUserImages] = useState([]);
 
-    const [preview, setPreview] = useState(route.params);
+    const [preview, setPreview] = useState(route.params.placePreview);
 
   useFocusEffect(
     useCallback(() => {
         setUserImages([]);
         setClients([]);
+        setPlace(null);
         if (placeId) {
             fetchPlace();
         } else if (preview) {
@@ -36,7 +36,7 @@ const PlaceScreen = ({ route, navigation }) => {
         } else {
             Alert.alert('Place error.');
         }
-    }, [])
+    }, [placeId])
   );
 
     useEffect(() => {
@@ -245,7 +245,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <View key={index}
                                     style={styles.userImagesItems}
                                 >
-                                    <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
+                                    <ShowMedia media={preview ? image.photo : BASE_URL + `${image.image}`} size={width * 0.26} />
                                 </View>
                             )
                         })}

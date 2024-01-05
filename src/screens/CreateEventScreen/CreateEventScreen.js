@@ -36,7 +36,7 @@ const CreateEventScreen = ({ route, navigation }) => {
         time: time,
         coordinates: coordinates,
         sport_types: favoriteSports.map(sport => sport.id || sport),
-        photos: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
+        images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
 

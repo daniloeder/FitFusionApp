@@ -276,14 +276,14 @@ const EventScreen = ({ route, navigation }) => {
                 <View key={index}
                   style={styles.userImagesItems}
                 >
-                  <ShowMedia media={BASE_URL + `${image.image}`} size={width * 0.26} />
+                  <ShowMedia media={preview ? image.photo : BASE_URL + `${image.image}`} size={width * 0.26} />
                 </View>
               )
             })}
           </View>
           : ''
         }
-        {(event.place_videos && event.place_videos.length) || (preview && event.videos) ?
+        {(event.videos && event.videos.length) || (preview && event.videos) ?
           <View
             style={styles.userImagesContainer}
           >
@@ -297,7 +297,7 @@ const EventScreen = ({ route, navigation }) => {
           : ''
         }
 
-        {(event.place_videos && event.place_videos.length) || (preview && event.videos) ?
+        {(event.videos && event.videos.length) || (preview && event.videos) ?
           <Modal
             animationType="slide"
             transparent={false}
@@ -310,7 +310,7 @@ const EventScreen = ({ route, navigation }) => {
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
               >
                 <ShowMedia
-                  media={preview ? event.videos : BASE_URL + `${event.place_videos[0].video}`}
+                  media={preview ? event.videos : BASE_URL + `${event.videos[0].video}`}
                   isVideo={true}
                   style={{ width: width, height: width * (9 / 16) }}
                 />

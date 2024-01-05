@@ -51,11 +51,11 @@ function validateOpenTimes(data) {
 const CreatePlaceScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
     const { preview } = route.params;
-    const [name, setName] = useState('test' || preview && preview.name || '');
-    const [description, setDescription] = useState('test' || preview && preview.description || '');
-    const [location, setLocation] = useState('test' || preview && preview.location || '');
-    const [sportsType, setSportsType] = useState([{"id": 1, "name": "Bodybuilding"}] || preview && preview.sportType || []);
-    const [coordinates, setCoordinates] = useState({"latitude": 36.5499, "longitude": 9.4422664} || preview && preview.coordinates || '');
+    const [name, setName] = useState(preview && preview.name || '');
+    const [description, setDescription] = useState(preview && preview.description || '');
+    const [location, setLocation] = useState(preview && preview.location || '');
+    const [sportsType, setSportsType] = useState(preview && preview.sportType || []);
+    const [coordinates, setCoordinates] = useState(preview && preview.coordinates || '');
 
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState([]);
@@ -70,7 +70,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         coordinates: coordinates,
         sport_types_keys: sportsType.map(sport => sport.id || sport),
         open_times: convertOpenTimes(dates),
-        photos: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
+        place_images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
 
@@ -212,7 +212,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                         }
 
                         <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { navigation.navigate('Place', { placePreview: placePreview }) }}>
-                            <Text style={styles.buttonText}>Preview Event</Text>
+                            <Text style={styles.buttonText}>Preview Place</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
