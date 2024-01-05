@@ -191,7 +191,7 @@ const HomeScreen = ({ route, navigation }) => {
             {places.slice(0, 3).map((place) => (
               <View key={place.id.toString()} style={styles.placeItem}>
                 <Text style={styles.placeTitle}>{place.name}</Text>
-                {place.events.length && <Text style={{ marginLeft: width * 0.075, color: '#FFF' }}>Events in this place:</Text>}
+                {place.events.length ? <Text style={{ marginLeft: width * 0.075, color: '#FFF' }}>Events in this place:</Text> : ''}
                 {place.events.map((event) => (
                   <View key={event.id}>
                     <TouchableOpacity
