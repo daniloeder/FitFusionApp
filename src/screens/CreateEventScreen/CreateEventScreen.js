@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimens
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
+import CustomSelect from '../../components/CustomSelect/CustomSelect.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import DatePicker from '../../components/Forms/DatePicker';
 import { SportsNames, SportsTypes } from '../../utils/sports';
@@ -26,7 +27,7 @@ const CreateEventScreen = ({ route, navigation }) => {
     const [selectedVideo, setSelectedVideo] = useState([]);
 
     const [places, setPlaces] = useState([]);
-    const[eventPlace, setEventPlace] = useState([]);
+    const [eventPlace, setEventPlace] = useState([]);
 
     const eventPreview = {
         title: title,
@@ -43,14 +44,14 @@ const CreateEventScreen = ({ route, navigation }) => {
     const fetchPlaces = async () => {
         try {
             const response = await fetch(BASE_URL + '/api/places/', {
-              method: 'GET',
-              headers: {
-                Authorization: `Token ${userToken}`,
-              },
+                method: 'GET',
+                headers: {
+                    Authorization: `Token ${userToken}`,
+                },
             });
             const data = await response.json();
             if (response.ok) {
-                setPlaces(data.map(place=>({id:place.id, name: place.name})));
+                setPlaces(data.map(place => ({ id: place.id, name: place.name })));
             }
         } catch (error) {
             console.error('Error fetching places:', error);
@@ -140,7 +141,7 @@ const CreateEventScreen = ({ route, navigation }) => {
                 },
                 body: eventFormData
             });
-            
+
             if (eventResponse.ok) {
                 const eventData = await eventResponse.json();
                 navigation.navigate('Event', { eventId: eventData.id })
@@ -192,8 +193,8 @@ const CreateEventScreen = ({ route, navigation }) => {
                 <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
-                <Text style={styles.inputTitles}>Event Place</Text>
-                <CustomPicker options={places} selectedOptions={eventPlace || []} setSelectedOptions={setEventPlace} max={1} />
+                <Text style={styles.inputTitles}>Event Place (Optional)</Text>
+                <CustomSelect options={places} selectedOption={eventPlace || []} setSelectedOption={setEventPlace} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />

@@ -42,8 +42,8 @@ function GetUserCoordinates({ userToken, userLocation, setUserLocation }) {
             try {
                 let location = await Location.getCurrentPositionAsync({});
                 setUserLocation({
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
+                    latitude: 52.5090663,//location.coords.latitude,
+                    longitude: 13.4005972,//location.coords.longitude,
                 });
                 Alert.alert('Location Updated Based on Your Current Location!');
             } catch (error) {
@@ -78,6 +78,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        marginBottom: width*0.05,
     },
     button: {
         backgroundColor: '#007bff',

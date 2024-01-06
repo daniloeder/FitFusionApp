@@ -4,7 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
-import CustomInput from '../../components/Forms/CustomInput.js';
+import CustomSelect from '../../components/CustomSelect/CustomSelect.js';
 import OpenTimes from '../../components/Forms/OpenTimes.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
@@ -176,7 +176,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = sportsType.map(sport => sport.id || sport), index = true)} setSelectedOptions={setSportsType} max={5} />
 
                 <Text style={styles.inputTitles}>Is Private</Text>
-                <CustomPicker options={[{ id: 1, name: "Private" }, { id: 2, name: "Public" }]} selectedOptions={privated} setSelectedOptions={setPrivated} max={1} />
+                <CustomSelect options={[{ id: 1, name: "Private" }, { id: 2, name: "Public" }]} selectedOption={privated} setSelectedOption={setPrivated} />
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
