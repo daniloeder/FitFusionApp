@@ -12,7 +12,7 @@ import { BASE_URL } from '@env';
 const width = Dimensions.get('window').width;
 
 const EventScreen = ({ route, navigation }) => {
-  const { userId, userToken } = route.params;
+  const { userToken, userId, eventId } = route.params;
   const [event, setEvent] = useState(null);
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
@@ -23,8 +23,6 @@ const EventScreen = ({ route, navigation }) => {
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
-  const eventId = route.params.eventId;
-
   useFocusEffect(
     useCallback(() => {
       setEvent(null);
@@ -33,7 +31,7 @@ const EventScreen = ({ route, navigation }) => {
       if (eventId) {
         fetchEvent();
       }
-    }, [])
+    }, [eventId])
   );
   useEffect(() => {
     setEvent(preview);
@@ -44,10 +42,10 @@ const EventScreen = ({ route, navigation }) => {
   }, [route.params.eventPreview]);
 
   useEffect(() => {
-    if (eventId) {
-      fetchEvent();
-    } else if (preview) {
+    if (preview) {
       setEvent(preview);
+    } else if (eventId) {
+      fetchEvent();
     } else {
       Alert.alert('Event error.');
     }
@@ -254,7 +252,7 @@ const EventScreen = ({ route, navigation }) => {
             <View style={styles.seeMoreButton}>
               <Text style={styles.seeAllText}>See All</Text>
             </View> :
-            <Text style={styles.moreText}>There is still no participants.</Text>
+            !preview ? <Text style={styles.moreText}>There is still no participants.</Text> : ''
           }
         </Pressable>
 
@@ -310,7 +308,7 @@ const EventScreen = ({ route, navigation }) => {
                 style={{ width: '100%', height: '100%', backgroundColor: '#000' }}
               >
                 <ShowMedia
-                  media={preview ? event.videos : BASE_URL + `${event.videos[0].video}`}
+                  media={preview ? event.videos : `${event.videos[0].video}`}
                   isVideo={true}
                   style={{ width: width, height: width * (9 / 16) }}
                 />
@@ -322,7 +320,7 @@ const EventScreen = ({ route, navigation }) => {
 
         {preview ?
           <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
-            navigation.navigate("CreateEvent")
+            navigation.navigate("Create Event")
           }}>
             <Text style={styles.buttonText}>Back to edition</Text>
           </TouchableOpacity> : ''

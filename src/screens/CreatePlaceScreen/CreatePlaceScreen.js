@@ -202,7 +202,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                         />
 
                         {setOpenCloseTime ?
-                            <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} add cancel />
+                            <OpenTimes dates={dates} setDates={setDates} setSetOpenCloseTime={setSetOpenCloseTime} cancel />
                             :
                             <TouchableOpacity style={styles.AddWorkingTimeButton} onPress={() => setSetOpenCloseTime(true)}>
                                 <Text style={{ color: '#FFFFFF', fontSize: 16, }}>
@@ -215,12 +215,12 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                             <Text style={styles.buttonText}>Preview Place</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
+                        <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.2 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
                             <Text style={styles.buttonText}>Create Place</Text>
                         </TouchableOpacity>
                     </>
                     :
-                    <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
+                    <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.2 }]} onPress={() => { !setOpenCloseTime || validateOpenTimes(dates) ? createPlace() : {} }}>
                         <Text style={styles.buttonText}>Update Place</Text>
                     </TouchableOpacity>
                 }
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
         borderRadius: width * 0.01,
         alignItems: 'center',
         marginTop: width * 0.05,
-        marginBottom: width * 0.1,
+        marginBottom: width * 0.01,
     },
     buttonText: {
         color: '#FFF',

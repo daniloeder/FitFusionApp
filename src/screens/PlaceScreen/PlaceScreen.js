@@ -29,10 +29,10 @@ const PlaceScreen = ({ route, navigation }) => {
         setUserImages([]);
         setClients([]);
         setPlace(null);
-        if (placeId) {
-            fetchPlace();
-        } else if (preview) {
+        if (preview) {
             setPlace(preview);
+        } else if (placeId) {
+            fetchPlace();
         } else {
             Alert.alert('Place error.');
         }
