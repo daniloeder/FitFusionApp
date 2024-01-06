@@ -218,21 +218,30 @@ const HomeScreen = ({ route, navigation }) => {
             ))}
 
             {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
-            {joinedEvents.map((event) =>
-              <View key={event.id} style={styles.joinedEventItem}>
-                <TouchableOpacity
-                  style={styles.joinedEventButton}
-                  onPress={() => {
-                    navigation.navigate('Event', { eventId: event.id });
-                  }}
-                >
-                  <Text style={styles.joinedEventTitle}>{event.title}</Text>
-                  <Text style={styles.eventDate}>Date: {event.date}</Text>
-                  <Text style={styles.eventDate}>Time: {event.time}</Text>
-                  <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {event.location}</Text>
-                  {event.payments && event.payments.length && !event.payments.regular ? <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by {-event.payments.days_until_next} days</Text> : ''}
-                </TouchableOpacity>
-              </View>
+            {joinedEvents.map((event) => {
+              return (
+                <View key={event.id} style={styles.joinedEventItem}>
+                  <TouchableOpacity
+                    style={styles.joinedEventButton}
+                    onPress={() => {
+                      navigation.navigate('Event', { eventId: event.id });
+                    }}
+                  >
+                    <Text style={styles.joinedEventTitle}>{event.title}</Text>
+                    <Text style={styles.eventDate}>Date: {event.date}</Text>
+                    <Text style={styles.eventDate}>Time: {event.time}</Text>
+                    {event.sport_types && event.sport_types.length ?
+                      <View>
+                        <SportsItems size={width * 0.8}
+                          favoriteSports={event.sport_types}
+                        />
+                      </View> : ''}
+                    <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {event.location}</Text>
+                    {event.payments && event.payments.length && !event.payments.regular ? <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by {-event.payments.days_until_next} days</Text> : ''}
+                  </TouchableOpacity>
+                </View>
+              )
+            }
             )}
 
             {joinedPlaces.length ? <Text style={styles.subtitle}>Places I've Joined:</Text> : ''}
@@ -246,8 +255,16 @@ const HomeScreen = ({ route, navigation }) => {
                     }}
                   >
                     <Text style={styles.joinedEventTitle}>{place.name}</Text>
+
+                    {place.sport_types && place.sport_types.length ?
+                      <View>
+                        <SportsItems size={width * 0.8}
+                          favoriteSports={place.sport_types}
+                        />
+                      </View> : ''}
+
                     <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
-                    {place.payments && place.payments.length && !place.payments.regular && place.payments.days_until_next > -1 && <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text>}
+                    {place.payments && place.payments.length && !place.payments.regular && place.payments.days_until_next > -1 ? <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text> : ''}
                   </TouchableOpacity>
                 </View>
               )
