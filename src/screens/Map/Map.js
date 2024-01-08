@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
-import Svg, { Circle, RadialGradient, Stop } from 'react-native-svg';
 import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
 import { SportsNames } from '../../utils/sports';
 import Icons from '../../components/Icons/Icons';
@@ -51,6 +50,16 @@ const OnOffButton = ({ icon, isLocalEnabled, setIsLocalEnabled }) => {
   )
 }
 
+const CircleOverlay = ({ centerCoordinates, radius }) => {
+  return (
+    <Circle
+      center={centerCoordinates}
+      radius={radius}
+      fillColor="rgba(0, 0, 255, 0.06)" // You can customize the circle color and opacity here
+      strokeColor="rgba(0, 0, 255, 0.1)" // You can customize the circle border color and opacity here
+    />
+  );
+};
 const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   return (
     <>
@@ -74,7 +83,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
   const [userLocation, setUserLocation] = useState(null);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState({});
   const mapRef = useRef();
 
   const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
@@ -122,7 +131,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
   const updateEvents = async () => {
     try {
-      const eventsResponse = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 200}`, {
+      const eventsResponse = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`
@@ -151,61 +160,88 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
       console.error('There was a problem with fetching events: ', error);
     }
   };
-  const fetchUserProfileImages = async (participants) => {
-    if (participants.length) {
+  const fetchUserProfileImages = async (userIds) => {
+    const batchSize = 5;
+
+    for (let i = 0; i < userIds.length; i += batchSize) {
+      const batchUserIds = userIds.slice(i, i + batchSize);
+
       try {
-        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${batchUserIds.join(',')}&low=true`);
         const data = await response.json();
         if (response.ok) {
-          // Create a map of user IDs to their profile image data
-          const profileImageMap = {};
-          data.forEach((user) => {
-            profileImageMap[user.user_id] = user.profile_image;
-          });
-
-          // Update each user in the state with their profile image data
-          setUsers((prevUsers) => {
-            return prevUsers.map((user) => {
-              if (profileImageMap.hasOwnProperty(user.id)) {
-                return { ...user, profile_image: profileImageMap[user.id] };
+          setUsers(prevUsers => {
+            const updatedUsers = { ...prevUsers };
+            data.forEach((userData) => {
+              if (updatedUsers[userData.user_id]) {
+                updatedUsers[userData.user_id].profile_image = userData.profile_image;
               }
-              return user;
             });
+            return updatedUsers;
           });
+        } else {
+          throw new Error('Failed to fetch user profile images');
         }
       } catch (error) {
         console.error('Error fetching user profile images:', error);
       }
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   };
+
+  function parseCoordinates(pointString) {
+    const match = pointString.match(/\(([^)]+)\)/);
+    if (match) {
+      const [longitude, latitude] = match[1].split(' ').map(Number);
+      return { lat: latitude, lng: longitude };
+    }
+    return null;
+  }
   const updateUsers = async () => {
     try {
-      const usersResponse = await fetch(BASE_URL + `/api/users/nearby-users/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 200}`, {
+      const usersResponse = await fetch(BASE_URL + `/api/users/nearby-users/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`
         }
       });
 
-      const usersData = await usersResponse.json();
+      let usersData = await usersResponse.json();
       if (usersData.length === 0) {
-        return
+        return;
       }
-      if (usersResponse.ok) {
-        fetchUserProfileImages(usersData.map((user) => user.id));
-      } else {
+
+      if (!usersResponse.ok) {
         throw new Error('Network response was not ok' + usersResponse.statusText);
       }
 
-      setUsers((prevUsers) => {
-        const newUsers = [...prevUsers];
-        usersData.forEach((user) => {
-          if (!newUsers.some((existingUser) => existingUser.id === user.id)) {
-            newUsers.push(user);
-          }
-        });
-        return newUsers;
+      usersData = usersData.map(user => {
+        const userCoords = parseCoordinates(user.coordinates);
+        const adjustedCurrentPosition = {
+          lat: currentPosition.latitude,
+          lng: currentPosition.longitude
+        };
+        const distance = calculateDistance(adjustedCurrentPosition, userCoords);
+        
+        return {
+          ...user,
+          distance: distance
+        };
+      }).sort((a, b) => a.distance - b.distance);
+
+      // Update users state with sorted data
+      const newUsers = { ...users };
+      usersData.forEach((user) => {
+        newUsers[user.id] = { ...(newUsers[user.id] || {}), ...user };
       });
+      setUsers(newUsers);
+
+      // Fetch profile images for users without images
+      const usersNeedingImages = usersData.filter(user => !newUsers[user.id] || !newUsers[user.id].profile_image).map(user => user.id);
+      if (usersNeedingImages.length > 0) {
+        await fetchUserProfileImages(usersNeedingImages);
+      }
+
     } catch (error) {
       console.error('There was a problem with fetching users: ', error);
     }
@@ -279,6 +315,26 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
     }
   };
 
+  const mapStyle = [
+    {
+      featureType: "poi.business",
+      elementType: "labels",
+      stylers: [
+        {
+          visibility: "off"
+        }
+      ]
+    },
+    {
+      featureType: "poi.attraction",
+      stylers: [{ visibility: "off" }]
+    },
+    {
+      featureType: "poi.medical",
+      stylers: [{ visibility: "off" }]
+    },
+  ];
+
   return (
     <View style={styles.container}>
       <MapView
@@ -288,6 +344,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         onRegionChangeComplete={handleRegionChange}
         scrollEnabled={SCROLL_ENABLED}
         zoomEnabled={ZOOM_ENABLED}
+        customMapStyle={mapStyle}
       >
         {isPlacesEnabled && places.map((place) => {
 
@@ -359,7 +416,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
             </Marker>
           );
         })}
-        {isUserEnabled && users.map((user, index) => {
+        {isUserEnabled && Object.values(users).map((user, index) => {
           const coordinatesArray = user.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
           return (
