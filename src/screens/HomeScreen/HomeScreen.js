@@ -63,7 +63,7 @@ const HomeScreen = ({ route, navigation }) => {
   const fetchNearbyPlaces = async (userToken, location) => {
     try {
       const distance = 1000 * 2;
-      const response = await fetch(BASE_URL + `/api/places/nearby-places/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}`, {
+      const response = await fetch(BASE_URL + `/api/places/nearby-places/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}&notMine=true`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -83,7 +83,7 @@ const HomeScreen = ({ route, navigation }) => {
   const fetchNearbyEvents = async (userToken, location) => {
     try {
       const distance = 1000 * 2;
-      const response = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}`, {
+      const response = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${location.latitude}&lng=${location.longitude}&distance=${distance}&notMine=true`, {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
