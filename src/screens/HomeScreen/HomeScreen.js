@@ -148,7 +148,7 @@ const HomeScreen = ({ route, navigation }) => {
       fetchNearbyPlaces(userToken, userLocation);
       fetchNearbyEvents(userToken, userLocation);
     }
-  }, [data]);
+  }, [userLocation]);
 
   useEffect(() => {
     if (data) {
