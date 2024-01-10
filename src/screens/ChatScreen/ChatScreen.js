@@ -13,6 +13,7 @@ const { width } = Dimensions.get('window');
 const ChatScreen = ({ route, navigation }) => {
   const { chats, markMessagesAsRead, handleNewMessage } = useChat();
   const { userToken, userId, participantId, chatImage, chatName } = route.params;
+  const [messages, setMessages] = useState([]);
   const [chatId, setChatId] = useState(false);
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
@@ -40,14 +41,14 @@ const ChatScreen = ({ route, navigation }) => {
         },
       });
       const data = await response.json();
-      //console.log(data)
-      //setMessages(data.reverse());
+      setMessages(data.reverse());
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
   };
 
   useEffect(() => {
+    setMessages([]);
     setChatId(route.params.chatId || false);
     setCurrentChat(route.params.chatId);
   }, [route.params.chatId]);
@@ -88,7 +89,6 @@ const ChatScreen = ({ route, navigation }) => {
     }, [chatId])
   );
 
-
   return (
     <KeyboardAvoidingView style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -108,10 +108,11 @@ const ChatScreen = ({ route, navigation }) => {
           }
           <Text style={styles.chatName}>{chatName}</Text>
         </View>
+        
         {chats[chatId] && chats[chatId].messages && <FlatList
-          data={[...chats[chatId].messages].reverse()}
+          data={[...messages, ...chats[chatId].messages].reverse()}
           ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item, index) => index.toString()}
           renderItem={({ item }) => (
             <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
               <Text style={styles.messageText}>{item.text}</Text>
