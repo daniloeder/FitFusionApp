@@ -54,6 +54,13 @@ const PlaceScreen = ({ route, navigation }) => {
     }, [route.params.isClientManagerModalVisible]);
 
     useEffect(() => {
+        if (isClientRequestsModalVisible) {
+            setClientRequestsModalVisible(true);
+            fetchClientRequests();
+        }
+    }, [isClientRequestsModalVisible]);
+
+    useEffect(() => {
         if (place && place.client_status) {
             setClientStatus(place.client_status);
         }
@@ -246,7 +253,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                                 <Icons name="Profile" size={width * 0.08} />
                                             }
                                         </View>
-                                        <View style={{ alignItems: 'center', marginLeft: '5%' }}>
+                                        <View style={{ marginLeft: '5%' }}>
                                             <Text style={styles.requestUsername}>{request.user.name}</Text>
                                             <View style={styles.clientclientclientclientRequestButtons}>
                                                 <TouchableOpacity
@@ -757,6 +764,7 @@ const styles = StyleSheet.create({
 
     requestUsername: {
         fontSize: width * 0.03,
+        marginLeft: '3%',
     },
     userBall: {
         borderRadius: width * 0.06,

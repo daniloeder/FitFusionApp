@@ -11,6 +11,7 @@ const SportsItems = ({ favoriteSports, size = width }) => {
 
     const styles = StyleSheet.create({
         favoriteSports: {
+            width: '100%',
             flexDirection: 'row',
             alignItems: 'flex-start',
             flexWrap: 'wrap',
