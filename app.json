@@ -2,12 +2,11 @@
   "expo": {
     "name": "FitFusionApp",
     "slug": "FitFusionApp",
-    "scheme": "FitFusionApp",
+    "scheme": "fitfusionapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/fit_fusion_icon.png",
     "userInterfaceStyle": "light",
-    "useNextNotificationsApi": true,
     "splash": {
       "image": "./assets/fit_fusion_icon.png",
       "resizeMode": "contain",
