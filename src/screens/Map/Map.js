@@ -248,30 +248,31 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
   };
 
   useEffect(() => {
-    (async () => {
+    const fetchAndSetUserLocation = async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         console.error('Permission to access location was denied');
         return;
       }
+  
+      
       let location = await Location.getCurrentPositionAsync({});
-      setUserLocation({
+      
+      const locationData = {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude,
         latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
         longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-      });
+      };
+      setUserLocation(locationData);
+      setCurrentPosition(locationData);
+  
       setCoordinatesList([{ lat: location.coords.latitude, lng: location.coords.longitude }]);
+    };
 
-      setCurrentPosition({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-        longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-      });
-
-    })();
+    fetchAndSetUserLocation();
   }, []);
+
 
   useEffect(() => {
     if (currentPosition) {
