@@ -231,7 +231,7 @@ const EventScreen = ({ route, navigation }) => {
             setParticipantsModalVisible(participants.length > 0);
           }}
         >
-          {(preview ? [...Array(5)] : userImages).map((image, index) =>
+          {(preview ? [...Array(5)] : userImages.slice(0, 10)).map((image, index) =>
             <View key={index}
               style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
             >
@@ -246,7 +246,7 @@ const EventScreen = ({ route, navigation }) => {
               }
             </View>
           )}
-          {event.participants_amount > 5 ? (<Text style={styles.moreText}>+{event.participants_amount - 5}</Text>) : ''}
+          {event.participants_amount > 10 ? (<Text style={styles.moreText}>+{event.participants_amount - 10}</Text>) : ''}
           {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
           {participants.length > 0 ?
             <View style={styles.seeMoreButton}>

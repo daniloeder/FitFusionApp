@@ -197,7 +197,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         setClientsModalVisible(clients.length > 0);
                     }}
                 >
-                    {(preview ? [...Array(5)] : userImages).map((image, index) =>
+                    {(preview ? [...Array(5)] : userImages.slice(0, 10)).map((image, index) =>
                         <View key={index}
                             style={[styles.image, { zIndex: 5 - index }, index === 0 ? { marginLeft: 0 } : {}]}
                         >
@@ -213,7 +213,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         </View>
                     )}
 
-                    {place.clients && place.clients.length > 5 ? (<Text style={styles.moreText}>+{place.clients.length - 5}</Text>) : ''}
+                    {place.clients && place.clients.length > 10 ? (<Text style={styles.moreText}>+{place.clients.length - 10}</Text>) : ''}
                     {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
                     {clients.length > 0 ?
                         <View style={styles.seeMoreButton}>
