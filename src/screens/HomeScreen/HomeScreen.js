@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Modal } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
@@ -8,6 +8,36 @@ import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
+
+const PlaceList = ({ places, navigation }) =>
+  places.map((place) => (
+    <View key={place.id.toString()} style={styles.placeItem}>
+      <Text style={styles.placeTitle}>{place.name}</Text>
+      {place.events.length ? <Text style={{ marginLeft: width * 0.075, color: '#FFF' }}>Events in this place:</Text> : ''}
+      {place.events.map((event) => (
+        <View key={event.id}>
+          <TouchableOpacity
+            style={styles.eventButton}
+            onPress={() => {
+              navigation.navigate('Event', { eventId: event.id });
+            }}
+          >
+            <Text style={styles.buttonText}>{event.title}</Text>
+            <Text style={styles.eventDate}>Date: {event.date}</Text>
+            <Text style={styles.eventDate}>Time: {event.time}</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity
+        style={styles.viewPlaceButton}
+        onPress={() => {
+          navigation.navigate('Place', { placeId: place.id });
+        }}
+      >
+        <Text style={styles.buttonText}>View Place</Text>
+      </TouchableOpacity>
+    </View>
+  ))
 
 const HomeScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
@@ -20,6 +50,8 @@ const HomeScreen = ({ route, navigation }) => {
   const [closerUsersPicture, setCloserUsersPicture] = useState(null);
   const [closerPlaces, setCloserPlaces] = useState(null);
   const [closerEvents, setCloserEvents] = useState(null);
+
+  const [placeModalVisible, setPlaceModalVisible] = useState(false);
 
   const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
@@ -188,34 +220,26 @@ const HomeScreen = ({ route, navigation }) => {
         {(places.length || joinedEvents.length) ?
           <>
             {places.length ? <Text style={styles.subtitle}>My Places:</Text> : ''}
-            {places.slice(0, 3).map((place) => (
-              <View key={place.id.toString()} style={styles.placeItem}>
-                <Text style={styles.placeTitle}>{place.name}</Text>
-                {place.events.length ? <Text style={{ marginLeft: width * 0.075, color: '#FFF' }}>Events in this place:</Text> : ''}
-                {place.events.map((event) => (
-                  <View key={event.id}>
-                    <TouchableOpacity
-                      style={styles.eventButton}
-                      onPress={() => {
-                        navigation.navigate('Event', { eventId: event.id });
-                      }}
-                    >
-                      <Text style={styles.buttonText}>{event.title}</Text>
-                      <Text style={styles.eventDate}>Date: {event.date}</Text>
-                      <Text style={styles.eventDate}>Time: {event.time}</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                <TouchableOpacity
-                  style={styles.viewPlaceButton}
-                  onPress={() => {
-                    navigation.navigate('Place', { placeId: place.id });
-                  }}
-                >
-                  <Text style={styles.buttonText}>View Place</Text>
-                </TouchableOpacity>
+            <PlaceList places={places.slice(0, 3)} navigation={navigation} />
+            {places.length > 3 ?
+              <TouchableOpacity
+                style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
+                onPress={() => { setPlaceModalVisible(true); }}>
+                <Text style={styles.buttonText}>All My Places</Text>
+              </TouchableOpacity> : ''}
+
+            <Modal
+              animationType="slide"
+              visible={placeModalVisible}
+              transparent={true}
+              onRequestClose={() => setPlaceModalVisible(false)}
+            >
+              <View style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <ScrollView style={{ padding: 10, width: width * 0.9, borderRadius: 20, marginLeft: width * 0.05, marginTop: 50, marginBottom: 50, borderRadius: 20, backgroundColor: '#991B1B', borderWidth: 5, borderColor: '#111' }}>
+                  <PlaceList places={places} navigation={navigation} />
+                </ScrollView>
               </View>
-            ))}
+            </Modal>
 
             {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
             {joinedEvents.map((event) => {
@@ -464,7 +488,6 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: '600',
     fontSize: width * 0.04,
-    marginBottom: width * 0.02,
   },
   eventDate: {
     fontSize: width * 0.04,
@@ -476,6 +499,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: width * 0.0375,
     borderRadius: width * 0.0125,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   joinedEventItem: {
     padding: width * 0.04,
