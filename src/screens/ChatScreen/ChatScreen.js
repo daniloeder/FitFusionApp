@@ -93,7 +93,9 @@ const ChatScreen = ({ route, navigation }) => {
     <KeyboardAvoidingView style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
       <View style={styles.container}>
-        <View style={styles.userInfo}>
+        <TouchableOpacity
+          onPress={()=>navigation.navigate('User Profile', { id: participantId })}
+        style={styles.userInfo}>
           {onlineStatus && (
             <View style={styles.onlineDot}></View>
           )}
@@ -107,7 +109,7 @@ const ChatScreen = ({ route, navigation }) => {
             </View>
           }
           <Text style={styles.chatName}>{chatName}</Text>
-        </View>
+        </TouchableOpacity>
         
         {chats[chatId] && chats[chatId].messages && <FlatList
           data={[...messages, ...chats[chatId].messages].reverse()}
