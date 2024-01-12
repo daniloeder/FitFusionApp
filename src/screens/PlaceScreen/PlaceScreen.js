@@ -36,7 +36,7 @@ const PlaceScreen = ({ route, navigation }) => {
         } else {
             Alert.alert('Place error.');
         }
-    }, [placeId])
+    }, [placeId, preview])
   );
 
     useEffect(() => {

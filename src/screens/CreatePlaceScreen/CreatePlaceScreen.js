@@ -99,7 +99,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         const placeFormData = new FormData();
         logAndAppend(placeFormData, 'name', name);
         logAndAppend(placeFormData, 'description', description);
-        if (privated[0].id === 1) {
+        if (privated.id === 1) {
             logAndAppend(placeFormData, 'is_privated', true);
         }
         logAndAppend(placeFormData, 'location', location);
