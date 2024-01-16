@@ -42,16 +42,18 @@ const PlaceScreen = ({ route, navigation }) => {
                 fetchPlace();
             } else {
                 Alert.alert('Place error.');
+                return;
             }
         }, [])
     );
-
-    useEffect(() => {
-        if (route.params.isClientManagerModalVisible) {
-            setClientRequestsModalVisible(true);
-            fetchClientRequests();
-        }
-    }, [route.params.isClientManagerModalVisible]);
+    useFocusEffect(
+        useCallback(() => {
+            if (route.params.isParticipantRequestModalVisible) {
+                setClientRequestsModalVisible(true);
+                fetchClientRequests();
+            }
+        }, [route.params.isParticipantRequestModalVisible])
+    );
 
     useEffect(() => {
         if (isClientRequestsModalVisible) {
@@ -488,7 +490,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 {place.created_by == userId ?
                     <Pressable
                         onPress={() => navigation.navigate('Create Event', { placeId: [{ id: place.id, name: place.name }] })}
-                        style={[styles.createEventButton, { minWidth: width * 0.6,  marginTop: width * 0.03 }]}
+                        style={[styles.createEventButton, { minWidth: width * 0.6, marginTop: width * 0.03 }]}
                     >
                         <Icons name="Events" size={width * 0.08} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Create Event</Text>

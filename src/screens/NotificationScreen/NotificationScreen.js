@@ -1,4 +1,4 @@
-import React, { useEffect, useState , useCallback} from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useGlobalContext } from './../../services/GlobalContext';
@@ -94,7 +94,7 @@ const Notifications = ({ route, navigation }) => {
               } else if (item.type === 'PlaceRequestApproved') {
                 navigation.navigate('Place', { placeId: item.item_id });
               } else if (item.type === 'PlaceRequestedJoin') {
-                navigation.navigate('Manage Place', { placeId: item.item_id, isParticipantManagerModalVisible: true });
+                navigation.navigate('Manage Place', { placeId: item.item_id, isParticipantRequestModalVisible: true });
               } else if (item.type === 'PaymentDayEventComming') {
                 navigation.navigate('Event', { eventId: item.item_id, paymentCardVisibel: true });
               } else if (item.type === 'NewNearPlace') {
@@ -119,7 +119,7 @@ const Notifications = ({ route, navigation }) => {
               ]}
             >
               <Text style={styles.notificationText}>{item.message}</Text>
-              <Text style={[styles.notificationDate, {color: item.is_read ? '#CCC' : '#555' }]}>
+              <Text style={[styles.notificationDate, { color: item.is_read ? '#CCC' : '#555' }]}>
                 {timeAgo(item.timestamp)}
               </Text>
             </View>

@@ -6,7 +6,7 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const Payment = ({ paymentData, userToken, onDelete }) => {
+const Payment = ({ paymentData, userToken, handleDelete }) => {
     const [payment, setPayment] = useState(paymentData);
     const [edit, setEdit] = useState(false);
     const [dateFrom, setDateFrom] = useState(paymentData.date_from);
@@ -39,42 +39,14 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
             .catch((error) => console.error('Error:', error));
     };
 
-    const handleDelete = () => {
-        fetch(BASE_URL + `/api/payments/${payment.id}/`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Token ${userToken}`,
-            },
-        })
-            .then(() => {
-                onDelete(payment.id);
-            })
-            .catch((error) => console.error('Error:', error));
-    };
     const handleSetPaid = () => {
-        const updatedPaymentData = {
-            status: payment.status === "Paid" ? "Pending" : "Paid",
-        };
+        setStatus(status === "Paid" ? "Pending" : "Paid")
 
-        fetch(BASE_URL + `/api/payments/${payment.id}/`, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Token ${userToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(updatedPaymentData),
-        })
-            .then((response) => response.json())
-            .then((data) => {
-                setPayment(data);
-            })
-            .catch((error) => console.error('Error:', error));
     };
-
-
 
     return (
         <View style={styles.paymentContainer}>
+            <Text style={styles.sectionTitle}>Payment</Text>
             <View style={styles.row}>
                 <Text style={styles.label}>Amount: {!edit && amount}</Text>
                 {edit && (
@@ -115,11 +87,11 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
                 <Text style={styles.label}>Subscription: {subscription}</Text>
             </View>
             <View style={styles.row}>
-                <Text style={[styles.label, { color: payment.status === "Paid" ? 'green' : 'red' }]}>Status: {payment.status}</Text>
+                <Text style={[styles.label, { color: status === "Paid" ? 'green' : 'red' }]}>Status: {status}</Text>
             </View>
 
             {edit && <TouchableOpacity style={[styles.saveButton, { backgroundColor: payment.status === "Paid" ? "red" : "green", width: '100%' }]} onPress={handleSetPaid}>
-                <Text style={styles.buttonText}>{payment.status === "Paid" ? "Set Pending" : "Set Paid"}</Text>
+                <Text style={styles.buttonText}>{status === "Paid" ? "Set Pending" : "Set Paid"}</Text>
             </TouchableOpacity>}
 
             <View style={styles.editDeleteButtons}>
@@ -137,7 +109,9 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
                 )}
                 <TouchableOpacity
                     style={styles.deleteButton}
-                    onPress={handleDelete}
+                    onPress={()=>{
+                        handleDelete(payment.id);
+                    }}
                 >
                     <Text style={styles.buttonText}>Delete</Text>
                 </TouchableOpacity>
@@ -148,17 +122,33 @@ const Payment = ({ paymentData, userToken, onDelete }) => {
 
 const UserPayments = ({ userToken, payments }) => {
     const [showPayment, setShowPayment] = useState(false);
+    const [paymetsList, setPaymentsList] = useState(payments);
+
+    const onDelete = (id) => {
+        const updatedPayments = paymetsList.filter(payment => payment.id !== id);
+        setPaymentsList(updatedPayments);
+    }
+    const handleDelete = (id) => {
+        onDelete(id);
+        fetch(BASE_URL + `/api/payments/${id}/`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Token ${userToken}`,
+            },
+        })
+            .catch((error) => console.error('Error:', error));
+    };
+
     return (
         <View style={styles.userPaymentsContainer}>
-            {showPayment && payments.map((payment) => {
+            {showPayment && paymetsList.map((payment) => {
                 return <View key={payment.id}>
-                    <Text style={styles.sectionTitle}>Payment</Text>
-                    <Payment key={payment.id} userToken={userToken} paymentData={payment} />
+                    <Payment key={payment.id} userToken={userToken} paymentData={payment} handleDelete={handleDelete} />
                 </View>
             })
             }
 
-            {payments && payments.length ?
+            {paymetsList && paymetsList.length ?
                 <TouchableOpacity
                     style={styles.editButton}
                     onPress={() => setShowPayment(!showPayment)}
@@ -206,7 +196,6 @@ const ManageUsers = ({ userToken, userIds, placeId, setUserPayments }) => {
                 console.error('Error:', error);
             }
 
-            print('setUserPayments && payments.length === 0 && fetchedPayments.length', setUserPayments && payments.length === 0 && fetchedPayments.length)
             if(setUserPayments && payments.length === 0 && fetchedPayments.length){
                 setUserPayments(fetchedPayments[0]);
             }

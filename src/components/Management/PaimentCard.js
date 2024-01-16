@@ -40,6 +40,7 @@ const PaymentCard = ({ paymentData, startVisible=false }) => {
                         <Text style={styles.paymentsModalText}>Payment Status: {paymentData.latest.status}</Text>
                         <Text style={styles.paymentsModalText}>From: {paymentData.latest.date_from}</Text>
                         <Text style={styles.paymentsModalText}>To: {paymentData.latest.date_to}</Text>
+                        <Text style={styles.paymentsModalText}>Due Date: {paymentData.latest.due_date}</Text>
                     </ScrollView>
 
                     {paymentData.latest.status !== 'Paid' && (
