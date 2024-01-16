@@ -118,7 +118,7 @@ const Notifications = ({ route, navigation }) => {
                 },
               ]}
             >
-              <Text style={styles.notificationText}>{item.message}</Text>
+              <Text style={styles.notificationText}>{item.title}</Text>
               <Text style={[styles.notificationDate, { color: item.is_read ? '#CCC' : '#555' }]}>
                 {timeAgo(item.timestamp)}
               </Text>
