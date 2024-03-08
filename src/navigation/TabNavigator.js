@@ -12,6 +12,7 @@ import { BASE_URL } from '@env';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
+import MyPlansScreen from '../screens/MyPlansScreen/MyPlansScreen';
 import OtherUserProfileScreen from '../screens/ProfileScreen/OtherUserProfileScreen';
 import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
 import ManagePlace from '../screens/PlaceScreen/ManagePlace'
@@ -393,6 +394,16 @@ const TabNavigator = () => {
           name="Profile"
           initialParams={{ userToken, id: false }}
           component={ProfileScreen}
+          options={({ navigation }) => ({
+            tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          })
+          }
+        />
+        <Tab.Screen
+          name="MyPlansScreen"
+          initialParams={{ userToken, id: false }}
+          component={MyPlansScreen}
           options={({ navigation }) => ({
             tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
