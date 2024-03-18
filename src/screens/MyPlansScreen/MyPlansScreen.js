@@ -6,6 +6,8 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
+
+
 const TrainingDay = ({ day, setSelectedDay, isSelected, index }) => {
     const styles = StyleSheet.create({
         dayContainer: {
@@ -35,41 +37,7 @@ const TrainingDay = ({ day, setSelectedDay, isSelected, index }) => {
 
 };
 
-const TrainingMember = ({ dayName, muscleGroup, exercises, updateModalExercise, removeExercise }) => {
-
-    return (
-        <View key={muscleGroup} style={styles.trainingMemberGroup}>
-            <View style={styles.muscleGroupHeader}>
-                <Text style={styles.muscleGroupText}>{muscleGroup}</Text>
-            </View>
-            {exercises.length > 0 ? exercises.map((exercise, index) => {
-                return (
-                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => {
-                        updateModalExercise(exercise.exercise_id);
-                    }}>
-                        <Text style={styles.exercise}>{exercise.name || exercise.exercise_id}</Text>
-                        {//<Icons name="CloseX" size={width * 0.04} style={{ marginLeft: width * 0.01 }} onPress={() => removeExercise(index)} />
-                        }
-                        <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
-                            <View style={{
-                                width: width * 0.07,
-                                borderRadius: width * 0.025,
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                backgroundColor: 'rgba(0, 100, 0, 0.7)',
-                            }}>
-                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.025 }}>{exercise.sets}x{exercise.reps}</Text>
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                )
-            }) : ''}
-        </View>
-    )
-}
-
 const TrainDetails = ({ exercise, showExerciseDetails, setShowExerciseDetails }) => {
-
     const onClose = () => {
         setShowExerciseDetails(false);
     };
@@ -163,6 +131,107 @@ const TrainDetails = ({ exercise, showExerciseDetails, setShowExerciseDetails })
             </View>
         </Modal>
     );
+}
+
+const TrainingMember = ({ dayName, muscleGroup, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup }) => {
+    const [edit, setEdit] = useState(false);
+    const [add, setAdd] = useState(false);
+
+    return (
+        <View key={muscleGroup} style={styles.trainingMemberGroup}>
+            <View style={styles.muscleGroupHeader}>
+                <Text style={styles.muscleGroupText}>{muscleGroup}</Text>
+            </View>
+            {exercises.length > 0 ? exercises.map((exercise, index) => {
+                return (
+                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => {
+                        if (edit) {
+                            removeExercise(dayName, muscleGroup, exercise.exercise_id);
+                        } else {
+                            updateModalExercise(exercise.exercise_id);
+                        }
+                    }}>
+                        <Text style={styles.exercise}>{exercise.name || exercise.exercise_id}</Text>
+                        {edit ?
+                            <Icons name="CloseX" size={width * 0.04} style={{ position: 'absolute', right: -2, top: -2 }} />
+                            : <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
+                                <View style={styles.exerciseItemInfo}>
+                                    <Text style={styles.exerciseItemInfoText}>{exercise.sets}x{exercise.reps}</Text>
+                                </View>
+                            </View>}
+                    </TouchableOpacity>
+                )
+            }) : ''}
+
+            <View style={{ alignItems: 'center', flexDirection: 'row', marginLeft: 'auto', marginTop: width * 0.01 }}>
+                {(edit || exercises.length === 0) && !add && <TouchableOpacity
+                    onPress={() => setAdd(!add)}
+                    style={styles.addExercisesButton}>
+                    <Icons name="Add" size={width * 0.06} style={{}} />
+                </TouchableOpacity>}
+                <TouchableOpacity
+                    onPress={() => {
+                        setEdit(!edit);
+                        setAdd(false);
+                    }}
+                    style={styles.editExercisesButton}>
+                    <Icons name={edit || add ? "OkV" : "Edit"} size={width * 0.05} style={{}} />
+                </TouchableOpacity>
+            </View>
+
+            {edit && <TouchableOpacity
+                onPress={() => removeMuscleGroup(dayName, muscleGroup)}
+                style={styles.removeMuscleGroupButton}>
+                <Icons name="CloseX" size={width * 0.04} style={{}} />
+            </TouchableOpacity>}
+
+            {add && <AddExerciseList
+                dayName={dayName}
+                muscleGroup={muscleGroup}
+                exercises={allExercises.filter(exercise => !exercises.map(exercise => exercise.exercise_id).includes(exercise.exercise_id))}
+                addExercise={addExercise}
+            />}
+
+        </View>
+    )
+}
+
+const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup }) => {
+
+    return (
+        <View style={[styles.trainingMemberGroup, { marginBottom: 20 }]}>
+            {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
+                return (
+                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => addMuscleGroup(dayName, muscle.id)}>
+                        <Text style={styles.exercise}>{muscle.name}</Text>
+                    </TouchableOpacity>
+                )
+            }) : ''}
+        </View>
+    )
+}
+
+const AddExerciseList = ({ dayName, muscleGroup, exercises, addExercise }) => {
+
+    return (
+        <View style={{ width: '100%' }}>
+            <ScrollView
+                style={styles.addExercisesListScrollView}
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+            >
+                <View style={styles.addExercisesListContainer}>
+                    {exercises.length > 0 ? exercises.map((exercise) => {
+                        return (
+                            <TouchableOpacity key={exercise.exercise_id} style={styles.planDetailsContainer} onPress={() => addExercise(dayName, muscleGroup, exercise.exercise_id)}>
+                                <Text style={styles.exercise}>{exercise.title}</Text>
+                            </TouchableOpacity>
+                        )
+                    }) : ''}
+                </View>
+            </ScrollView>
+        </View>
+    )
 }
 
 const MyPlansScreen = () => {
@@ -279,18 +348,35 @@ const MyPlansScreen = () => {
 
     });
 
-    const exercises_list = Object.keys(days).flatMap(day =>
-        Object.keys(days[day]).flatMap(part =>
-            Object.keys(days[day][part])
-        )
-    );
+    const muscle_groups = {
+        chest: { id: 'chest', name: 'Chest' },
+        back: { id: 'back', name: 'Back' },
+        neck: { id: 'neck', name: 'Neck' },
+        trapezius: { id: 'trapezius', name: 'Trapezius' },
+        shoulders: { id: 'shoulders', name: 'Shoulders' },
+        biceps: { id: 'biceps', name: 'Biceps' },
+        triceps: { id: 'triceps', name: 'Triceps' },
+        forearm: { id: 'forearm', name: 'Forearm' },
+        abs: { id: 'abs', name: 'Abs' },
+        leg: { id: 'leg', name: 'Leg' },
+        hip: { id: 'hip', name: 'Hip' },
+        cardio: { id: 'cardio', name: 'Cardio' },
+        fullBody: { id: 'fullBody', name: 'Full Body' },
+        calf: { id: 'calf', name: 'Calf' }
+    };
+
+    const [exercises_list, setExercisesList] = useState([]);
+
+    useEffect(() => {
+        setExercisesList(Object.values(days).flatMap(day => Object.values(day).flatMap(part => Object.keys(part))))
+    }, [days]);
 
     const [selectedDay, setSelectedDay] = useState(null);
-
     const [exercises, setExercises] = useState([]);
-
     const [showExerciseDetails, setShowExerciseDetails] = useState(false);
     const [exercise, setExercise] = useState(null);
+    const [allExercises, setAllExercises] = useState(null);
+
     const fetchExercises = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/exercise/?ids=${exercises_list}`, {
             method: 'GET',
@@ -302,23 +388,38 @@ const MyPlansScreen = () => {
         const data = await response.json();
         setExercises(data);
     }
+    const fetchAllExercises = async () => {
+        const response = await fetch(BASE_URL + `/api/exercises/all-exercises/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token a23f29aed70ef958acbbd34a131736f0ddc4d361`,
+            },
+        });
+        const data = await response.json();
+
+        setAllExercises(data);
+    }
+
     useEffect(() => {
         if (!exercises.length) {
             fetchExercises();
+            fetchAllExercises();
         }
     }, []);
     const updateModalExercise = (exercise) => {
-        if (exercises[exercise]) {
-            setExercise(exercises[exercise]);
+        const newExercise = exercises[exercise] || allExercises[exercise];
+        if (newExercise) {
+            setExercise(newExercise);
             setShowExerciseDetails(true);
         }
     }
-    const removeExercise = (dayName, muscleGroup, exerciseIndex) => {
-        if (!days[dayName] || !days[dayName][muscleGroup]) {
-            console.error(`Day or muscle group: ${dayName} - ${muscleGroup} not found.`);
-            return;
-        }
-        const newExercises = days[dayName][muscleGroup].filter((_, index) => index !== exerciseIndex);
+    const addExercise = (dayName, muscleGroup, exerciseId) => {
+        const newExercises = {
+            ...days[dayName][muscleGroup],
+            [exerciseId]: { "reps": 10, "sets": 4 }
+        };
+
         setDays(prevDays => ({
             ...prevDays,
             [dayName]: {
@@ -326,7 +427,53 @@ const MyPlansScreen = () => {
                 [muscleGroup]: newExercises
             }
         }));
+
     };
+    const removeExercise = (dayName, muscleGroup, exerciseIndex) => {
+        if (!days[dayName] || !days[dayName][muscleGroup]) {
+            console.error(`Day or muscle group: ${dayName} - ${muscleGroup} not found.`);
+            return;
+        }
+        const newExercises = Object.entries(days[dayName][muscleGroup])
+            .filter(([exerciseName, _]) => exerciseName !== exerciseIndex)
+            .reduce((acc, [exerciseName, exerciseDetails]) => {
+                acc[exerciseName] = exerciseDetails;
+                return acc;
+            }, {});
+        setDays(prevDays => ({
+            ...prevDays,
+            [dayName]: {
+                ...prevDays[dayName],
+                [muscleGroup]: newExercises
+            }
+        }));
+
+    };
+    const removeMuscleGroup = (dayName, muscleGroup) => {
+        if (!days[dayName]) {
+            console.error(`Day: ${dayName} not found.`);
+            return;
+        }
+        const { [muscleGroup]: removedGroup, ...remainingGroups } = days[dayName];
+        setDays(prevDays => ({
+            ...prevDays,
+            [dayName]: remainingGroups
+        }));
+    };
+    const addMuscleGroup = (dayName, muscleGroup) => {
+        if (!days[dayName]) {
+            console.error(`Day: ${dayName} not found.`);
+            return;
+        }
+        setDays(prevDays => ({
+            ...prevDays,
+            [dayName]: {
+                ...prevDays[dayName],
+                [muscleGroup]: {}
+            }
+        }));
+    };
+
 
     return (
         <View style={styles.container}>
@@ -361,22 +508,35 @@ const MyPlansScreen = () => {
 
                     </View>
                     <View>
-                        {selectedDay && Object.entries(days).map(([dayName, dayDetails]) => {
+                        {selectedDay && allExercises && Object.entries(days).map(([dayName, dayDetails]) => {
                             if (selectedDay.name === dayName.slice(0, 3)) {
                                 return (
                                     <View key={dayName}>
                                         {Object.entries(dayDetails).map(([muscleGroup, exercises_list]) => {
                                             return <TrainingMember key={muscleGroup} dayName={dayName} muscleGroup={muscleGroup} exercises={
-                                                Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => ({ ...exerciseDetails, exercise_id: exerciseId, name: exercises[exerciseId].title })).filter(Boolean)
-                                            } updateModalExercise={updateModalExercise} removeExercise={removeExercise} />
+                                                Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => ({ ...exerciseDetails, exercise_id: exerciseId, name: allExercises[exerciseId].title })).filter(Boolean)
+                                            }
+                                                allExercises={allExercises ?
+                                                    Object.values(allExercises)
+                                                        .filter(exercise => exercise.muscle_groups.some(group => group.muscle_group_id === muscleGroup))
+                                                    //.map(exercise => {exercise.exercise_id})
+                                                    : []
+                                                }
+                                                updateModalExercise={updateModalExercise} addExercise={addExercise} removeExercise={removeExercise} removeMuscleGroup={removeMuscleGroup} />
                                         })}
                                     </View>
                                 )
                             }
                         })}
                     </View>
-                </View>
+                    <View style={styles.addMuscleGroupButton}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Muscle Group</Text>
+                    </View>
+                    {selectedDay && <AddMuscleGroupList muscleGroups={
+                        Object.values(muscle_groups).filter(group => !Object.keys(days[selectedDay.name]).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
+                    } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} />}
 
+                </View>
             </ScrollView>
         </View>
     );
@@ -445,6 +605,74 @@ const styles = StyleSheet.create({
         margin: width * 0.01,
         backgroundColor: '#aaa',
     },
+    exerciseItemInfo: {
+        width: width * 0.07,
+        borderRadius: width * 0.025,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 100, 0, 0.7)',
+    },
+    exerciseItemInfoText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: width * 0.025
+    },
+    addExercisesButton: {
+        width: width * 0.07,
+        height: width * 0.07,
+        backgroundColor: '#AAA',
+        borderRadius: width * 0.02,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    editExercisesButton: {
+        width: width * 0.07,
+        height: width * 0.07,
+        backgroundColor: '#AAA',
+        borderRadius: width * 0.02,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
+    removeMuscleGroupButton: {
+        width: width * 0.08,
+        height: width * 0.08,
+        backgroundColor: 'red',
+        borderRadius: width * 0.04,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        zIndex: 100,
+    },
+    addExercisesListScrollView: {
+        width: '105%',
+        padding: 5,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderTopLeftRadius: width * 0.02,
+        borderBottomLeftRadius: width * 0.02,
+        marginVertical: width * 0.01,
+    },
+    addExercisesListContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        width: width * 3,
+    },
+    addMuscleGroupButton:{
+        width: '80%',
+        height: width * 0.08,
+        backgroundColor: '#6495ED',
+        borderRadius: width * 0.04,
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'row',
+        marginLeft: '10%',
+        top: 10,
+        zIndex: 1,
+    },
+
+
     removeButton: {
         fontSize: 18,
         fontWeight: 'bold',

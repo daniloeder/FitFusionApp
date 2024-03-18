@@ -74,6 +74,8 @@ import ParticipantRequest from './../../../assets/icons/participantRequest.svg';
 import ParticipantEdit from './../../../assets/icons/participantEdit.svg';
 import Camera from './../../../assets/icons/camera.svg';
 import QRCode from './../../../assets/icons/qrcode.svg';
+import OkV from './../../../assets/icons/ok-v.svg';
+import Add from './../../../assets/icons/add.svg';
 
 import GradientCircle from './../../../assets/icons/gradientCircle.svg';
 
@@ -162,6 +164,8 @@ const Icons = ({
     ParticipantEdit: ParticipantEdit,
     Camera: Camera,
     QRCode: QRCode,
+    OkV: OkV,
+    Add: Add,
 
     GradientCircle: GradientCircle,
 
