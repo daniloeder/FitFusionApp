@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
+import { TextInput } from 'react-native-gesture-handler';
 
 const width = Dimensions.get('window').width;
 
-
-
-const TrainingDay = ({ day, setSelectedDay, isSelected, index }) => {
+const TrainingDay = ({ dayName, setSelectedDay, isSelected, index }) => {
     const styles = StyleSheet.create({
         dayContainer: {
             backgroundColor: isSelected ? '#FFF' : '#DDD',
@@ -28,9 +27,9 @@ const TrainingDay = ({ day, setSelectedDay, isSelected, index }) => {
     });
 
     return (
-        <TouchableOpacity onPress={() => setSelectedDay(day)} style={{ width: width * 0.128 }} activeOpacity={1}>
+        <TouchableOpacity onPress={setSelectedDay} style={{ width: width * 0.128 }} activeOpacity={1}>
             <View style={styles.dayContainer}>
-                <Text style={styles.dayText}>{day.name}</Text>
+                <Text style={styles.dayText}>{dayName}</Text>
             </View>
         </TouchableOpacity>
     );
@@ -133,35 +132,221 @@ const TrainDetails = ({ exercise, showExerciseDetails, setShowExerciseDetails })
     );
 }
 
-const TrainingMember = ({ dayName, muscleGroup, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup }) => {
+const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExerciseSetsDone, showSetsEditModal, setShowSetsEditModal }) => {
+    const [setsToDo, setSetsToDo] = useState(exercise.sets[1]);
+    const [reps, setReps] = useState('10');
+
+    const stylesSetsIndicator = StyleSheet.create({
+        modalBackground: {
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        },
+        modalView: {
+            width: '40%',
+            height: '20%',
+            padding: width * 0.01,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            borderRadius: 5,
+            borderWidth: 1,
+            borderColor: '#FFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: {
+                width: 0,
+                height: 1,
+            },
+            shadowOpacity: 0.25,
+            shadowRadius: 1.92,
+            elevation: 2.5,
+        },
+        row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginVertical: 5
+        },
+        textInput: {
+            height: 20,
+            borderColor: 'gray',
+            borderWidth: 0.5,
+            borderRadius: 2.5,
+            paddingHorizontal: 5,
+            color: '#FFF',
+            fontWeight: 'bold'
+        },
+        okButton: {
+            backgroundColor: '#FFF',
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+            borderRadius: 2.5,
+            marginTop: 5,
+        },
+        okButtonText: {
+            color: '#000',
+            fontWeight: 'bold'
+        },
+        touchableOpacity: {
+            padding: width * 0.016,
+            bottom: -width * 0.016,
+            position: 'absolute'
+        },
+    });
+
+    return (
+        showSetsEditModal ?
+            <Modal
+                visible={true}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setShowSetsEditModal(false)}
+            >
+                <View style={stylesSetsIndicator.modalBackground}>
+                    <View style={stylesSetsIndicator.modalView}>
+                        <View style={stylesSetsIndicator.row}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Sets: </Text>
+                            <TextInput
+                                style={stylesSetsIndicator.textInput}
+                                keyboardType='numeric'
+                                onChangeText={text => { setSetsToDo(parseInt(text.slice(-3)) || 0) }}
+                                defaultValue={String(setsToDo)}
+                            />
+                        </View>
+                        <View style={stylesSetsIndicator.row}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Reps: </Text>
+                            <TextInput
+                                style={stylesSetsIndicator.textInput}
+                                keyboardType='numeric'
+                                onChangeText={text => { setReps(text.slice(-3)) }}
+                                defaultValue={reps}
+                            />
+                        </View>
+                        <TouchableOpacity style={stylesSetsIndicator.okButton}
+                            onPress={() => {
+                                setShowSetsEditModal(false);
+                                updateExerciseSetsDone(dayName, muscleGroup, exercise.exercise_id, [0, setsToDo], reps);
+                            }}
+                        >
+                            <Text style={stylesSetsIndicator.okButtonText}>Ok</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+            :
+            <TouchableOpacity style={stylesSetsIndicator.touchableOpacity}
+                onLongPress={() => setShowSetsEditModal(true)}
+                onPress={() => {
+                    if (!exercise.done) {
+                        updateExerciseSetsDone(dayName, muscleGroup, exercise.exercise_id,
+                            [(exercise.sets[0] + 1) % (exercise.sets[1] + 1), exercise.sets[1]], reps
+                        )
+                    }
+                    if(edit){
+                        setShowSetsEditModal(true);
+                    }
+                }}
+            >
+                <View style={[styles.exerciseItemInfo, edit? {padding:2,borderRadius:4,flexDirection:'row'} : {}]}>
+                    <Text style={styles.exerciseItemInfoText}>{exercise.sets[0] > 0 && `${exercise.sets[0]} of `}{exercise.sets[1]}x{exercise.reps}</Text>
+                    {edit && <Icons name="Edit" size={15} style={{ marginLeft: 5 }} />}
+                </View>
+            </TouchableOpacity>
+    )
+}
+
+const BallonDetails = ({ dayName, muscleGroup, setShowBallon, updateModalExercise, removeExercise, exerciseId, done, updateExerciseDone }) => {
+    return (
+        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: 5, borderRadius: 5 }}>
+
+                <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
+                    updateExerciseDone(dayName, muscleGroup, exerciseId, !done);
+                    setShowBallon(false);
+                }}>
+                    <Text style={{ color: '#FFF' }}>
+                        {done ? 'Undone' : 'Done'}
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={{ padding: 10, backgroundColor: '#2196F3', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                    updateModalExercise(exerciseId);
+                    setShowBallon(false);
+                }}>
+                    <Text style={{ color: '#FFF' }}>
+                        See
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={{ padding: 10, backgroundColor: '#F44336', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                    setShowBallon(false);
+                    removeExercise(dayName, muscleGroup, exerciseId)
+                }}>
+                    <Text style={{ color: '#FFF' }}>
+                        Remove
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={{ padding: 10, backgroundColor: '#AAA', borderRadius: 10, marginLeft: 10 }} onPress={() => setShowBallon(false)}>
+                    <Text style={{ color: '#FFF' }}>
+                        Close
+                    </Text>
+                </TouchableOpacity>
+
+            </View>
+        </View>
+    )
+}
+
+const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, updateModalExercise, updateExerciseDone, updateExerciseSetsDone }) => {
+    const [showBallon, setShowBallon] = useState(false);
+    const [showSetsEditModal, setShowSetsEditModal] = useState(false);
+
+    return (
+        <View>
+            <Pressable style={[styles.planDetailsContainer, { backgroundColor: exercise.done ? '#4CAF50' : '#aaa' }]}
+                onLongPress={() => {
+                    if (showBallon) {
+                        setShowBallon(false);
+                    } else if (edit) {
+                        removeExercise(dayName, muscleGroup, exercise.exercise_id);
+                    } else {
+                        updateModalExercise(exercise.exercise_id);
+                    }
+                }}
+                delayLongPress={200}
+                onPress={() => {
+                    setShowBallon(!showBallon);
+                }}>
+                <Text style={styles.exerciseItemText}>{exercise.name || exercise.exercise_id}</Text>
+                {edit && <Icons name="CloseX" size={width * 0.04} style={{ position: 'absolute', right: -2, top: -2 }} />}
+                <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
+                    <ExerciseSetsIndicator edit={edit} dayName={dayName} muscleGroup={muscleGroup} exercise={exercise} updateExerciseSetsDone={updateExerciseSetsDone} showSetsEditModal={showSetsEditModal} setShowSetsEditModal={setShowSetsEditModal} />
+                </View>
+
+            </Pressable>
+
+            {showBallon && <BallonDetails setShowBallon={setShowBallon} dayName={dayName} muscleGroup={muscleGroup} exerciseId={exercise.exercise_id} removeExercise={removeExercise} updateModalExercise={updateModalExercise} done={exercise.done} updateExerciseDone={updateExerciseDone} />}
+        </View>
+    )
+}
+
+const TrainingMember = ({ dayName, muscleGroup, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
+
+    const doneExercises = exercises.filter(exercise => exercise.done);
+    const undoneExercises = exercises.filter(exercise => !exercise.done);
 
     return (
         <View key={muscleGroup} style={styles.trainingMemberGroup}>
             <View style={styles.muscleGroupHeader}>
                 <Text style={styles.muscleGroupText}>{muscleGroup}</Text>
             </View>
-            {exercises.length > 0 ? exercises.map((exercise, index) => {
-                return (
-                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => {
-                        if (edit) {
-                            removeExercise(dayName, muscleGroup, exercise.exercise_id);
-                        } else {
-                            updateModalExercise(exercise.exercise_id);
-                        }
-                    }}>
-                        <Text style={styles.exercise}>{exercise.name || exercise.exercise_id}</Text>
-                        {edit ?
-                            <Icons name="CloseX" size={width * 0.04} style={{ position: 'absolute', right: -2, top: -2 }} />
-                            : <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
-                                <View style={styles.exerciseItemInfo}>
-                                    <Text style={styles.exerciseItemInfoText}>{exercise.sets}x{exercise.reps}</Text>
-                                </View>
-                            </View>}
-                    </TouchableOpacity>
-                )
-            }) : ''}
+            {exercises.length > 0 ? doneExercises.concat(undoneExercises).map((exercise, index) =>
+                <ExerciseItem key={index} dayName={dayName} muscleGroup={muscleGroup} exercise={exercise} edit={edit} removeExercise={removeExercise} updateModalExercise={updateModalExercise} updateExerciseDone={updateExerciseDone} updateExerciseSetsDone={updateExerciseSetsDone} />
+            ) : ''}
 
             <View style={{ alignItems: 'center', flexDirection: 'row', marginLeft: 'auto', marginTop: width * 0.01 }}>
                 {(edit || exercises.length === 0) && !add && <TouchableOpacity
@@ -203,7 +388,7 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup }) => {
             {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
                 return (
                     <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => addMuscleGroup(dayName, muscle.id)}>
-                        <Text style={styles.exercise}>{muscle.name}</Text>
+                        <Text style={styles.exerciseItemText}>{muscle.name}</Text>
                     </TouchableOpacity>
                 )
             }) : ''}
@@ -224,7 +409,7 @@ const AddExerciseList = ({ dayName, muscleGroup, exercises, addExercise }) => {
                     {exercises.length > 0 ? exercises.map((exercise) => {
                         return (
                             <TouchableOpacity key={exercise.exercise_id} style={styles.planDetailsContainer} onPress={() => addExercise(dayName, muscleGroup, exercise.exercise_id)}>
-                                <Text style={styles.exercise}>{exercise.title}</Text>
+                                <Text style={styles.exerciseItemText}>{exercise.title}</Text>
                             </TouchableOpacity>
                         )
                     }) : ''}
@@ -239,112 +424,114 @@ const MyPlansScreen = () => {
     const [days, setDays] = useState({
         Sun: {
             neck: {
-                'lying-weighted-lateral-neck-flexion': { sets: 4, reps: 10 },
-                'weighted-lying-neck-extension': { sets: 4, reps: 10 },
-                'weighted-lying-neck-flexion': { sets: 4, reps: 10 },
+                'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'weighted-lying-neck-extension': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'weighted-lying-neck-flexion': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             trapezius: {
-                'overhead-shrug': { sets: 4, reps: 10 },
-                'gittleson-shrug': { sets: 4, reps: 10 },
-                '45-degree-incline-row': { sets: 4, reps: 10 },
+                'overhead-shrug': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'gittleson-shrug': { sets: [0, 4], reps: 10, done: false, edit: false },
+                '45-degree-incline-row': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             shoulders: {
-                'medicine-ball-overhead-throw': { sets: 4, reps: 10 },
-                'standing-dumbbell-shoulder-press': { sets: 4, reps: 10 },
+                'medicine-ball-overhead-throw': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'standing-dumbbell-shoulder-press': { sets: [0, 4], reps: 10, done: false, edit: false },
             }
         },
         Mon: {
             chest: {
-                'standing-medicine-ball-chest-pass': { sets: 4, reps: 10 },
-                'arm-scissors': { sets: 4, reps: 10 },
+                'standing-medicine-ball-chest-pass': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'arm-scissors': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             back: {
-                'rowing-machine': { sets: 4, reps: 10 },
-                'lever-front-pulldown': { sets: 4, reps: 10 },
-                'pull-up': { sets: 4, reps: 10 },
+                'rowing-machine': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'lever-front-pulldown': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'pull-up': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             erectorSpinae: {
-                'dumbbell-good-morning': { sets: 4, reps: 10 },
-                'dumbbell-deadlift': { sets: 4, reps: 10 },
-                'dumbbell-sumo-deadlift': { sets: 4, reps: 10 },
+                'dumbbell-good-morning': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dumbbell-deadlift': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dumbbell-sumo-deadlift': { sets: [0, 4], reps: 10, done: false, edit: false },
             }
         },
         Tue: {
             biceps: {
-                'seated-zottman-curl': { sets: 4, reps: 10 },
-                'standing-barbell-concentration-curl': { sets: 4, reps: 10 },
-                'waiter-curl': { sets: 4, reps: 10 },
+                'seated-zottman-curl': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'standing-barbell-concentration-curl': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'waiter-curl': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             triceps: {
-                'one-arm-triceps-pushdown': { sets: 4, reps: 10 },
-                'dumbbell-kickback': { sets: 4, reps: 10 },
+                'one-arm-triceps-pushdown': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dumbbell-kickback': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             forearm: {
-                'wrist-roller': { sets: 4, reps: 10 },
-                'dumbbell-seated-neutral-wrist-curl': { sets: 4, reps: 10 },
+                'wrist-roller': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dumbbell-seated-neutral-wrist-curl': { sets: [0, 4], reps: 10, done: false, edit: false },
             }
         },
         Wed: {
             abs: {
-                'medicine-ball-rotational-throw': { sets: 4, reps: 10 },
-                'dragon-flag': { sets: 4, reps: 10 },
-                'ab-coaster-machine': { sets: 4, reps: 10 },
+                'medicine-ball-rotational-throw': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dragon-flag': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'ab-coaster-machine': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             leg: {
-                'curtsy-lunge': { sets: 4, reps: 10 },
-                '5-dot-drills': { sets: 4, reps: 10 },
+                'curtsy-lunge': { sets: [0, 4], reps: 10, done: false, edit: false },
+                '5-dot-drills': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             calf: {
-                'standing-calf-raise': { sets: 4, reps: 10 },
-                'calf-raise': { sets: 4, reps: 10 },
-                'calf-raise-with-resistance-band': { sets: 4, reps: 10 },
+                'standing-calf-raise': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'calf-raise': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'calf-raise-with-resistance-band': { sets: [0, 4], reps: 10, done: false, edit: false },
             }
         },
+
         Thu: {
             hip: {
-                'high-knee-lunge-on-bosu-ball': { sets: 4, reps: 10 },
+                'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             cardio: {
-                'navy-seal-burpee': { sets: 4, reps: 10 },
-                'depth-jump-to-hurdle-hop': { sets: 4, reps: 10 },
+                'navy-seal-burpee': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'depth-jump-to-hurdle-hop': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             fullBody: {
-                'dumbbell-walking-lunge': { sets: 4, reps: 10 },
-                'dumbbell-push-press': { sets: 4, reps: 10 },
+                'dumbbell-walking-lunge': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'dumbbell-push-press': { sets: [0, 4], reps: 10, done: false, edit: false },
             }
         },
         Fri: {
             neck: {
-                'diagonal-neck-stretch': { sets: 4, reps: 10 },
-                'neck-rotation-stretch': { sets: 4, reps: 10 },
-                'neck-flexion-stretch': { sets: 4, reps: 10 },
+                'diagonal-neck-stretch': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'neck-rotation-stretch': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'neck-flexion-stretch': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             trapezius: {
-                'dumbbell-shrug': { sets: 4, reps: 10 },
-                'cable-shrug': { sets: 4, reps: 10 },
-                'barbell-shrug': { sets: 4, reps: 10 },
+                'dumbbell-shrug': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'cable-shrug': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'barbell-shrug': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
             shoulders: {
-                'side-arm-raises': { sets: 4, reps: 10 },
+                'side-arm-raises': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
         },
         Sat: {
             chest: {
-                'incline-chest-fly-machine': { sets: 4, reps: 10 },
-                'bench-press': { sets: 4, reps: 10 },
-                'pec-deck-fly': { sets: 4, reps: 10 }
+                'incline-chest-fly-machine': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'bench-press': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'pec-deck-fly': { sets: [0, 4], reps: 10, done: false, edit: false }
             },
             back: {
-                'cable-rear-pulldown': { sets: 4, reps: 10 },
-                'lat-pulldown': { sets: 4, reps: 10 },
-                'seated-cable-row': { sets: 4, reps: 10 }
+                'cable-rear-pulldown': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'lat-pulldown': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'seated-cable-row': { sets: [0, 4], reps: 10, done: false, edit: false }
             },
             erectorSpinae: {
-                'seated-back-extension': { sets: 4, reps: 10 },
-                'barbell-bent-over-row': { sets: 4, reps: 10 },
-                'bent-over-dumbbell-row': { sets: 4, reps: 10 }
+                'seated-back-extension': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'barbell-bent-over-row': { sets: [0, 4], reps: 10, done: false, edit: false },
+                'bent-over-dumbbell-row': { sets: [0, 4], reps: 10, done: false, edit: false }
             }
         },
+
 
     });
 
@@ -407,6 +594,51 @@ const MyPlansScreen = () => {
             fetchAllExercises();
         }
     }, []);
+
+    const updateExerciseDone = (dayName, muscleGroup, exerciseIndex, done) => {
+        const newExercises = {
+            ...days[dayName][muscleGroup],
+            [exerciseIndex]: { ...days[dayName][muscleGroup][exerciseIndex], done: done }
+        };
+
+        setDays(
+            prevDays => ({
+                ...prevDays,
+                [dayName]: {
+                    ...prevDays[dayName],
+                    [muscleGroup]: {
+                        ...prevDays[dayName][muscleGroup],
+                        ...newExercises
+                    }
+                }
+            })
+        )
+
+    }
+    const updateExerciseSetsDone = (dayName, muscleGroup, exerciseIndex, setsDone, repsToDo) => {
+        const newExercises = {
+            ...days[dayName][muscleGroup],
+            [exerciseIndex]: {
+                ...days[dayName][muscleGroup][exerciseIndex],
+                reps: repsToDo || 10,
+                sets: setsDone
+            }
+        };
+
+        setDays(
+            prevDays => ({
+                ...prevDays,
+                [dayName]: {
+                    ...prevDays[dayName],
+                    [muscleGroup]: {
+                        ...prevDays[dayName][muscleGroup],
+                        ...newExercises
+                    }
+                }
+            })
+        )
+    }
+
     const updateModalExercise = (exercise) => {
         const newExercise = exercises[exercise] || allExercises[exercise];
         if (newExercise) {
@@ -417,7 +649,7 @@ const MyPlansScreen = () => {
     const addExercise = (dayName, muscleGroup, exerciseId) => {
         const newExercises = {
             ...days[dayName][muscleGroup],
-            [exerciseId]: { "reps": 10, "sets": 4 }
+            [exerciseId]: { reps: 10, sets: 4, done: false, edit: false }
         };
 
         setDays(prevDays => ({
@@ -499,8 +731,8 @@ const MyPlansScreen = () => {
                         {Object.entries(days).map(([dayName, dayDetails], index) =>
                             <TrainingDay
                                 key={dayName}
-                                day={{ name: dayName.slice(0, 3), ...dayDetails }}
-                                setSelectedDay={() => setSelectedDay({ name: dayName.slice(0, 3), ...dayDetails })}
+                                dayName={dayName}
+                                setSelectedDay={() => setSelectedDay({ name: dayName.slice(0, 3), exercises: { ...dayDetails } })}
                                 isSelected={selectedDay && selectedDay.name === dayName.slice(0, 3)}
                                 index={index}
                             />
@@ -522,7 +754,7 @@ const MyPlansScreen = () => {
                                                     //.map(exercise => {exercise.exercise_id})
                                                     : []
                                                 }
-                                                updateModalExercise={updateModalExercise} addExercise={addExercise} removeExercise={removeExercise} removeMuscleGroup={removeMuscleGroup} />
+                                                updateModalExercise={updateModalExercise} addExercise={addExercise} removeExercise={removeExercise} removeMuscleGroup={removeMuscleGroup} updateExerciseDone={updateExerciseDone} updateExerciseSetsDone={updateExerciseSetsDone} />
                                         })}
                                     </View>
                                 )
@@ -591,7 +823,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFFFFF',
     },
-    exercise: {
+    exerciseItemText: {
         fontSize: width * 0.04,
         fontWeight: 'bold',
         color: '#FFFFFF',
@@ -599,6 +831,7 @@ const styles = StyleSheet.create({
     planDetailsContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         paddingHorizontal: width * 0.02,
         paddingVertical: width * 0.008,
         borderRadius: width * 0.02,
@@ -606,11 +839,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#aaa',
     },
     exerciseItemInfo: {
-        width: width * 0.07,
+        minWidth: width * 0.07,
+        paddingHorizontal: 3,
         borderRadius: width * 0.025,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 100, 0, 0.7)',
+        backgroundColor: 'rgba(0, 100, 0, 0.9)',
     },
     exerciseItemInfoText: {
         color: '#FFF',
@@ -659,7 +893,7 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         width: width * 3,
     },
-    addMuscleGroupButton:{
+    addMuscleGroupButton: {
         width: '80%',
         height: width * 0.08,
         backgroundColor: '#6495ED',
