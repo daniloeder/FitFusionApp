@@ -332,7 +332,7 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, up
     )
 }
 
-const TrainingMember = ({ dayName, muscleGroup, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone }) => {
+const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -342,7 +342,7 @@ const TrainingMember = ({ dayName, muscleGroup, exercises, allExercises, updateM
     return (
         <View key={muscleGroup} style={styles.trainingMemberGroup}>
             <View style={styles.muscleGroupHeader}>
-                <Text style={styles.muscleGroupText}>{muscleGroup}</Text>
+                <Text style={styles.muscleGroupText}>{muscleGroupName}</Text>
             </View>
             {exercises.length > 0 ? doneExercises.concat(undoneExercises).map((exercise, index) =>
                 <ExerciseItem key={index} dayName={dayName} muscleGroup={muscleGroup} exercise={exercise} edit={edit} removeExercise={removeExercise} updateModalExercise={updateModalExercise} updateExerciseDone={updateExerciseDone} updateExerciseSetsDone={updateExerciseSetsDone} />
@@ -448,7 +448,7 @@ const MyPlansScreen = () => {
                 'lever-front-pulldown': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'pull-up': { sets: [0, 4], reps: 10, done: false, edit: false },
             },
-            erectorSpinae: {
+            erector_spinae: {
                 'dumbbell-good-morning': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'dumbbell-deadlift': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'dumbbell-sumo-deadlift': { sets: [0, 4], reps: 10, done: false, edit: false },
@@ -525,7 +525,7 @@ const MyPlansScreen = () => {
                 'lat-pulldown': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'seated-cable-row': { sets: [0, 4], reps: 10, done: false, edit: false }
             },
-            erectorSpinae: {
+            erector_spinae: {
                 'seated-back-extension': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'barbell-bent-over-row': { sets: [0, 4], reps: 10, done: false, edit: false },
                 'bent-over-dumbbell-row': { sets: [0, 4], reps: 10, done: false, edit: false }
@@ -549,7 +549,8 @@ const MyPlansScreen = () => {
         hip: { id: 'hip', name: 'Hip' },
         cardio: { id: 'cardio', name: 'Cardio' },
         fullBody: { id: 'fullBody', name: 'Full Body' },
-        calf: { id: 'calf', name: 'Calf' }
+        calf: { id: 'calf', name: 'Calf' },
+        erector_spinae: { id: 'erector_spinae', name: 'Erector Spinae' },
     };
 
     const [exercises_list, setExercisesList] = useState([]);
@@ -706,7 +707,6 @@ const MyPlansScreen = () => {
         }));
     };
 
-
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -745,7 +745,7 @@ const MyPlansScreen = () => {
                                 return (
                                     <View key={dayName}>
                                         {Object.entries(dayDetails).map(([muscleGroup, exercises_list]) => {
-                                            return <TrainingMember key={muscleGroup} dayName={dayName} muscleGroup={muscleGroup} exercises={
+                                            return <TrainingMember key={muscleGroup} dayName={dayName} muscleGroupName={muscle_groups[muscleGroup].name} muscleGroup={muscleGroup} exercises={
                                                 Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => ({ ...exerciseDetails, exercise_id: exerciseId, name: allExercises[exerciseId].title })).filter(Boolean)
                                             }
                                                 allExercises={allExercises ?
