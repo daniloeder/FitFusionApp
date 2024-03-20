@@ -242,12 +242,12 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
                             [(exercise.sets[0] + 1) % (exercise.sets[1] + 1), exercise.sets[1]], reps
                         )
                     }
-                    if(edit){
+                    if (edit) {
                         setShowSetsEditModal(true);
                     }
                 }}
             >
-                <View style={[styles.exerciseItemInfo, edit? {padding:2,borderRadius:4,flexDirection:'row'} : {}]}>
+                <View style={[styles.exerciseItemInfo, edit ? { padding: 2, borderRadius: 4, flexDirection: 'row' } : {}]}>
                     <Text style={styles.exerciseItemInfoText}>{exercise.sets[0] > 0 && `${exercise.sets[0]} of `}{exercise.sets[1]}x{exercise.reps}</Text>
                     {edit && <Icons name="Edit" size={15} style={{ marginLeft: 5 }} />}
                 </View>
@@ -565,6 +565,8 @@ const MyPlansScreen = () => {
     const [exercise, setExercise] = useState(null);
     const [allExercises, setAllExercises] = useState(null);
 
+    const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
+
     const fetchExercises = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/exercise/?ids=${exercises_list}`, {
             method: 'GET',
@@ -616,6 +618,26 @@ const MyPlansScreen = () => {
         )
 
     }
+    const updateAllExercisesDone = (dayName, done) => {
+        const newDays = { ...days };
+        Object.keys(newDays[dayName]).forEach(muscleGroup => {
+            newDays[dayName][muscleGroup] = Object.fromEntries(
+                Object.entries(newDays[dayName][muscleGroup]).map(([exerciseName, exerciseDetails]) => [
+                    exerciseName,
+                    { ...exerciseDetails, done: done }
+                ])
+            );
+
+        });
+
+        setDays(newDays);
+    };
+    const verifyAllExercisesDone = (dayName) => {
+        return Object.values(days[dayName]).every(muscleGroup =>
+            Object.values(muscleGroup).every(exercise => exercise.done)
+        );
+    };
+
     const updateExerciseSetsDone = (dayName, muscleGroup, exerciseIndex, setsDone, repsToDo) => {
         const newExercises = {
             ...days[dayName][muscleGroup],
@@ -707,6 +729,8 @@ const MyPlansScreen = () => {
         }));
     };
 
+    const trainCompleted = verifyAllExercisesDone(selectedDay.name);
+
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -761,13 +785,19 @@ const MyPlansScreen = () => {
                             }
                         })}
                     </View>
-                    <View style={styles.addMuscleGroupButton}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Muscle Group</Text>
+                    <View >
+                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
+                            updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone('Sun'));
+                        }}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
+                        </TouchableOpacity>
                     </View>
-                    {selectedDay && <AddMuscleGroupList muscleGroups={
+                    <TouchableOpacity style={styles.addMuscleGroupButton} onPress={() => setAddNewMuscleGroup(!addNewMuscleGroup)}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Muscle Group</Text>
+                    </TouchableOpacity>
+                    {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
                         Object.values(muscle_groups).filter(group => !Object.keys(days[selectedDay.name]).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
                     } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} />}
-
                 </View>
             </ScrollView>
         </View>
@@ -900,11 +930,20 @@ const styles = StyleSheet.create({
         borderRadius: width * 0.04,
         justifyContent: 'center',
         alignItems: 'center',
-        flexDirection: 'row',
         marginLeft: '10%',
         top: 10,
         zIndex: 1,
     },
+    trainCompleteButton: {
+        width: '80%',
+        padding: width * 0.02,
+        borderRadius: width * 0.04,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: '10%',
+        marginTop: 5,
+    },
+
 
 
     removeButton: {
