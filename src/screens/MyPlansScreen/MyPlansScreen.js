@@ -790,7 +790,7 @@ const MyPlansScreen = () => {
                     </View>
                     <View >
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
-                            updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone('Sun'));
+                            updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(selectedDay.name));
                         }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
                         </TouchableOpacity>
