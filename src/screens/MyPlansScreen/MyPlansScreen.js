@@ -317,7 +317,11 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, up
                 }}
                 delayLongPress={200}
                 onPress={() => {
-                    setShowBallon(!showBallon);
+                    if(edit){
+                        removeExercise(dayName, muscleGroup, exercise.exercise_id);
+                    } else {
+                        setShowBallon(!showBallon);
+                    }
                 }}>
                 <Text style={styles.exerciseItemText}>{exercise.name || exercise.exercise_id}</Text>
                 {edit && <Icons name="CloseX" size={width * 0.04} style={{ position: 'absolute', right: -2, top: -2 }} />}
@@ -672,7 +676,7 @@ const MyPlansScreen = () => {
     const addExercise = (dayName, muscleGroup, exerciseId) => {
         const newExercises = {
             ...days[dayName][muscleGroup],
-            [exerciseId]: { reps: 10, sets: 4, done: false, edit: false }
+            [exerciseId]: { reps: 10, sets: [0, 4], done: false, edit: false }
         };
 
         setDays(prevDays => ({
@@ -682,7 +686,6 @@ const MyPlansScreen = () => {
                 [muscleGroup]: newExercises
             }
         }));
-
     };
     const removeExercise = (dayName, muscleGroup, exerciseIndex) => {
         if (!days[dayName] || !days[dayName][muscleGroup]) {
