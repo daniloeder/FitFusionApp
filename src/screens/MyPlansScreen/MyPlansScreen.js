@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
+import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 
 const width = Dimensions.get('window').width;
 
-const TrainingDay = ({ dayName, setSelectedDay, isSelected, index }) => {
+const UserPlans = ({ }) => {
+    return (
+        <TouchableOpacity onPress={setSelectedDay} style={{ width: width * 0.128 }} activeOpacity={1}>
+            <View style={styles.dayContainer}>
+                <Text style={styles.dayText}>{dayName}</Text>
+            </View>
+        </TouchableOpacity>
+    );
+}
+
+const Tabs = ({ name, setSelectedTab, isSelected, index, size = 1 }) => {
     const styles = StyleSheet.create({
         dayContainer: {
             backgroundColor: isSelected ? '#FFF' : '#DDD',
@@ -27,9 +38,9 @@ const TrainingDay = ({ dayName, setSelectedDay, isSelected, index }) => {
     });
 
     return (
-        <TouchableOpacity onPress={setSelectedDay} style={{ width: width * 0.128 }} activeOpacity={1}>
+        <TouchableOpacity onPress={setSelectedTab} style={{ width: width * 0.128 * size }} activeOpacity={1}>
             <View style={styles.dayContainer}>
-                <Text style={styles.dayText}>{dayName}</Text>
+                <Text style={styles.dayText}>{name}</Text>
             </View>
         </TouchableOpacity>
     );
@@ -255,51 +266,63 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
     )
 }
 
-const BallonDetails = ({ dayName, muscleGroup, setShowBallon, updateModalExercise, removeExercise, exerciseId, done, updateExerciseDone }) => {
+const BallonDetails = ({ dayName, muscleGroup, setShowBallon, updateModalExercise, removeExercise, exerciseId, done, updateExerciseDone, updateUnvailableExercises }) => {
     return (
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: 5, borderRadius: 5 }}>
+            <View style={{ alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.2)', padding: 5, borderRadius: 5 }}>
 
-                <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
-                    updateExerciseDone(dayName, muscleGroup, exerciseId, !done);
-                    setShowBallon(false);
-                }}>
-                    <Text style={{ color: '#FFF' }}>
-                        {done ? 'Undone' : 'Done'}
-                    </Text>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
 
-                <TouchableOpacity style={{ padding: 10, backgroundColor: '#2196F3', borderRadius: 10, marginLeft: 10 }} onPress={() => {
-                    updateModalExercise(exerciseId);
-                    setShowBallon(false);
-                }}>
-                    <Text style={{ color: '#FFF' }}>
-                        See
-                    </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
+                        updateExerciseDone(dayName, muscleGroup, exerciseId, !done);
+                        setShowBallon(false);
+                    }}>
+                        <Text style={{ color: '#FFF' }}>
+                            {done ? 'Undone' : 'Done'}
+                        </Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={{ padding: 10, backgroundColor: '#F44336', borderRadius: 10, marginLeft: 10 }} onPress={() => {
-                    setShowBallon(false);
-                    removeExercise(dayName, muscleGroup, exerciseId)
-                }}>
-                    <Text style={{ color: '#FFF' }}>
-                        Remove
-                    </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={{ padding: 10, backgroundColor: '#2196F3', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                        updateModalExercise(exerciseId);
+                        setShowBallon(false);
+                    }}>
+                        <Text style={{ color: '#FFF' }}>
+                            See
+                        </Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={{ padding: 10, backgroundColor: '#AAA', borderRadius: 10, marginLeft: 10 }} onPress={() => setShowBallon(false)}>
-                    <Text style={{ color: '#FFF' }}>
-                        Close
-                    </Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={{ padding: 10, backgroundColor: '#555', borderRadius: 10, marginLeft: 10 }} onPress={() => setShowBallon(false)}>
+                        <Text style={{ color: '#FFF' }}>
+                            Close
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: width * 0.02 }}>
+                    <TouchableOpacity style={{ padding: 10, backgroundColor: '#FFC107', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                        setShowBallon(false);
+                        updateUnvailableExercises(exerciseId, true);
+                        removeExercise(dayName, muscleGroup, exerciseId);
+                    }}>
+                        <Text style={{ color: '#FFF' }}>
+                            Unavailable
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={{ padding: 10, backgroundColor: '#00BCD4', borderRadius: 10, marginLeft: 10 }} onPress={() => setShowBallon(false)}>
+                        <Text style={{ color: '#FFF' }}>
+                            Alternative
+                        </Text>
+                    </TouchableOpacity>
+                </View>
 
             </View>
         </View>
     )
 }
 
-const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, updateModalExercise, updateExerciseDone, updateExerciseSetsDone }) => {
+const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, updateModalExercise, updateExerciseDone, updateExerciseSetsDone, updateUnvailableExercises }) => {
     const [showBallon, setShowBallon] = useState(false);
     const [showSetsEditModal, setShowSetsEditModal] = useState(false);
 
@@ -317,26 +340,59 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, edit, removeExercise, up
                 }}
                 delayLongPress={200}
                 onPress={() => {
-                    if(edit){
+                    if (edit) {
                         removeExercise(dayName, muscleGroup, exercise.exercise_id);
                     } else {
                         setShowBallon(!showBallon);
                     }
                 }}>
                 <Text style={styles.exerciseItemText}>{exercise.name || exercise.exercise_id}</Text>
-                {edit && <Icons name="CloseX" size={width * 0.04} style={{ position: 'absolute', right: -2, top: -2 }} />}
+                {(edit || showBallon) &&
+                    <TouchableOpacity style={styles.exerciseItemRemoveBox}
+                        onPress={() => {
+                            setShowBallon(false);
+                            removeExercise(dayName, muscleGroup, exercise.exercise_id);
+                        }}
+                    >
+                        <View style={styles.exerciseItemRemove}>
+                            <Icons name="CloseX" size={width * 0.03} />
+                        </View>
+                    </TouchableOpacity>
+                }
                 <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
-                    <ExerciseSetsIndicator edit={edit} dayName={dayName} muscleGroup={muscleGroup} exercise={exercise} updateExerciseSetsDone={updateExerciseSetsDone} showSetsEditModal={showSetsEditModal} setShowSetsEditModal={setShowSetsEditModal} />
+                    <ExerciseSetsIndicator
+                        edit={edit}
+                        dayName={dayName}
+                        muscleGroup={muscleGroup}
+                        exercise={exercise}
+                        updateExerciseSetsDone={updateExerciseSetsDone}
+                        showSetsEditModal={showSetsEditModal}
+                        setShowSetsEditModal={setShowSetsEditModal}
+                    />
+
                 </View>
 
             </Pressable>
 
-            {showBallon && <BallonDetails setShowBallon={setShowBallon} dayName={dayName} muscleGroup={muscleGroup} exerciseId={exercise.exercise_id} removeExercise={removeExercise} updateModalExercise={updateModalExercise} done={exercise.done} updateExerciseDone={updateExerciseDone} />}
+            {showBallon && (
+                <BallonDetails
+                    setShowBallon={setShowBallon}
+                    dayName={dayName}
+                    muscleGroup={muscleGroup}
+                    exerciseId={exercise.exercise_id}
+                    removeExercise={removeExercise}
+                    updateModalExercise={updateModalExercise}
+                    done={exercise.done}
+                    updateExerciseDone={updateExerciseDone}
+                    updateUnvailableExercises={updateUnvailableExercises}
+                />
+            )}
+
         </View>
     )
 }
 
-const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone }) => {
+const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unvailableExercises, updateUnvailableExercises }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -349,7 +405,19 @@ const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allE
                 <Text style={styles.muscleGroupText}>{muscleGroupName}</Text>
             </View>
             {exercises.length > 0 ? doneExercises.concat(undoneExercises).map((exercise, index) =>
-                <ExerciseItem key={index} dayName={dayName} muscleGroup={muscleGroup} exercise={exercise} edit={edit} removeExercise={removeExercise} updateModalExercise={updateModalExercise} updateExerciseDone={updateExerciseDone} updateExerciseSetsDone={updateExerciseSetsDone} />
+                <ExerciseItem
+                    key={index}
+                    dayName={dayName}
+                    muscleGroup={muscleGroup}
+                    exercise={exercise}
+                    edit={edit}
+                    removeExercise={removeExercise}
+                    updateModalExercise={updateModalExercise}
+                    updateExerciseDone={updateExerciseDone}
+                    updateExerciseSetsDone={updateExerciseSetsDone}
+                    updateUnvailableExercises={updateUnvailableExercises}
+                />
+
             ) : ''}
 
             <View style={{ alignItems: 'center', flexDirection: 'row', marginLeft: 'auto', marginTop: width * 0.01 }}>
@@ -377,7 +445,7 @@ const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allE
             {add && <AddExerciseList
                 dayName={dayName}
                 muscleGroup={muscleGroup}
-                exercises={allExercises.filter(exercise => !exercises.map(exercise => exercise.exercise_id).includes(exercise.exercise_id))}
+                exercises={allExercises.filter(exercise => !exercises.map(exercise => exercise.exercise_id).includes(exercise.exercise_id) && !unvailableExercises.includes(exercise.exercise_id))}
                 addExercise={addExercise}
             />}
 
@@ -423,9 +491,11 @@ const AddExerciseList = ({ dayName, muscleGroup, exercises, addExercise }) => {
     )
 }
 
-const MyPlansScreen = () => {
+const MyPlansScreen = ({ }) => {
+    const { userToken } = useGlobalContext();
 
-    const [days, setDays] = useState({
+    const [plan, setPlan] = useState('training');
+    const [daysExercises, setDaysExercises] = useState({
         Sun: {
             neck: {
                 'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, done: false, edit: false },
@@ -556,12 +626,12 @@ const MyPlansScreen = () => {
         calf: { id: 'calf', name: 'Calf' },
         erector_spinae: { id: 'erector_spinae', name: 'Erector Spinae' },
     };
-
+    const [unvailableExercises, setUnvailableExercises] = useState([]);
     const [exercises_list, setExercisesList] = useState([]);
 
     useEffect(() => {
-        setExercisesList(Object.values(days).flatMap(day => Object.values(day).flatMap(part => Object.keys(part))))
-    }, [days]);
+        setExercisesList(Object.values(daysExercises).flatMap(day => Object.values(day).flatMap(part => Object.keys(part))))
+    }, [daysExercises]);
 
     const [selectedDay, setSelectedDay] = useState(null);
     const [exercises, setExercises] = useState([]);
@@ -576,7 +646,7 @@ const MyPlansScreen = () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Token a23f29aed70ef958acbbd34a131736f0ddc4d361`,
+                'Authorization': `Token ${userToken}`,
             },
         });
         const data = await response.json();
@@ -587,7 +657,7 @@ const MyPlansScreen = () => {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Token a23f29aed70ef958acbbd34a131736f0ddc4d361`,
+                'Authorization': `Token ${userToken}`,
             },
         });
         const data = await response.json();
@@ -604,11 +674,11 @@ const MyPlansScreen = () => {
 
     const updateExerciseDone = (dayName, muscleGroup, exerciseIndex, done) => {
         const newExercises = {
-            ...days[dayName][muscleGroup],
-            [exerciseIndex]: { ...days[dayName][muscleGroup][exerciseIndex], done: done }
+            ...daysExercises[dayName][muscleGroup],
+            [exerciseIndex]: { ...daysExercises[dayName][muscleGroup][exerciseIndex], done: done }
         };
 
-        setDays(
+        setDaysExercises(
             prevDays => ({
                 ...prevDays,
                 [dayName]: {
@@ -623,7 +693,7 @@ const MyPlansScreen = () => {
 
     }
     const updateAllExercisesDone = (dayName, done) => {
-        const newDays = { ...days };
+        const newDays = { ...daysExercises };
         Object.keys(newDays[dayName]).forEach(muscleGroup => {
             newDays[dayName][muscleGroup] = Object.fromEntries(
                 Object.entries(newDays[dayName][muscleGroup]).map(([exerciseName, exerciseDetails]) => [
@@ -634,25 +704,24 @@ const MyPlansScreen = () => {
 
         });
 
-        setDays(newDays);
+        setDaysExercises(newDays);
     };
     const verifyAllExercisesDone = (dayName) => {
-        return Object.values(days[dayName]).every(muscleGroup =>
+        return Object.values(daysExercises[dayName]).every(muscleGroup =>
             Object.values(muscleGroup).every(exercise => exercise.done)
         );
     };
-
     const updateExerciseSetsDone = (dayName, muscleGroup, exerciseIndex, setsDone, repsToDo) => {
         const newExercises = {
-            ...days[dayName][muscleGroup],
+            ...daysExercises[dayName][muscleGroup],
             [exerciseIndex]: {
-                ...days[dayName][muscleGroup][exerciseIndex],
+                ...daysExercises[dayName][muscleGroup][exerciseIndex],
                 reps: repsToDo || 10,
                 sets: setsDone
             }
         };
 
-        setDays(
+        setDaysExercises(
             prevDays => ({
                 ...prevDays,
                 [dayName]: {
@@ -665,6 +734,13 @@ const MyPlansScreen = () => {
             })
         )
     }
+    const updateUnvailableExercises = (exercise, add) => {
+        if (add) {
+            setUnvailableExercises([...unvailableExercises, exercise]);
+        } else {
+            setUnvailableExercises(unvailableExercises.filter(item => item !== exercise));
+        }
+    }
 
     const updateModalExercise = (exercise) => {
         const newExercise = exercises[exercise] || allExercises[exercise];
@@ -675,11 +751,11 @@ const MyPlansScreen = () => {
     }
     const addExercise = (dayName, muscleGroup, exerciseId) => {
         const newExercises = {
-            ...days[dayName][muscleGroup],
+            ...daysExercises[dayName][muscleGroup],
             [exerciseId]: { reps: 10, sets: [0, 4], done: false, edit: false }
         };
 
-        setDays(prevDays => ({
+        setDaysExercises(prevDays => ({
             ...prevDays,
             [dayName]: {
                 ...prevDays[dayName],
@@ -688,17 +764,17 @@ const MyPlansScreen = () => {
         }));
     };
     const removeExercise = (dayName, muscleGroup, exerciseIndex) => {
-        if (!days[dayName] || !days[dayName][muscleGroup]) {
+        if (!daysExercises[dayName] || !daysExercises[dayName][muscleGroup]) {
             console.error(`Day or muscle group: ${dayName} - ${muscleGroup} not found.`);
             return;
         }
-        const newExercises = Object.entries(days[dayName][muscleGroup])
+        const newExercises = Object.entries(daysExercises[dayName][muscleGroup])
             .filter(([exerciseName, _]) => exerciseName !== exerciseIndex)
             .reduce((acc, [exerciseName, exerciseDetails]) => {
                 acc[exerciseName] = exerciseDetails;
                 return acc;
             }, {});
-        setDays(prevDays => ({
+        setDaysExercises(prevDays => ({
             ...prevDays,
             [dayName]: {
                 ...prevDays[dayName],
@@ -708,22 +784,22 @@ const MyPlansScreen = () => {
 
     };
     const removeMuscleGroup = (dayName, muscleGroup) => {
-        if (!days[dayName]) {
+        if (!daysExercises[dayName]) {
             console.error(`Day: ${dayName} not found.`);
             return;
         }
-        const { [muscleGroup]: removedGroup, ...remainingGroups } = days[dayName];
-        setDays(prevDays => ({
+        const { [muscleGroup]: removedGroup, ...remainingGroups } = daysExercises[dayName];
+        setDaysExercises(prevDays => ({
             ...prevDays,
             [dayName]: remainingGroups
         }));
     };
     const addMuscleGroup = (dayName, muscleGroup) => {
-        if (!days[dayName]) {
+        if (!daysExercises[dayName]) {
             console.error(`Day: ${dayName} not found.`);
             return;
         }
-        setDays(prevDays => ({
+        setDaysExercises(prevDays => ({
             ...prevDays,
             [dayName]: {
                 ...prevDays[dayName],
@@ -732,7 +808,7 @@ const MyPlansScreen = () => {
         }));
     };
 
-    const trainCompleted = verifyAllExercisesDone(selectedDay.name);
+    const trainCompleted = verifyAllExercisesDone(selectedDay ? selectedDay.name : 'Sun');
 
     return (
         <View style={styles.container}>
@@ -747,19 +823,34 @@ const MyPlansScreen = () => {
                 {selectedDay && exercise && <TrainDetails
                     showExerciseDetails={showExerciseDetails}
                     setShowExerciseDetails={setShowExerciseDetails}
-                    exercise={
-                        exercise
-                    } />}
+                    exercise={exercise} />}
 
-                {/* Training Plan Section */}
                 <View style={styles.sectionContainer}>
+
                     <Text style={styles.sectionTitle}>Training Plan</Text>
+                    <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+                        {[
+                            { plan_id: 'training', plan_name: 'Training' },
+                            { plan_id: 'diet', plan_name: 'Diet' }
+                        ].map((planOption, index) =>
+                            <Tabs
+                                key={index}
+                                name={planOption.plan_name}
+                                setSelectedTab={() => setPlan(planOption.plan_id)}
+                                isSelected={planOption.plan_id === plan}
+                                index={index}
+                                size={1.5}
+                            />
+                        )}
+                    </View>
+
                     <View style={styles.headerSectionContent}>
-                        {Object.entries(days).map(([dayName, dayDetails], index) =>
-                            <TrainingDay
+
+                        {Object.entries(daysExercises).map(([dayName, dayDetails], index) =>
+                            <Tabs
                                 key={dayName}
-                                dayName={dayName}
-                                setSelectedDay={() => setSelectedDay({ name: dayName.slice(0, 3), exercises: { ...dayDetails } })}
+                                name={dayName}
+                                setSelectedTab={() => setSelectedDay({ name: dayName.slice(0, 3), exercises: { ...dayDetails } })}
                                 isSelected={selectedDay && selectedDay.name === dayName.slice(0, 3)}
                                 index={index}
                             />
@@ -767,7 +858,7 @@ const MyPlansScreen = () => {
 
                     </View>
                     <View>
-                        {selectedDay && allExercises && Object.entries(days).map(([dayName, dayDetails]) => {
+                        {selectedDay && allExercises && Object.entries(daysExercises).map(([dayName, dayDetails]) => {
                             if (selectedDay.name === dayName.slice(0, 3)) {
                                 return (
                                     <View key={dayName}>
@@ -781,7 +872,16 @@ const MyPlansScreen = () => {
                                                     //.map(exercise => {exercise.exercise_id})
                                                     : []
                                                 }
-                                                updateModalExercise={updateModalExercise} addExercise={addExercise} removeExercise={removeExercise} removeMuscleGroup={removeMuscleGroup} updateExerciseDone={updateExerciseDone} updateExerciseSetsDone={updateExerciseSetsDone} />
+                                                updateModalExercise={updateModalExercise}
+                                                addExercise={addExercise}
+                                                removeExercise={removeExercise}
+                                                removeMuscleGroup={removeMuscleGroup}
+                                                updateExerciseDone={updateExerciseDone}
+                                                updateExerciseSetsDone={updateExerciseSetsDone}
+                                                unvailableExercises={unvailableExercises}
+                                                updateUnvailableExercises={updateUnvailableExercises}
+                                            />
+
                                         })}
                                     </View>
                                 )
@@ -799,7 +899,7 @@ const MyPlansScreen = () => {
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Muscle Group</Text>
                     </TouchableOpacity>
                     {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                        Object.values(muscle_groups).filter(group => !Object.keys(days[selectedDay.name]).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
+                        Object.values(muscle_groups).filter(group => !Object.keys(daysExercises[selectedDay.name]).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
                     } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} />}
                 </View>
             </ScrollView>
@@ -860,6 +960,21 @@ const styles = StyleSheet.create({
         fontSize: width * 0.04,
         fontWeight: 'bold',
         color: '#FFFFFF',
+    },
+    exerciseItemRemoveBox: {
+        padding: 5,
+        position: 'absolute',
+        top: -6,
+        left: -6,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    exerciseItemRemove: {
+        padding: 3,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F44336'
     },
     planDetailsContainer: {
         flexDirection: 'row',
