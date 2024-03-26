@@ -417,7 +417,7 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, allExercises, edit, addE
     )
 }
 
-const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allExercises, updateModalExercise, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise }) => {
+const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -439,7 +439,6 @@ const TrainingMember = ({ dayName, muscleGroup, muscleGroupName, exercises, allE
                     edit={edit}
                     addExercise={addExercise}
                     removeExercise={removeExercise}
-                    updateModalExercise={updateModalExercise}
                     updateExerciseDone={updateExerciseDone}
                     updateExerciseSetsDone={updateExerciseSetsDone}
                     updateUnavailableExercises={updateUnavailableExercises}
@@ -590,8 +589,6 @@ const MyPlansScreen = ({ }) => {
 
     const [selectedDay, setSelectedDay] = useState(null);
     const [exercises, setExercises] = useState([]);
-    const [showExerciseDetails, setShowExerciseDetails] = useState(false);
-    const [exercise, setExercise] = useState(null);
     const [allExercises, setAllExercises] = useState(null);
 
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
@@ -823,14 +820,6 @@ const MyPlansScreen = ({ }) => {
 
         return not_selected_exercises.length > exercise_index ? not_selected_exercises[exercise_index] : false;
     };
-    const updateModalExercise = (exercise, SetAlternativeButton) => {
-        const newExercise = exercises[exercise] || allExercises[exercise];
-        newExercise['alternativeButton'] = SetAlternativeButton
-        if (newExercise) {
-            setExercise(newExercise);
-            setShowExerciseDetails(true);
-        }
-    }
     const addExercise = (dayName, muscleGroup, exerciseId) => {
         const newExercises = {
             ...daysExercises[dayName][muscleGroup],
@@ -933,27 +922,6 @@ const MyPlansScreen = ({ }) => {
     }, []);
 
     useEffect(() => {
-        if (plans) {
-            return
-            const plan = plans.find(plan => plan.id === planId);
-            if (planId && plan) {
-                console.log('Intruzo', plan)
-                setDaysExercises(
-                    formatToAddSets(plan.days)
-                )
-
-            } else {
-                return
-                setDaysExercises(
-                    formatToAddSets(plans[0].days)
-                )
-                setPlanId(plans[0].id);
-            }
-            //setUnavailableExercises(plans.filter(plan => !exercises_list.includes(plan.exercise)).map(plan => plan.exercise));
-        }
-    }, [plans]);
-
-    useEffect(() => {
         if (planId) {
             setSelectedDay({ name: 'Sun', exercises: plans.filter(plan => plan.id === planId)[0].days.Sun });
         }
@@ -975,10 +943,6 @@ const MyPlansScreen = ({ }) => {
                 showsHorizontalScrollIndicator={false}
                 overScrollMode="never"
             >
-                {selectedDay && exercise && <TrainDetails
-                    showExerciseDetails={showExerciseDetails}
-                    setShowExerciseDetails={setShowExerciseDetails}
-                    exercise={exercise} />}
 
                 <View style={styles.sectionContainer}>
 
@@ -1051,7 +1015,6 @@ const MyPlansScreen = ({ }) => {
                                                     //.map(exercise => {exercise.exercise_id})
                                                     : []
                                                 }
-                                                updateModalExercise={updateModalExercise}
                                                 addExercise={addExercise}
                                                 removeExercise={removeExercise}
                                                 removeMuscleGroup={removeMuscleGroup}
