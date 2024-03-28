@@ -5,7 +5,6 @@ import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
-//I have changed the daysExercise structure and need to change this function to handle it. daysExercises is like: {         Sun: {             exercises: {                 neck: {                     'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, done: false, edit: false }                 },                 hip: {                     'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Mon: {             exercises: {                 chest: {                     'standing-medicine-ball-chest-pass': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Tue: {             exercises: {                 biceps: {                     'seated-zottman-curl': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Wed: {             exercises: {                 abs: {                     'medicine-ball-rotational-throw': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Thu: {             exercises: {                 hip: {                     'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Fri: {             exercises: {                 neck: {                     'diagonal-neck-stretch': { sets: [0, 4], reps: 10, done: false, edit: false }                 }             },             rest: false         },         Sat: {             exercises: {},             rest: true         },     }
 
 const width = Dimensions.get('window').width;
 
@@ -150,9 +149,24 @@ const TrainDetails = ({ dayName, muscleGroup, allExercises, exercise, showExerci
     );
 }
 
-const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExerciseSetsDone, showSetsEditModal, setShowSetsEditModal, updateExerciseDone }) => {
-    const [setsToDo, setSetsToDo] = useState(exercise.sets[1]);
+const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateExerciseSetsDone, showSetsEditModal, setShowSetsEditModal, updateExerciseDone }) => {
+    const [setsToDo, setSetsToDo] = useState(exercise.sets);
     const [reps, setReps] = useState(exercise.reps || '10');
+    const [restTime, setRestTime] = useState(exercise.rest);
+    const [setsDone, setSetsDone] = useState(0);
+    const [updated, setUpdate] = useState(false);
+
+    useEffect(() => {
+        let interval = null;
+        if (restTime > 0 && updated) {
+            interval = setInterval(() => {
+                setRestTime((prevRestTime) => prevRestTime - 1);
+            }, 1000);
+        } else {
+            clearInterval(interval);
+        }
+        return () => clearInterval(interval);
+    }, [restTime, updated]);
 
     const stylesSetsIndicator = StyleSheet.create({
         modalBackground: {
@@ -163,7 +177,7 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
         },
         modalView: {
             width: '40%',
-            height: '20%',
+            height: '30%',
             padding: width * 0.01,
             backgroundColor: 'rgba(0, 0, 0, 0.8)',
             borderRadius: 5,
@@ -207,10 +221,20 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
         },
         touchableOpacity: {
             padding: width * 0.016,
-            bottom: -width * 0.016,
-            position: 'absolute'
         },
+        infoContainer: {
+            width: '100%',
+            flexDirection: 'row',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            position: 'absolute',
+            bottom: -width * 0.017,
+            zIndex: 2
+        }
     });
+    const spentTime = `${Math.floor(restTime / 60)}:${restTime % 60 < 10 ? '0' : ''}${restTime % 60}`;
+    const totalTime = `${Math.floor(exercise.rest / 60)}:${exercise.rest % 60 < 10 ? '0' : ''}${exercise.rest % 60}`;
 
     return (
         showSetsEditModal ?
@@ -240,10 +264,20 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
                                 defaultValue={String(reps)}
                             />
                         </View>
+                        <View style={stylesSetsIndicator.row}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Rest Seconds:</Text>
+                            <TextInput
+                                style={stylesSetsIndicator.textInput}
+                                keyboardType='numeric'
+                                onChangeText={text => { setRestTime(text.slice(-3)); setUpdate(false); }}
+                                defaultValue={String(exercise.rest)}
+                            />
+                        </View>
                         <TouchableOpacity style={stylesSetsIndicator.okButton}
                             onPress={() => {
                                 setShowSetsEditModal(false);
-                                updateExerciseSetsDone(dayName, muscleGroup, exercise.exercise_id, [0, setsToDo], reps);
+                                updateExerciseSetsDone(dayName, muscleGroup, exercise.exercise_id, setsToDo, reps, restTime);
+                                setUpdate(false);
                             }}
                         >
                             <Text style={stylesSetsIndicator.okButtonText}>Ok</Text>
@@ -252,25 +286,51 @@ const ExerciseSetsIndicator = ({ edit, dayName, muscleGroup, exercise, updateExe
                 </View>
             </Modal>
             :
-            <TouchableOpacity style={stylesSetsIndicator.touchableOpacity}
-                onLongPress={() => setShowSetsEditModal(true)}
-                onPress={() => {
-                    if (!exercise.done) {
-                        updateExerciseSetsDone(dayName, muscleGroup, exercise.exercise_id,
-                            [(exercise.sets[0] + 1) % (exercise.sets[1] + 1), exercise.sets[1]], reps
-                        )
-                        updateExerciseDone(dayName, muscleGroup, exercise.exercise_id, (exercise.sets[0] + 1) % (exercise.sets[1] + 1) === exercise.sets[1]);
-                    }
-                    if (edit) {
-                        setShowSetsEditModal(true);
-                    }
-                }}
-            >
-                <View style={[styles.exerciseItemInfo, edit ? { padding: 2, borderRadius: 4, flexDirection: 'row' } : {}]}>
-                    <Text style={styles.exerciseItemInfoText}>{exercise.sets[0] > 0 && `${exercise.sets[0]} of `}{exercise.sets[1]}x{exercise.reps}</Text>
-                    {edit && <Icons name="Edit" size={15} style={{ marginLeft: 5 }} />}
-                </View>
-            </TouchableOpacity>
+            <View style={stylesSetsIndicator.infoContainer}>
+                <TouchableOpacity style={[stylesSetsIndicator.touchableOpacity, { left: width * 0.016 }]}
+                    onLongPress={() => setShowSetsEditModal(true)}
+                    onPress={() => {
+                        if (!edit) {
+                            setUpdate(true);
+                            setRestTime(exercise.rest)
+                        }
+                    }}
+                >
+                    <View style={[styles.exerciseItemInfo, {
+                        backgroundColor: exercise.done ? 'rgb(0,208,0)' : `rgb(${255 - restTime / exercise.rest * 255}, ${restTime / exercise.rest * 255*0.8}, 0)`
+                    }, edit ? { padding: 2, borderRadius: 4 } : {}]}>
+                        <Icons name="Watch" size={10} fill="#FFF" style={{ marginRight: 2 }} />
+                        <Text style={styles.exerciseItemInfoText}>
+                            {updated && !exercise.done ? `${spentTime} of ${totalTime}` : totalTime}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[stylesSetsIndicator.touchableOpacity, { right: width * 0.016 }]}
+                    onLongPress={() => setShowSetsEditModal(true)}
+                    onPress={() => {
+                        if (!exercise.done) {
+                            setSetsDone(setsDone + 1);
+                            if ((setsDone + 1) % (exercise.sets + 1) === exercise.sets) {
+                                setSetsDone(0);
+                                setUpdate(false);
+                                updateExerciseDone(dayName, muscleGroup, exercise.exercise_id, true);
+                            } else {
+                                setUpdate(!edit && true);
+                                setRestTime(exercise.rest)
+                            }
+                        }
+                        if (edit) {
+                            setShowSetsEditModal(true);
+                        }
+                    }}
+                >
+                    <View style={[styles.exerciseItemInfo, { backgroundColor: '#6495ED' }, edit ? { padding: 2, borderRadius: 4 } : {}]}>
+                        <Text style={styles.exerciseItemInfoText}>{!exercise.done && (setsDone > 0) && `${setsDone} of `}{exercise.sets}x{exercise.reps}</Text>
+                        {edit && <Icons name="Edit" size={15} style={{ marginLeft: 5 }} />}
+                    </View>
+                </TouchableOpacity>
+            </View>
     )
 }
 
@@ -291,15 +351,15 @@ const BallonDetails = ({ dayName, muscleGroup, allExercises, setShowBallon, setA
                                 Add
                             </Text>
                         </TouchableOpacity>
-                    :
-                    <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
-                        updateExerciseDone(dayName, muscleGroup, exerciseId, !done);
-                        setShowBallon(false);
-                    }}>
-                        <Text style={{ color: '#FFF' }}>
-                            {done ? 'Undone' : 'Done'}
-                        </Text>
-                    </TouchableOpacity>
+                        :
+                        <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
+                            updateExerciseDone(dayName, muscleGroup, exerciseId, !done);
+                            setShowBallon(false);
+                        }}>
+                            <Text style={{ color: '#FFF' }}>
+                                {done ? 'Undone' : 'Done'}
+                            </Text>
+                        </TouchableOpacity>
                     }
 
                     <TouchableOpacity style={{ padding: 10, backgroundColor: '#2196F3', borderRadius: 10, marginLeft: 10 }} onPress={() => {
@@ -322,7 +382,7 @@ const BallonDetails = ({ dayName, muscleGroup, allExercises, setShowBallon, setA
                 {!done && <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: width * 0.02 }}>
                     <TouchableOpacity style={{ padding: 10, backgroundColor: '#FFC107', borderRadius: 10, marginLeft: 10 }} onPress={() => {
                         updateUnavailableExercises('add', [exerciseId]);
-                        if(!adding) removeExercise(dayName, muscleGroup, exerciseId);
+                        if (!adding) removeExercise(dayName, muscleGroup, exerciseId);
                         setShowBallon(false);
                     }}>
                         <Text style={{ color: '#FFF' }}>
@@ -369,7 +429,7 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, allExercises, edit, addE
                 getAlternativeExercise={getAlternativeExercise}
                 removeExercise={removeExercise}
             />}
-            <Pressable style={[styles.planDetailsContainer, { backgroundColor: exercise.done ? '#4CAF50' : '#aaa' }]}
+            <Pressable style={[styles.planDetailsContainer, { backgroundColor: exercise.done ? '#4CAF50' : '#aaa', zIndex: 1 }]}
                 onLongPress={() => {
                     setShowExerciseDetails(true);
                 }}
@@ -381,35 +441,35 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, allExercises, edit, addE
                         setShowBallon(!showBallon);
                     }
                 }}>
-                  
+
                 <Text style={styles.exerciseItemText}>{exercise.title || exercise.exercise_id}</Text>
 
                 {!adding && <>
-                {(edit || showBallon) &&
-                    <TouchableOpacity style={styles.exerciseItemRemoveBox}
-                        onPress={() => {
-                            setShowBallon(false);
-                            removeExercise(dayName, muscleGroup, exercise.exercise_id);
-                        }}
-                    >
-                        <View style={styles.exerciseItemRemove}>
-                            <Icons name="CloseX" size={width * 0.03} />
-                        </View>
-                    </TouchableOpacity>
-                }
-                <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
-                    <ExerciseSetsIndicator
-                        edit={edit}
-                        dayName={dayName}
-                        muscleGroup={muscleGroup}
-                        exercise={exercise}
-                        updateExerciseSetsDone={updateExerciseSetsDone}
-                        showSetsEditModal={showSetsEditModal}
-                        setShowSetsEditModal={setShowSetsEditModal}
-                        updateExerciseDone={updateExerciseDone}
-                    />
+                    {(edit || showBallon) &&
+                        <TouchableOpacity style={styles.exerciseItemRemoveBox}
+                            onPress={() => {
+                                setShowBallon(false);
+                                removeExercise(dayName, muscleGroup, exercise.exercise_id);
+                            }}
+                        >
+                            <View style={styles.exerciseItemRemove}>
+                                <Icons name="CloseX" size={width * 0.03} />
+                            </View>
+                        </TouchableOpacity>
+                    }
+                    <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', alignItems: 'flex-end', right: width * -0.02, bottom: -width * 0.018 }]}>
+                        <ExerciseSetsIndicators
+                            edit={edit}
+                            dayName={dayName}
+                            muscleGroup={muscleGroup}
+                            exercise={exercise}
+                            updateExerciseSetsDone={updateExerciseSetsDone}
+                            showSetsEditModal={showSetsEditModal}
+                            setShowSetsEditModal={setShowSetsEditModal}
+                            updateExerciseDone={updateExerciseDone}
+                        />
 
-                </View>
+                    </View>
                 </>}
 
             </Pressable>
@@ -557,10 +617,10 @@ const MyPlansScreen = ({ }) => {
         Sun: {
             exercises: {
                 neck: {
-                    'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, rest: 120, rest: 120, done: false, edit: false }
                 },
                 hip: {
-                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -568,7 +628,7 @@ const MyPlansScreen = ({ }) => {
         Mon: {
             exercises: {
                 chest: {
-                    'standing-medicine-ball-chest-pass': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'standing-medicine-ball-chest-pass': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -576,7 +636,7 @@ const MyPlansScreen = ({ }) => {
         Tue: {
             exercises: {
                 biceps: {
-                    'seated-zottman-curl': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'seated-zottman-curl': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -584,7 +644,7 @@ const MyPlansScreen = ({ }) => {
         Wed: {
             exercises: {
                 abs: {
-                    'medicine-ball-rotational-throw': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'medicine-ball-rotational-throw': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -592,7 +652,7 @@ const MyPlansScreen = ({ }) => {
         Thu: {
             exercises: {
                 hip: {
-                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -600,7 +660,7 @@ const MyPlansScreen = ({ }) => {
         Fri: {
             exercises: {
                 neck: {
-                    'diagonal-neck-stretch': { sets: [0, 4], reps: 10, done: false, edit: false }
+                    'diagonal-neck-stretch': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -661,48 +721,6 @@ const MyPlansScreen = ({ }) => {
         const data = await response.json();
 
         setAllExercises(data);
-    }
-    const formatToAddSets = (daysExercises) => {
-        return Object.fromEntries(
-            Object.entries(daysExercises).map(([day, { exercises, rest }]) => [
-                day,
-                {
-                    exercises: Object.fromEntries(
-                        Object.entries(exercises).map(([muscleGroup, exercises]) => [
-                            muscleGroup,
-                            Object.fromEntries(
-                                Object.entries(exercises).map(([exerciseName, details]) => [
-                                    exerciseName,
-                                    { ...details, sets: [0, details.sets || 0] },
-                                ])
-                            ),
-                        ])
-                    ),
-                    rest,
-                },
-            ])
-        );
-    };
-    const formatToRemoveSets = (daysExercises) => {
-        return Object.fromEntries(
-            Object.entries(daysExercises).map(([day, { exercises, rest }]) => [
-                day,
-                {
-                    exercises: Object.fromEntries(
-                        Object.entries(exercises).map(([muscleGroup, exercises]) => [
-                            muscleGroup,
-                            Object.fromEntries(
-                                Object.entries(exercises).map(([exerciseName, { sets, done, edit, ...details }]) => [
-                                    exerciseName,
-                                    { ...details, sets: sets[1] },
-                                ])
-                            ),
-                        ])
-                    ),
-                    rest,
-                },
-            ])
-        );
     }
 
     const updatePlans = async (training_id, daysExercises) => {
@@ -772,10 +790,9 @@ const MyPlansScreen = ({ }) => {
         });
         const data = await response.json();
         setPlans(data.training_plans);
-        setDaysExercises(formatToAddSets(data.training_plans[0].days));
         if (!planId && data.training_plans.length > 0) {
             setPlanId(data.training_plans[0].id);
-            setDaysExercises(formatToAddSets(data.training_plans[0].days));
+            setDaysExercises(data.training_plans[0].days);
         }
         setUnavailableExercises(data.unavailable_exercises);
     }
@@ -824,8 +841,8 @@ const MyPlansScreen = ({ }) => {
         );
     };
 
-    const updateExerciseSetsDone = (dayName, muscleGroup, exerciseName, setsDone, repsToDo) => {
-        setDaysExercises(prevDays => ({
+    const updateExerciseSetsDone = (dayName, muscleGroup, exerciseName, setsDone, repsToDo, restTime) => {
+        const updatedExercises = prevDays => ({
             ...prevDays,
             [dayName]: {
                 ...prevDays[dayName],
@@ -836,13 +853,17 @@ const MyPlansScreen = ({ }) => {
                         [exerciseName]: {
                             ...prevDays[dayName].exercises[muscleGroup][exerciseName],
                             sets: setsDone,
-                            reps: repsToDo || prevDays[dayName].exercises[muscleGroup][exerciseName].reps
+                            reps: repsToDo || prevDays[dayName].exercises[muscleGroup][exerciseName].reps,
+                            rest: restTime || prevDays[dayName].exercises[muscleGroup][exerciseName].rest
                         }
                     }
                 }
             }
-        }));
+        });
+        setDaysExercises(updatedExercises);
+        setEdit(true);
     }
+
 
     const updateUnavailableExercises = async (action, exercises) => {
         try {
@@ -880,7 +901,7 @@ const MyPlansScreen = ({ }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId) => {
-        const newExercise = { sets: [0, 4], reps: 10, done: false, edit: false };
+        const newExercise = { sets: 4, reps: 10, rest: 120, done: false, edit: false };
 
         setEdit(true);
 
@@ -909,7 +930,7 @@ const MyPlansScreen = ({ }) => {
             .reduce((acc, [exerciseName, exerciseDetails]) => {
                 acc[exerciseName] = exerciseDetails;
                 return acc;
-            }, replace ? { [replace]: { reps: 10, sets: [0, 4], done: false, edit: false } } : {});
+            }, replace ? { [replace]: { reps: 10, sets: [0, 4], rest: 120, done: false, edit: false } } : {});
 
         setEdit(true);
 
@@ -980,7 +1001,7 @@ const MyPlansScreen = ({ }) => {
             setPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId));
         }
         setPlanId(plans.length ? plans[0].id : 0);
-        setDaysExercises(plans.length ? formatToAddSets(plans[0].days) : {});
+        setDaysExercises(plans.length ? plans[0].days : {});
     };
 
     useEffect(() => {
@@ -1046,7 +1067,7 @@ const MyPlansScreen = ({ }) => {
                                         alert('You must save or cancel changes before moving to another plan.');
                                         return;
                                     }
-                                    setDaysExercises(formatToAddSets(plan.days)); setPlanId(plan.id);
+                                    setDaysExercises(plan.days); setPlanId(plan.id);
                                 }}
                                 isSelected={plan.id === planId}
                                 len={plans.length}
@@ -1124,13 +1145,13 @@ const MyPlansScreen = ({ }) => {
                     {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
 
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
-                            setDaysExercises(formatToAddSets(plans.find(plan => plan.id === planId).days));
+                            setDaysExercises(plans.find(plan => plan.id === planId).days);
                             setEdit(false);
                         }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cancel Changes</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => updatePlans(planId, { "days": formatToRemoveSets(daysExercises) })}>
+                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => updatePlans(planId, { "days": daysExercises })}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
                         </TouchableOpacity>
 
@@ -1250,7 +1271,7 @@ const styles = StyleSheet.create({
         borderRadius: width * 0.025,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 100, 0, 0.9)',
+        flexDirection: 'row'
     },
     exerciseItemInfoText: {
         color: '#FFF',
