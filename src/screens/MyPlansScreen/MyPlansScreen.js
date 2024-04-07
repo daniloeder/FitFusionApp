@@ -269,7 +269,7 @@ const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateEx
                             <TextInput
                                 style={stylesSetsIndicator.textInput}
                                 keyboardType='numeric'
-                                onChangeText={text => { setRestTime(text.slice(-3)); setUpdate(false); }}
+                                onChangeText={text => { setRestTime(text.slice(-3));setUpdate(false); }}
                                 defaultValue={String(exercise.rest)}
                             />
                         </View>
@@ -288,10 +288,14 @@ const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateEx
             :
             <View style={stylesSetsIndicator.infoContainer}>
                 <TouchableOpacity style={[stylesSetsIndicator.touchableOpacity, { left: width * 0.016 }]}
-                    onLongPress={() => setShowSetsEditModal(true)}
+                    onLongPress={() => {setShowSetsEditModal(true);setRestTime(exercise.rest);setUpdate(false);}}
                     onPress={() => {
                         if (!edit) {
                             setUpdate(true);
+                            setRestTime(exercise.rest)
+                        }
+                        if(updated){
+                            setUpdate(false);
                             setRestTime(exercise.rest)
                         }
                     }}
