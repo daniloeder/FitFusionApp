@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
@@ -297,7 +297,7 @@ const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateEx
                     }}
                 >
                     <View style={[styles.exerciseItemInfo, {
-                        backgroundColor: exercise.done ? 'rgb(0,208,0)' : `rgb(${255 - restTime / exercise.rest * 255}, ${restTime / exercise.rest * 255*0.8}, 0)`
+                        backgroundColor: exercise.done || !exercise.rest ? 'rgb(0,208,0)' : `rgb(${255 - restTime / exercise.rest * 255}, ${restTime / exercise.rest * 255 * 0.8}, 0)`
                     }, edit ? { padding: 2, borderRadius: 4 } : {}]}>
                         <Icons name="Watch" size={10} fill="#FFF" style={{ marginRight: 2 }} />
                         <Text style={styles.exerciseItemInfoText}>
@@ -617,10 +617,10 @@ const MyPlansScreen = ({ }) => {
         Sun: {
             exercises: {
                 neck: {
-                    'lying-weighted-lateral-neck-flexion': { sets: [0, 4], reps: 10, rest: 120, rest: 120, done: false, edit: false }
+                    'lying-weighted-lateral-neck-flexion': { sets: 4, reps: 10, rest: 120, rest: 120, done: false, edit: false }
                 },
                 hip: {
-                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'high-knee-lunge-on-bosu-ball': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -628,7 +628,7 @@ const MyPlansScreen = ({ }) => {
         Mon: {
             exercises: {
                 chest: {
-                    'standing-medicine-ball-chest-pass': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'standing-medicine-ball-chest-pass': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -636,7 +636,7 @@ const MyPlansScreen = ({ }) => {
         Tue: {
             exercises: {
                 biceps: {
-                    'seated-zottman-curl': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'seated-zottman-curl': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -644,7 +644,7 @@ const MyPlansScreen = ({ }) => {
         Wed: {
             exercises: {
                 abs: {
-                    'medicine-ball-rotational-throw': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'medicine-ball-rotational-throw': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -652,7 +652,7 @@ const MyPlansScreen = ({ }) => {
         Thu: {
             exercises: {
                 hip: {
-                    'high-knee-lunge-on-bosu-ball': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'high-knee-lunge-on-bosu-ball': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -660,7 +660,7 @@ const MyPlansScreen = ({ }) => {
         Fri: {
             exercises: {
                 neck: {
-                    'diagonal-neck-stretch': { sets: [0, 4], reps: 10, rest: 120, done: false, edit: false }
+                    'diagonal-neck-stretch': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
                 }
             },
             rest: false
@@ -686,7 +686,7 @@ const MyPlansScreen = ({ }) => {
         leg: { id: 'leg', name: 'Leg' },
         hip: { id: 'hip', name: 'Hip' },
         cardio: { id: 'cardio', name: 'Cardio' },
-        fullBody: { id: 'fullBody', name: 'Full Body' },
+        full_body: { id: 'full_body', name: 'Full Body' },
         calf: { id: 'calf', name: 'Calf' },
         erector_spinae: { id: 'erector_spinae', name: 'Erector Spinae' },
     };
@@ -697,6 +697,7 @@ const MyPlansScreen = ({ }) => {
     const [exercises, setExercises] = useState([]);
     const [allExercises, setAllExercises] = useState(null);
 
+    const [newTrainingModal, setNewTrainingModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
 
     const fetchExercises = async () => {
@@ -742,27 +743,6 @@ const MyPlansScreen = ({ }) => {
             console.error('There was a problem with the fetch operation:', error);
         }
     }
-    const createTrainingPlan = async (daysExercises) => {
-        try {
-            const response = await fetch(BASE_URL + `/api/exercises/training-plans/`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Token ${userToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(daysExercises)
-            });
-            const data = await response.json();
-            if (response.ok && data.id) {
-                setPlans(prevPlans => [...prevPlans, data]);
-                setDaysExercises(data.days)
-                setPlanId(data.id);
-            }
-            return false;
-        } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
-        }
-    }
     const deleteTrainingPlan = async (training_id) => {
         try {
             const response = await fetch(BASE_URL + `/api/exercises/training-plans/${training_id}/`, {
@@ -779,7 +759,42 @@ const MyPlansScreen = ({ }) => {
             console.error('There was a problem with the fetch operation:', error);
         }
     }
+    const GenerateWeekWorkoutPlan = async (trainingName, workoutType, workoutDays, rest, focus, avoid, goals, setError, onClose) => {
+        try {
+            const response = await fetch(BASE_URL + '/api/exercises/generate-exercises/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "name": trainingName,
+                    "workout_days": workoutDays,
+                    "rest": rest,
+                    "workout_type": workoutType,
+                    "focus": focus,
+                    "avoid": avoid,
+                    "main_goal": '',
+                    "goals": goals
+                })
+            });
+            const data = await response.json();
+            if (response.ok && data.id && plans) {
+                setPlans(prevPlans => [...prevPlans, data]);
+                setDaysExercises(data.days);
+                setPlanId(data.id);
+                onClose();
+                setSelectedDay({ name: workoutDays[0], exercises: data.days[workoutDays[0]].exercises })
+            } else {
+                setError(true);
+                throw new Error('Failed to generate exercises');
+            }
 
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+            throw error;
+        }
+    };
     const fetchPlans = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/user-plans/`, {
             method: 'GET',
@@ -930,7 +945,7 @@ const MyPlansScreen = ({ }) => {
             .reduce((acc, [exerciseName, exerciseDetails]) => {
                 acc[exerciseName] = exerciseDetails;
                 return acc;
-            }, replace ? { [replace]: { reps: 10, sets: [0, 4], rest: 120, done: false, edit: false } } : {});
+            }, replace ? { [replace]: { reps: 10, sets: 4, rest: 120, done: false, edit: false } } : {});
 
         setEdit(true);
 
@@ -981,19 +996,6 @@ const MyPlansScreen = ({ }) => {
         }));
     };
 
-    const addTrainingPlan = (plan) => {
-        if (!plan || !plan.days || typeof plan.name !== 'string') {
-            console.error('Invalid plan format.');
-            return;
-        }
-        if (online) {
-            createTrainingPlan(plan);
-        } else {
-            setPlans(prevPlans => [...prevPlans, plan]);
-            setDaysExercises(plan.days);
-            setPlanId(0);
-        }
-    };
     const removeTrainingPlan = (planId) => {
         if (online) {
             deleteTrainingPlan(planId);
@@ -1018,19 +1020,339 @@ const MyPlansScreen = ({ }) => {
 
     useEffect(() => {
         if (planId) {
-            setSelectedDay({ name: 'Sun', exercises: plans.filter(plan => plan.id === planId)[0].days.Sun });
+            const newDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].find(day => !plans[0].days[day].rest);
+            setSelectedDay({ name: newDay, exercises: plans.filter(plan => plan.id === planId)[0].days[newDay] });
         }
     }, [planId]);
-
-    useEffect(() => {
-    }, [allExercises, selectedDay]);
 
     const trainCompleted = verifyAllExercisesDone(selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'training', plan_name: 'Training' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
+    const NewTrainingModal = ({ setNewTrainingModal }) => {
+        const [generating, setGenerating] = useState(false);
+        const [error, setError] = useState(false);
+
+        const [trainingName, setTrainingName] = useState('');
+
+        const [workoutDays, setWorkoutDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+        const allWorkoutDaysNames = { 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday' };
+        const orderDays = (dayList) => {
+            const orderedDays = [];
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            for (let day of days) {
+                if (dayList.includes(day)) {
+                    orderedDays.push(day);
+                }
+            }
+            return orderedDays;
+        }
+        useEffect(() => {
+            const orderedDays = orderDays(workoutDays);
+            if (JSON.stringify(orderedDays) !== JSON.stringify(workoutDays)) {
+                setWorkoutDays(orderDays(workoutDays));
+            }
+        }, [workoutDays]);
+
+        const allRestOptions = ['short', 'medium', 'long'];
+        const allRestOptionsNames = { 'short': 'Short', 'medium': 'Medium', 'long': 'Long' }
+        const [rest, setRest] = useState(['medium']);
+
+        const allWorkoutTypes = ["home", "gym", "crossfit", "pilates", "yoga", "endurance"]
+        const allWorkoutTypesNames = { 'home': 'Home', 'gym': 'Gym', 'crossfit': 'Crossfit', 'pilates': 'Pilates', 'yoga': 'Yoga', 'endurance': 'Endurance' }
+        const [workoutType, setWorkoutType] = useState(['gym']);
+
+        const allFocusOrAvoid = ['neck', 'trapezius', 'shoulders', 'chest', 'back', 'erector_spinae', 'biceps', 'triceps', 'forearm', 'abs', 'leg', 'calf', 'hip', 'cardio', 'full_body'];
+        const allFocusOrAvoidNames = { 'neck': 'Neck', 'trapezius': 'Trapezius', 'shoulders': 'Shoulders', 'chest': 'Chest', 'back': 'Back', 'erector_spinae': 'Erector Spinae', 'biceps': 'Biceps', 'triceps': 'Triceps', 'forearm': 'Forearm', 'abs': 'Abs', 'leg': 'Leg', 'calf': 'Calf', 'hip': 'Hip', 'cardio': 'Cardio', 'full_body': 'Full Body' };
+        const [focus, setFocus] = useState([]);
+        const [avoid, setAvoid] = useState([]);
+
+        const allGoals = ['general_fitness', 'muscle_strength', 'weight_loss', 'core_strength_and_stability', 'body_recomposition', 'balance_and_coordination', 'athletic_performance_improvement', 'posture_correction', 'stress_reduction_and_relaxation', 'muscle_definition_and_toning', 'endurance_training', 'power_and_explosiveness', 'increase_energy_levels', 'enhance_overall_health_and_well_being', 'cardiovascular_endurance', 'muscle_hypertrophy', 'flexibility_and_mobility', 'injury_rehabilitation_and_prevention', 'functional_fitness', 'agility_and_speed'];
+        const allGoalsNames = { 'general_fitness': 'General Fitness', 'muscle_strength': 'Muscle Strength', 'weight_loss': 'Weight Loss', 'core_strength_and_stability': 'Core Strength and Stability', 'body_recomposition': 'Body Recomposition', 'balance_and_coordination': 'Balance and Coordination', 'athletic_performance_improvement': 'Athletic Performance Improvement', 'posture_correction': 'Posture Correction', 'stress_reduction_and_relaxation': 'Stress Reduction and Relaxation', 'muscle_definition_and_toning': 'Muscle Definition and Toning', 'endurance_training': 'Endurance Training', 'power_and_explosiveness': 'Power and Explosiveness', 'increase_energy_levels': 'Increase Energy Levels', 'enhance_overall_health_and_well_being': 'Enhance Overall Health and Well Being', 'cardiovascular_endurance': 'Cardiovascular Endurance', 'muscle_hypertrophy': 'Muscle Hypertrophy', 'flexibility_and_mobility': 'Flexibility and Mobility', 'injury_rehabilitation_and_prevention': 'Injury Rehabilitation and Prevention', 'functional_fitness': 'Functional Fitness', 'agility_and_speed': 'Agility and Speed' };
+        const [goals, setGoals] = useState([]);
+
+        const onClose = () => {
+            setNewTrainingModal(false);
+        }
+        const styles = StyleSheet.create({
+            container: {
+                flex: 1,
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                paddingTop: 10,
+                paddingBottom: 10,
+                paddingHorizontal: 15,
+            },
+            newTrainingScroll: {
+                flex: 1,
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                borderRadius: 10,
+                padding: 10,
+            },
+            generating: {
+                width: '100%',
+                height: width * 1.5,
+                borderRadius: 10,
+                marginTop: width * 0.15,
+                backgroundColor: '#FFF',
+                justifyContent: 'center',
+                alignItems: 'center',
+            },
+            generatingText: {
+                color: '#000',
+                fontSize: width * 0.05,
+                fontWeight: 'bold',
+                marginHorizontal: '1%',
+            },
+            newTrainingTitle: {
+                width: '80%',
+                fontSize: width * 0.04,
+                color: '#000',
+                backgroundColor: '#FFF',
+                fontWeight: 'bold',
+                padding: 10,
+                borderRadius: 10,
+                marginLeft: '5%',
+                marginBottom: 20,
+            },
+            selectBox: {
+                width: '90%',
+                marginLeft: '5%',
+                borderRadius: 5,
+                justifyContent: 'space-between',
+                marginBottom: 10,
+            },
+            textContainer: {
+                flex: 0,
+                borderTopRightRadius: 5,
+                borderTopLeftRadius: 5,
+                justifyContent: 'center',
+                backgroundColor: '#fff',
+                paddingVertical: 2,
+                paddingHorizontal: 15,
+                marginRight: 'auto',
+            },
+            itemsList: {
+                width: '100%',
+                padding: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-evenly',
+                flexWrap: 'wrap',
+            },
+            selectedItems: {
+                borderTopRightRadius: 5,
+                backgroundColor: '#F0F0F0',
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+            },
+            unselectedItems: {
+                borderRadius: 5,
+                borderTopLeftRadius: 0,
+                borderTopEndRadius: 0,
+                backgroundColor: '#CCCCCC',
+            },
+            selectBoxItem: {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: width * 0.02,
+                paddingVertical: width * 0.008,
+                borderRadius: width * 0.01,
+                margin: width * 0.01,
+                backgroundColor: '#DDD',
+            },
+            selectBoxItemText: {
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: width * 0.03
+            },
+            showAllButton: {
+                padding: 5,
+                width: '50%',
+                marginLeft: '5%',
+                borderRadius: 5,
+                backgroundColor: '#0000FF',
+            },
+            showAllText: {
+                color: '#fff',
+                fontWeight: 'bold',
+                fontSize: width * 0.03
+            },
+            workoutButton: {
+                flex: 0,
+                padding: 12,
+                borderRadius: 5,
+                marginHorizontal: '5%',
+                marginTop: 5,
+                alignItems: 'center',
+                justifyContent: 'center',
+            },
+            workoutButtonText: {
+                color: '#fff',
+                fontWeight: 'bold',
+                fontSize: width * 0.035
+            },
+
+        });
+
+        const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem }) => {
+            const onSelectItem = (item) => {
+                if (selectedOptions.includes(item)) {
+                    setSelectedItem(selectedOptions.filter(selected => selected !== item));
+                } else {
+                    setSelectedItem([...selectedOptions, item]);
+                }
+            }
+            const onRemoveItem = (item) => {
+                setSelectedItem(selectedOptions.filter(selected => selected !== item));
+            }
+            const alertMaxItems = (title) => {
+                alert(`You can only select ${max} "${title}" per training day. Please remove an item first.`);
+            }
+
+            return (
+                <View style={styles.selectBox}>
+                    <View style={styles.textContainer}>
+                        <Text style={{ fontWeight: 'bold', fontSize: width * 0.03, color: '#000' }}>{title}</Text>
+                    </View>
+                    <View style={[styles.itemsList, styles.selectedItems]}>
+                        {
+                            selectedOptions.map(option => {
+                                return (
+                                    <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
+                                        <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
+                                    </TouchableOpacity>
+                                )
+                            })
+                        }
+                    </View>
+                    <View style={[styles.itemsList, styles.unselectedItems]}>
+                        {
+                            allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
+                                return (
+                                    <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
+                                        <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
+                                    </TouchableOpacity>
+                                )
+                            })
+                        }
+                        {max && <Text style={{ position: 'absolute', bottom: 0, right: 3, color: '#888', fontSize: width * 0.03 }}>Max: {max}</Text>}
+                    </View>
+                </View>
+            )
+        }
+
+        return (
+
+            <Modal
+                visible={newTrainingModal}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={onClose}
+            >
+                <View style={styles.container}>
+                    <ScrollView style={styles.newTrainingScroll}>
+
+                        {generating ?
+                            <View style={styles.generating}>
+                                {error ?
+                                    <>
+                                        <Text style={styles.generatingText}>Sorry, we got an error while Generating Workout... :/</Text>
+                                    </>
+                                    : <>
+                                        <ActivityIndicator size="large" color="#0000ff" />
+                                        <Text style={styles.generatingText}>Generating Workout...</Text>
+                                    </>
+
+                                }
+                            </View>
+                            : <>
+                                <TextInput style={styles.newTrainingTitle} placeholder="Workout Name" onChangeText={setTrainingName} />
+
+                                <SelectBox
+                                    title="Workout Type"
+                                    max={1}
+                                    allOptions={allWorkoutTypes}
+                                    allOptionsNames={allWorkoutTypesNames}
+                                    selectedOptions={workoutType}
+                                    setSelectedItem={setWorkoutType}
+                                />
+                                <SelectBox
+                                    title="Week Workout Days"
+                                    allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                    allOptionsNames={allWorkoutDaysNames}
+                                    selectedOptions={workoutDays}
+                                    setSelectedItem={setWorkoutDays}
+                                />
+                                <SelectBox
+                                    title="Rest Time Among Sets"
+                                    max={1}
+                                    allOptions={allRestOptions}
+                                    allOptionsNames={allRestOptionsNames}
+                                    selectedOptions={rest}
+                                    setSelectedItem={setRest}
+                                />
+                                <SelectBox
+                                    title="Goals"
+                                    max={3}
+                                    allOptions={allGoals}
+                                    allOptionsNames={allGoalsNames}
+                                    selectedOptions={goals}
+                                    setSelectedItem={setGoals}
+                                />
+                                <SelectBox
+                                    title="Muscles to Focus"
+                                    max={3}
+                                    allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
+                                    allOptionsNames={allFocusOrAvoidNames}
+                                    selectedOptions={focus}
+                                    setSelectedItem={setFocus}
+                                />
+                                <SelectBox
+                                    title="Muscles to Avoid"
+                                    max={3}
+                                    allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
+                                    allOptionsNames={allFocusOrAvoidNames}
+                                    selectedOptions={avoid}
+                                    setSelectedItem={setAvoid}
+                                />
+
+                                <TouchableOpacity
+                                    style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
+                                    onPress={() => {
+                                        if (!trainingName) {
+                                            alert('Please enter a workout name')
+                                            return
+                                        }
+                                        if (workoutDays.length === 0) {
+                                            alert('Please select at least one day')
+                                            return
+                                        }
+                                        setGenerating(true);
+                                        GenerateWeekWorkoutPlan(trainingName, workoutType[0], workoutDays, rest[0], focus, avoid, goals, setError, onClose)
+                                    }}
+                                >
+                                    <Text style={styles.workoutButtonText}>Generate Workout Plan</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.workoutButton, { backgroundColor: '#999', marginBottom: 50 }]}
+                                    onPress={onClose}
+                                >
+                                    <Text style={styles.workoutButtonText}>Cancel</Text>
+                                </TouchableOpacity>
+                            </>
+                        }
+
+                    </ScrollView>
+                </View>
+            </Modal>
+        )
+    }
+
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+
+            <NewTrainingModal setNewTrainingModal={setNewTrainingModal} />
 
             <ScrollView
                 style={styles.contentContainer}
@@ -1077,7 +1399,6 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View style={styles.headerSectionContent}>
-
                         {Object.entries(daysExercises).sort((a, b) => {
                             const order = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                             return order.indexOf(a[0]) - order.indexOf(b[0]);
@@ -1092,7 +1413,6 @@ const MyPlansScreen = ({ }) => {
                                 TabSize={width * 0.89 / 7}
                             />
                         )}
-
                     </View>
 
                     <View>
@@ -1100,26 +1420,32 @@ const MyPlansScreen = ({ }) => {
                             if (selectedDay.name === dayName.slice(0, 3)) {
                                 return (
                                     <View key={dayName}>
-                                        {Object.entries(dayInfo.exercises).map(([muscleGroup, exercises_list]) => {
-                                            return <TrainingMember key={muscleGroup} dayName={dayName} muscleGroupName={muscle_groups[muscleGroup].name} muscleGroup={muscleGroup} exercises={
-                                                Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => ({ ...exerciseDetails, exercise_id: exerciseId, title: allExercises[exerciseId].title })).filter(Boolean)
-                                            }
-                                                allExercises={allExercises ?
-                                                    Object.values(allExercises)
-                                                        .filter(exercise => exercise.muscle_groups.some(group => group.muscle_group_id === muscleGroup))
-                                                    : []
-                                                }
-                                                addExercise={addExercise}
-                                                removeExercise={removeExercise}
-                                                removeMuscleGroup={removeMuscleGroup}
-                                                updateExerciseDone={updateExerciseDone}
-                                                updateExerciseSetsDone={updateExerciseSetsDone}
-                                                unavailableExercises={unavailableExercises}
-                                                updateUnavailableExercises={updateUnavailableExercises}
-                                                getAlternativeExercise={getAlternativeExercise}
-                                            />
+                                        {Object.keys(dayInfo.exercises).length > 0 ? Object.entries(dayInfo.exercises).map(
+                                            ([muscleGroup, exercises_list]) => {
+                                                return <TrainingMember key={muscleGroup} dayName={dayName} muscleGroupName={muscle_groups[muscleGroup].name} muscleGroup={muscleGroup}
+                                                    exercises={
+                                                        Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => ({ ...exerciseDetails, exercise_id: exerciseId, title: allExercises[exerciseId].title })).filter(Boolean)
+                                                    }
+                                                    allExercises={allExercises ?
+                                                        Object.values(allExercises)
+                                                            .filter(exercise => exercise.muscle_groups.some(group => group.muscle_group_id === muscleGroup))
+                                                        : []
+                                                    }
+                                                    addExercise={addExercise}
+                                                    removeExercise={removeExercise}
+                                                    removeMuscleGroup={removeMuscleGroup}
+                                                    updateExerciseDone={updateExerciseDone}
+                                                    updateExerciseSetsDone={updateExerciseSetsDone}
+                                                    unavailableExercises={unavailableExercises}
+                                                    updateUnavailableExercises={updateUnavailableExercises}
+                                                    getAlternativeExercise={getAlternativeExercise}
+                                                />
 
-                                        })}
+                                            }
+                                        ) :
+                                            <View>
+                                                <Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text>
+                                            </View>}
                                     </View>
                                 )
                             }
@@ -1128,7 +1454,7 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                        {Object.keys(daysExercises[selectedDay ? selectedDay.name : 'Mon']).length > 0 && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
+                        {Object.keys(daysExercises[selectedDay ? selectedDay.name : 'Mon'].exercises).length > 0 && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
                             updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(selectedDay.name));
                         }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
@@ -1143,7 +1469,6 @@ const MyPlansScreen = ({ }) => {
                     } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
                     {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
-
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
                             setDaysExercises(plans.find(plan => plan.id === planId).days);
                             setEdit(false);
@@ -1158,7 +1483,7 @@ const MyPlansScreen = ({ }) => {
                     </View>}
 
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
-                        addTrainingPlan({ id: 0, name: 'New Training', days: { Sun: { exercises: {}, rest: false }, Mon: { exercises: {}, rest: false }, Tue: { exercises: {}, rest: false }, Wed: { exercises: {}, rest: false }, Thu: { exercises: {}, rest: false }, Fri: { exercises: {}, rest: false }, Sat: { exercises: {}, rest: false } } })
+                        setNewTrainingModal(true);
                     }}>
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>New Train</Text>
                     </TouchableOpacity>
