@@ -269,7 +269,7 @@ const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateEx
                             <TextInput
                                 style={stylesSetsIndicator.textInput}
                                 keyboardType='numeric'
-                                onChangeText={text => { setRestTime(text.slice(-3));setUpdate(false); }}
+                                onChangeText={text => { setRestTime(text.slice(-3)); setUpdate(false); }}
                                 defaultValue={String(exercise.rest)}
                             />
                         </View>
@@ -288,13 +288,13 @@ const ExerciseSetsIndicators = ({ edit, dayName, muscleGroup, exercise, updateEx
             :
             <View style={stylesSetsIndicator.infoContainer}>
                 <TouchableOpacity style={[stylesSetsIndicator.touchableOpacity, { left: width * 0.016 }]}
-                    onLongPress={() => {setShowSetsEditModal(true);setRestTime(exercise.rest);setUpdate(false);}}
+                    onLongPress={() => { setShowSetsEditModal(true); setRestTime(exercise.rest); setUpdate(false); }}
                     onPress={() => {
                         if (!edit) {
                             setUpdate(true);
                             setRestTime(exercise.rest)
                         }
-                        if(updated){
+                        if (updated) {
                             setUpdate(false);
                             setRestTime(exercise.rest)
                         }
@@ -757,13 +757,15 @@ const MyPlansScreen = ({ }) => {
                 },
             });
             if (response.ok && response.status === 204) {
-                setPlans(prevPlans => prevPlans.filter(plan => plan.id !== training_id));
+                const newPlans = plans.filter(plan => plan.id!== training_id);
+                setPlans(newPlans);
+                setPlanId(newPlans[0].id);;
             }
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
         }
     }
-    const GenerateWeekWorkoutPlan = async (trainingName, workoutType, workoutDays, rest, focus, avoid, goals, setError, onClose) => {
+    const GenerateWeekWorkoutPlan = async (requestBody, setError, onClose) => {
         try {
             const response = await fetch(BASE_URL + '/api/exercises/generate-exercises/', {
                 method: 'POST',
@@ -771,16 +773,7 @@ const MyPlansScreen = ({ }) => {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    "name": trainingName,
-                    "workout_days": workoutDays,
-                    "rest": rest,
-                    "workout_type": workoutType,
-                    "focus": focus,
-                    "avoid": avoid,
-                    "main_goal": '',
-                    "goals": goals
-                })
+                body: JSON.stringify(requestBody)
             });
             const data = await response.json();
             if (response.ok && data.id && plans) {
@@ -788,7 +781,9 @@ const MyPlansScreen = ({ }) => {
                 setDaysExercises(data.days);
                 setPlanId(data.id);
                 onClose();
-                setSelectedDay({ name: workoutDays[0], exercises: data.days[workoutDays[0]].exercises })
+                if(requestBody.use_ai){
+                    setSelectedDay({ name: requestBody.workout_days[0], exercises: data.days[requestBody.workout_days[0]].exercises })
+                }
             } else {
                 setError(true);
                 throw new Error('Failed to generate exercises');
@@ -883,7 +878,6 @@ const MyPlansScreen = ({ }) => {
         setEdit(true);
     }
 
-
     const updateUnavailableExercises = async (action, exercises) => {
         try {
             response = await fetch(BASE_URL + `/api/exercises/user-plans/update_plan/`, {
@@ -977,7 +971,8 @@ const MyPlansScreen = ({ }) => {
             ...prevDays,
             [dayName]: {
                 ...prevDays[dayName],
-                exercises: remainingGroups
+                exercises: remainingGroups,
+                rest: Object.keys(remainingGroups).length === 0
             }
         }));
     };
@@ -995,7 +990,8 @@ const MyPlansScreen = ({ }) => {
                 exercises: {
                     ...prevDays[dayName].exercises,
                     [muscleGroup]: {}
-                }
+                },
+                rest: false
             }
         }));
     };
@@ -1024,17 +1020,19 @@ const MyPlansScreen = ({ }) => {
 
     useEffect(() => {
         if (planId) {
-            const newDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].find(day => !plans[0].days[day].rest);
-            setSelectedDay({ name: newDay, exercises: plans.filter(plan => plan.id === planId)[0].days[newDay] });
+            const selectedPlan = plans.find(plan => plan.id === planId);
+            const newDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].find(day => !selectedPlan.days[day].rest) || 'Sun';
+            setSelectedDay({ name: newDay, exercises: selectedPlan.days[newDay] });
         }
     }, [planId]);
 
     const trainCompleted = verifyAllExercisesDone(selectedDay ? selectedDay.name : 'Sun');
-    const fit_plans = [{ plan_id: 'training', plan_name: 'Training' }, { plan_id: 'diet', plan_name: 'Diet' }];
+    const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
     const NewTrainingModal = ({ setNewTrainingModal }) => {
         const [generating, setGenerating] = useState(false);
         const [error, setError] = useState(false);
+        const [useAI, setUseAI] = useState(false);
 
         const [trainingName, setTrainingName] = useState('');
 
@@ -1074,6 +1072,8 @@ const MyPlansScreen = ({ }) => {
         const allGoalsNames = { 'general_fitness': 'General Fitness', 'muscle_strength': 'Muscle Strength', 'weight_loss': 'Weight Loss', 'core_strength_and_stability': 'Core Strength and Stability', 'body_recomposition': 'Body Recomposition', 'balance_and_coordination': 'Balance and Coordination', 'athletic_performance_improvement': 'Athletic Performance Improvement', 'posture_correction': 'Posture Correction', 'stress_reduction_and_relaxation': 'Stress Reduction and Relaxation', 'muscle_definition_and_toning': 'Muscle Definition and Toning', 'endurance_training': 'Endurance Training', 'power_and_explosiveness': 'Power and Explosiveness', 'increase_energy_levels': 'Increase Energy Levels', 'enhance_overall_health_and_well_being': 'Enhance Overall Health and Well Being', 'cardiovascular_endurance': 'Cardiovascular Endurance', 'muscle_hypertrophy': 'Muscle Hypertrophy', 'flexibility_and_mobility': 'Flexibility and Mobility', 'injury_rehabilitation_and_prevention': 'Injury Rehabilitation and Prevention', 'functional_fitness': 'Functional Fitness', 'agility_and_speed': 'Agility and Speed' };
         const [goals, setGoals] = useState([]);
 
+        const [newTrainingComment, setNewTrainingComment] = useState('');
+
         const onClose = () => {
             setNewTrainingModal(false);
         }
@@ -1086,10 +1086,10 @@ const MyPlansScreen = ({ }) => {
                 paddingHorizontal: 15,
             },
             newTrainingScroll: {
-                flex: 1,
-                backgroundColor: 'rgba(0,0,0,0.5)',
+                backgroundColor: 'rgba(0,0,0,0.7)',
                 borderRadius: 10,
                 padding: 10,
+                paddingTop: 10,
             },
             generating: {
                 width: '100%',
@@ -1115,6 +1115,7 @@ const MyPlansScreen = ({ }) => {
                 padding: 10,
                 borderRadius: 10,
                 marginLeft: '5%',
+                marginTop: useAI ? 10 : width*0.5,
                 marginBottom: 20,
             },
             selectBox: {
@@ -1194,10 +1195,21 @@ const MyPlansScreen = ({ }) => {
                 fontWeight: 'bold',
                 fontSize: width * 0.035
             },
+            newTrainingComment: {
+                width: '90%',
+                fontSize: width * 0.03,
+                color: '#000',
+                backgroundColor: '#FFF',
+                fontWeight: 'bold',
+                padding: 10,
+                borderRadius: 10,
+                marginLeft: '5%',
+                marginBottom: 20,
+            }
 
         });
 
-        const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem }) => {
+        const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem, obligatory = false }) => {
             const onSelectItem = (item) => {
                 if (selectedOptions.includes(item)) {
                     setSelectedItem(selectedOptions.filter(selected => selected !== item));
@@ -1219,13 +1231,14 @@ const MyPlansScreen = ({ }) => {
                     </View>
                     <View style={[styles.itemsList, styles.selectedItems]}>
                         {
-                            selectedOptions.map(option => {
+                            selectedOptions.length ? selectedOptions.map(option => {
                                 return (
                                     <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
                                         <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
                                     </TouchableOpacity>
                                 )
-                            })
+                            }) :
+                                <Text style={{ color: '#888', fontSize: width * 0.025 }}>Select an option to add.{obligatory && " Obligatory!"}</Text>
                         }
                     </View>
                     <View style={[styles.itemsList, styles.unselectedItems]}>
@@ -1242,6 +1255,28 @@ const MyPlansScreen = ({ }) => {
                     </View>
                 </View>
             )
+        }
+
+        function checkBeforeCreation(){
+            if (!trainingName) {
+                alert('Please enter a workout name')
+                return false
+            }
+            if(useAI){
+                if (workoutType.length === 0) {
+                    alert('Please select a workout type')
+                    return false
+                }
+                if (workoutDays.length === 0) {
+                    alert('Please select at least one day')
+                    return false
+                }
+                if (rest.length === 0) {
+                    alert('Please select a rest time')
+                    return false
+                }
+            }
+            return true
         }
 
         return (
@@ -1271,71 +1306,101 @@ const MyPlansScreen = ({ }) => {
                             : <>
                                 <TextInput style={styles.newTrainingTitle} placeholder="Workout Name" onChangeText={setTrainingName} />
 
-                                <SelectBox
-                                    title="Workout Type"
-                                    max={1}
-                                    allOptions={allWorkoutTypes}
-                                    allOptionsNames={allWorkoutTypesNames}
-                                    selectedOptions={workoutType}
-                                    setSelectedItem={setWorkoutType}
-                                />
-                                <SelectBox
-                                    title="Week Workout Days"
-                                    allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
-                                    allOptionsNames={allWorkoutDaysNames}
-                                    selectedOptions={workoutDays}
-                                    setSelectedItem={setWorkoutDays}
-                                />
-                                <SelectBox
-                                    title="Rest Time Among Sets"
-                                    max={1}
-                                    allOptions={allRestOptions}
-                                    allOptionsNames={allRestOptionsNames}
-                                    selectedOptions={rest}
-                                    setSelectedItem={setRest}
-                                />
-                                <SelectBox
-                                    title="Goals"
-                                    max={3}
-                                    allOptions={allGoals}
-                                    allOptionsNames={allGoalsNames}
-                                    selectedOptions={goals}
-                                    setSelectedItem={setGoals}
-                                />
-                                <SelectBox
-                                    title="Muscles to Focus"
-                                    max={3}
-                                    allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
-                                    allOptionsNames={allFocusOrAvoidNames}
-                                    selectedOptions={focus}
-                                    setSelectedItem={setFocus}
-                                />
-                                <SelectBox
-                                    title="Muscles to Avoid"
-                                    max={3}
-                                    allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
-                                    allOptionsNames={allFocusOrAvoidNames}
-                                    selectedOptions={avoid}
-                                    setSelectedItem={setAvoid}
-                                />
+                                {useAI && <>
+                                    <SelectBox
+                                        title="Week Workout Days"
+                                        allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                        allOptionsNames={allWorkoutDaysNames}
+                                        selectedOptions={workoutDays}
+                                        setSelectedItem={setWorkoutDays}
+                                        obligatory
+                                    />
+                                    <SelectBox
+                                        title="Workout Type"
+                                        max={1}
+                                        allOptions={allWorkoutTypes}
+                                        allOptionsNames={allWorkoutTypesNames}
+                                        selectedOptions={workoutType}
+                                        setSelectedItem={setWorkoutType}
+                                        obligatory
+                                    />
+                                    <SelectBox
+                                        title="Rest Time Among Sets"
+                                        max={1}
+                                        allOptions={allRestOptions}
+                                        allOptionsNames={allRestOptionsNames}
+                                        selectedOptions={rest}
+                                        setSelectedItem={setRest}
+                                        obligatory
+                                    />
+                                    <SelectBox
+                                        title="Goals"
+                                        max={3}
+                                        allOptions={allGoals}
+                                        allOptionsNames={allGoalsNames}
+                                        selectedOptions={goals}
+                                        setSelectedItem={setGoals}
+                                    />
+                                    <SelectBox
+                                        title="Muscles to Focus"
+                                        max={3}
+                                        allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
+                                        allOptionsNames={allFocusOrAvoidNames}
+                                        selectedOptions={focus}
+                                        setSelectedItem={setFocus}
+                                    />
+                                    <SelectBox
+                                        title="Muscles to Avoid"
+                                        max={3}
+                                        allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
+                                        allOptionsNames={allFocusOrAvoidNames}
+                                        selectedOptions={avoid}
+                                        setSelectedItem={setAvoid}
+                                    />
+                                    <TextInput style={styles.newTrainingComment} placeholder="Say what do you want about your workout.(Optional)" onChangeText={setNewTrainingComment} />
+                                </>}
 
                                 <TouchableOpacity
-                                    style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
+                                    style={[styles.workoutButton, { backgroundColor: '#FF5733' }]}
                                     onPress={() => {
-                                        if (!trainingName) {
-                                            alert('Please enter a workout name')
-                                            return
+                                        if(useAI){
+                                            if(checkBeforeCreation()){
+                                                setGenerating(true);
+                                                GenerateWeekWorkoutPlan({
+                                                        "name": trainingName,
+                                                        "workout_days": workoutDays,
+                                                        "rest": rest,
+                                                        "workout_type": workoutType[0],
+                                                        "focus": focus,
+                                                        "avoid": avoid,
+                                                        "main_goal": '',
+                                                        "goals": goals,
+                                                        "comment": newTrainingComment,
+                                                        "use_ai": true
+                                                    }, setError, onClose)
+                                            }
+                                        } else {
+                                            setUseAI(true);
                                         }
-                                        if (workoutDays.length === 0) {
-                                            alert('Please select at least one day')
-                                            return
-                                        }
-                                        setGenerating(true);
-                                        GenerateWeekWorkoutPlan(trainingName, workoutType[0], workoutDays, rest[0], focus, avoid, goals, setError, onClose)
                                     }}
                                 >
-                                    <Text style={styles.workoutButtonText}>Generate Workout Plan</Text>
+                                    <Text style={styles.workoutButtonText}>Generate with AI (GPT)</Text>
                                 </TouchableOpacity>
+
+                                {!useAI && <TouchableOpacity
+                                    style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
+                                    onPress={() => {
+                                        if(checkBeforeCreation()){
+                                            setGenerating(true);
+                                            GenerateWeekWorkoutPlan({
+                                                "name": trainingName,
+                                                "use_ai": false
+                                            }, setError, onClose)
+                                        }
+                                    }}
+                                >
+                                    <Text style={styles.workoutButtonText}>Generate From Zero</Text>
+                                </TouchableOpacity>}
 
                                 <TouchableOpacity
                                     style={[styles.workoutButton, { backgroundColor: '#999', marginBottom: 50 }]}
@@ -1367,7 +1432,7 @@ const MyPlansScreen = ({ }) => {
 
                 <View style={styles.sectionContainer}>
 
-                    <Text style={styles.sectionTitle}>Training Plan</Text>
+                    <Text style={styles.sectionTitle}>Workout Plan</Text>
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
                         {fit_plans.map((planOption, index) =>
                             <Tabs
@@ -1454,7 +1519,6 @@ const MyPlansScreen = ({ }) => {
                                 )
                             }
                         })}
-
                     </View>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
@@ -1489,7 +1553,7 @@ const MyPlansScreen = ({ }) => {
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
                         setNewTrainingModal(true);
                     }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>New Train</Text>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>New Workout</Text>
                     </TouchableOpacity>
 
                     {plans && plans.length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
