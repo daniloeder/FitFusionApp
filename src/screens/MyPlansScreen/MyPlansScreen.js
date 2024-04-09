@@ -472,7 +472,6 @@ const ExerciseItem = ({ dayName, muscleGroup, exercise, allExercises, edit, addE
                             setShowSetsEditModal={setShowSetsEditModal}
                             updateExerciseDone={updateExerciseDone}
                         />
-
                     </View>
                 </>}
 
@@ -571,11 +570,14 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
         <View style={[styles.trainingMemberGroup, { marginBottom: 20 }]}>
             {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
                 return (
-                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => { addMuscleGroup(dayName, muscle.id); setAddNewMuscleGroup(); }}>
+                    <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => { addMuscleGroup(dayName, muscle.id)}}>
                         <Text style={styles.exerciseItemText}>{muscle.name}</Text>
                     </TouchableOpacity>
                 )
             }) : ''}
+            <TouchableOpacity onPress={setAddNewMuscleGroup} style={{position: 'absolute', right: 0, top: -12, padding: 5, backgroundColor: '#F44336', borderRadius: 10}}>
+                <Icons name="CloseX" size={width * 0.045} />
+            </TouchableOpacity>
         </View>
     )
 }
@@ -610,11 +612,399 @@ const AddExerciseList = ({ dayName, muscleGroup, exercises, allExercises, addExe
     )
 }
 
+const NewTrainingModal = ({ newTrainingModal, setNewTrainingModal }) => {
+    const [generating, setGenerating] = useState(false);
+    const [error, setError] = useState(false);
+    const [useAI, setUseAI] = useState(false);
+
+    const [trainingName, setTrainingName] = useState('');
+
+    const [workoutDays, setWorkoutDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    const allWorkoutDaysNames = { 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday' };
+    const orderDays = (dayList) => {
+        const orderedDays = [];
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        for (let day of days) {
+            if (dayList.includes(day)) {
+                orderedDays.push(day);
+            }
+        }
+        return orderedDays;
+    }
+    useEffect(() => {
+        const orderedDays = orderDays(workoutDays);
+        if (JSON.stringify(orderedDays) !== JSON.stringify(workoutDays)) {
+            setWorkoutDays(orderDays(workoutDays));
+        }
+    }, [workoutDays]);
+
+    const allRestOptions = ['short', 'medium', 'long'];
+    const allRestOptionsNames = { 'short': 'Short', 'medium': 'Medium', 'long': 'Long' }
+    const [rest, setRest] = useState(['medium']);
+
+    const allWorkoutTypes = ["home", "gym", "crossfit", "pilates", "yoga", "endurance"]
+    const allWorkoutTypesNames = { 'home': 'Home', 'gym': 'Gym', 'crossfit': 'Crossfit', 'pilates': 'Pilates', 'yoga': 'Yoga', 'endurance': 'Endurance' }
+    const [workoutType, setWorkoutType] = useState(['gym']);
+
+    const allFocusOrAvoid = ['neck', 'trapezius', 'shoulders', 'chest', 'back', 'erector_spinae', 'biceps', 'triceps', 'forearm', 'abs', 'leg', 'calf', 'hip', 'cardio', 'full_body'];
+    const allFocusOrAvoidNames = { 'neck': 'Neck', 'trapezius': 'Trapezius', 'shoulders': 'Shoulders', 'chest': 'Chest', 'back': 'Back', 'erector_spinae': 'Erector Spinae', 'biceps': 'Biceps', 'triceps': 'Triceps', 'forearm': 'Forearm', 'abs': 'Abs', 'leg': 'Leg', 'calf': 'Calf', 'hip': 'Hip', 'cardio': 'Cardio', 'full_body': 'Full Body' };
+    const [focus, setFocus] = useState([]);
+    const [avoid, setAvoid] = useState([]);
+
+    const allGoals = ['general_fitness', 'muscle_strength', 'weight_loss', 'core_strength_and_stability', 'body_recomposition', 'balance_and_coordination', 'athletic_performance_improvement', 'posture_correction', 'stress_reduction_and_relaxation', 'muscle_definition_and_toning', 'endurance_training', 'power_and_explosiveness', 'increase_energy_levels', 'enhance_overall_health_and_well_being', 'cardiovascular_endurance', 'muscle_hypertrophy', 'flexibility_and_mobility', 'injury_rehabilitation_and_prevention', 'functional_fitness', 'agility_and_speed'];
+    const allGoalsNames = { 'general_fitness': 'General Fitness', 'muscle_strength': 'Muscle Strength', 'weight_loss': 'Weight Loss', 'core_strength_and_stability': 'Core Strength and Stability', 'body_recomposition': 'Body Recomposition', 'balance_and_coordination': 'Balance and Coordination', 'athletic_performance_improvement': 'Athletic Performance Improvement', 'posture_correction': 'Posture Correction', 'stress_reduction_and_relaxation': 'Stress Reduction and Relaxation', 'muscle_definition_and_toning': 'Muscle Definition and Toning', 'endurance_training': 'Endurance Training', 'power_and_explosiveness': 'Power and Explosiveness', 'increase_energy_levels': 'Increase Energy Levels', 'enhance_overall_health_and_well_being': 'Enhance Overall Health and Well Being', 'cardiovascular_endurance': 'Cardiovascular Endurance', 'muscle_hypertrophy': 'Muscle Hypertrophy', 'flexibility_and_mobility': 'Flexibility and Mobility', 'injury_rehabilitation_and_prevention': 'Injury Rehabilitation and Prevention', 'functional_fitness': 'Functional Fitness', 'agility_and_speed': 'Agility and Speed' };
+    const [goals, setGoals] = useState([]);
+
+    const [newTrainingComment, setNewTrainingComment] = useState('');
+
+    const onClose = () => {
+        setNewTrainingModal(false);
+    }
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            paddingTop: 10,
+            paddingBottom: 10,
+            paddingHorizontal: 15,
+        },
+        newTrainingScroll: {
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            borderRadius: 10,
+            padding: 10,
+            paddingTop: 10,
+        },
+        generating: {
+            width: '100%',
+            height: width * 1.5,
+            borderRadius: 10,
+            marginTop: width * 0.15,
+            backgroundColor: '#FFF',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        generatingText: {
+            color: '#000',
+            fontSize: width * 0.05,
+            fontWeight: 'bold',
+            marginHorizontal: '1%',
+        },
+        newTrainingTitle: {
+            width: '80%',
+            fontSize: width * 0.04,
+            color: '#000',
+            backgroundColor: '#FFF',
+            fontWeight: 'bold',
+            padding: 10,
+            borderRadius: 10,
+            marginLeft: '5%',
+            marginTop: useAI ? 10 : width*0.5,
+            marginBottom: 20,
+        },
+        selectBox: {
+            width: '90%',
+            marginLeft: '5%',
+            borderRadius: 5,
+            justifyContent: 'space-between',
+            marginBottom: 10,
+        },
+        textContainer: {
+            flex: 0,
+            borderTopRightRadius: 5,
+            borderTopLeftRadius: 5,
+            justifyContent: 'center',
+            backgroundColor: '#fff',
+            paddingVertical: 2,
+            paddingHorizontal: 15,
+            marginRight: 'auto',
+        },
+        itemsList: {
+            width: '100%',
+            padding: 10,
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            flexWrap: 'wrap',
+        },
+        selectedItems: {
+            borderTopRightRadius: 5,
+            backgroundColor: '#F0F0F0',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+        },
+        unselectedItems: {
+            borderRadius: 5,
+            borderTopLeftRadius: 0,
+            borderTopEndRadius: 0,
+            backgroundColor: '#CCCCCC',
+        },
+        selectBoxItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: width * 0.02,
+            paddingVertical: width * 0.008,
+            borderRadius: width * 0.01,
+            margin: width * 0.01,
+            backgroundColor: '#DDD',
+        },
+        selectBoxItemText: {
+            color: '#000',
+            fontWeight: 'bold',
+            fontSize: width * 0.03
+        },
+        showAllButton: {
+            padding: 5,
+            width: '50%',
+            marginLeft: '5%',
+            borderRadius: 5,
+            backgroundColor: '#0000FF',
+        },
+        showAllText: {
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: width * 0.03
+        },
+        workoutButton: {
+            flex: 0,
+            padding: 12,
+            borderRadius: 5,
+            marginHorizontal: '5%',
+            marginTop: 5,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        workoutButtonText: {
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: width * 0.035
+        },
+        newTrainingComment: {
+            width: '90%',
+            fontSize: width * 0.03,
+            color: '#000',
+            backgroundColor: '#FFF',
+            fontWeight: 'bold',
+            padding: 10,
+            borderRadius: 10,
+            marginLeft: '5%',
+            marginBottom: 20,
+        }
+
+    });
+
+    const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem, obligatory = false }) => {
+        const onSelectItem = (item) => {
+            if (selectedOptions.includes(item)) {
+                setSelectedItem(selectedOptions.filter(selected => selected !== item));
+            } else {
+                setSelectedItem([...selectedOptions, item]);
+            }
+        }
+        const onRemoveItem = (item) => {
+            setSelectedItem(selectedOptions.filter(selected => selected !== item));
+        }
+        const alertMaxItems = (title) => {
+            alert(`You can only select ${max} "${title}" per training day. Please remove an item first.`);
+        }
+
+        return (
+            <View style={styles.selectBox}>
+                <View style={styles.textContainer}>
+                    <Text style={{ fontWeight: 'bold', fontSize: width * 0.03, color: '#000' }}>{title}</Text>
+                </View>
+                <View style={[styles.itemsList, styles.selectedItems]}>
+                    {
+                        selectedOptions.length ? selectedOptions.map(option => {
+                            return (
+                                <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
+                                    <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
+                                </TouchableOpacity>
+                            )
+                        }) :
+                            <Text style={{ color: '#888', fontSize: width * 0.025 }}>Select an option to add.{obligatory && " Obligatory!"}</Text>
+                    }
+                </View>
+                <View style={[styles.itemsList, styles.unselectedItems]}>
+                    {
+                        allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
+                            return (
+                                <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
+                                    <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
+                                </TouchableOpacity>
+                            )
+                        })
+                    }
+                    {max && <Text style={{ position: 'absolute', bottom: 0, right: 3, color: '#888', fontSize: width * 0.03 }}>Max: {max}</Text>}
+                </View>
+            </View>
+        )
+    }
+
+    function checkBeforeCreation(){
+        if (!trainingName) {
+            alert('Please enter a workout name')
+            return false
+        }
+        if(useAI){
+            if (workoutType.length === 0) {
+                alert('Please select a workout type')
+                return false
+            }
+            if (workoutDays.length === 0) {
+                alert('Please select at least one day')
+                return false
+            }
+            if (rest.length === 0) {
+                alert('Please select a rest time')
+                return false
+            }
+        }
+        return true
+    }
+
+    return (
+
+        <Modal
+            visible={newTrainingModal}
+            animationType="slide"
+            transparent={true}
+            onRequestClose={onClose}
+        >
+            <View style={styles.container}>
+                <ScrollView style={styles.newTrainingScroll}>
+
+                    {generating ?
+                        <View style={styles.generating}>
+                            {error ?
+                                <>
+                                    <Text style={styles.generatingText}>Sorry, we got an error while Generating Workout... :/</Text>
+                                </>
+                                : <>
+                                    <ActivityIndicator size="large" color="#0000ff" />
+                                    <Text style={styles.generatingText}>Generating Workout...</Text>
+                                </>
+
+                            }
+                        </View>
+                        : <>
+                            <TextInput style={styles.newTrainingTitle} placeholder="Workout Name" onChangeText={setTrainingName} />
+
+                            {useAI && <>
+                                <SelectBox
+                                    title="Week Workout Days"
+                                    allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                    allOptionsNames={allWorkoutDaysNames}
+                                    selectedOptions={workoutDays}
+                                    setSelectedItem={setWorkoutDays}
+                                    obligatory
+                                />
+                                <SelectBox
+                                    title="Workout Type"
+                                    max={1}
+                                    allOptions={allWorkoutTypes}
+                                    allOptionsNames={allWorkoutTypesNames}
+                                    selectedOptions={workoutType}
+                                    setSelectedItem={setWorkoutType}
+                                    obligatory
+                                />
+                                <SelectBox
+                                    title="Rest Time Among Sets"
+                                    max={1}
+                                    allOptions={allRestOptions}
+                                    allOptionsNames={allRestOptionsNames}
+                                    selectedOptions={rest}
+                                    setSelectedItem={setRest}
+                                    obligatory
+                                />
+                                <SelectBox
+                                    title="Goals"
+                                    max={3}
+                                    allOptions={allGoals}
+                                    allOptionsNames={allGoalsNames}
+                                    selectedOptions={goals}
+                                    setSelectedItem={setGoals}
+                                />
+                                <SelectBox
+                                    title="Muscles to Focus"
+                                    max={3}
+                                    allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
+                                    allOptionsNames={allFocusOrAvoidNames}
+                                    selectedOptions={focus}
+                                    setSelectedItem={setFocus}
+                                />
+                                <SelectBox
+                                    title="Muscles to Avoid"
+                                    max={3}
+                                    allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
+                                    allOptionsNames={allFocusOrAvoidNames}
+                                    selectedOptions={avoid}
+                                    setSelectedItem={setAvoid}
+                                />
+                                <TextInput style={styles.newTrainingComment} placeholder="Say what do you want about your workout.(Optional)" onChangeText={setNewTrainingComment} />
+                            </>}
+
+                            <TouchableOpacity
+                                style={[styles.workoutButton, { backgroundColor: '#FF5733' }]}
+                                onPress={() => {
+                                    if(useAI){
+                                        if(checkBeforeCreation()){
+                                            setGenerating(true);
+                                            GenerateWeekWorkoutPlan({
+                                                    "name": trainingName,
+                                                    "workout_days": workoutDays,
+                                                    "rest": rest,
+                                                    "workout_type": workoutType[0],
+                                                    "focus": focus,
+                                                    "avoid": avoid,
+                                                    "main_goal": '',
+                                                    "goals": goals,
+                                                    "comment": newTrainingComment,
+                                                    "use_ai": true
+                                                }, setError, onClose)
+                                        }
+                                    } else {
+                                        setUseAI(true);
+                                    }
+                                }}
+                            >
+                                <Text style={styles.workoutButtonText}>Generate with AI (GPT)</Text>
+                            </TouchableOpacity>
+
+                            {!useAI && <TouchableOpacity
+                                style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
+                                onPress={() => {
+                                    if(checkBeforeCreation()){
+                                        setGenerating(true);
+                                        GenerateWeekWorkoutPlan({
+                                            "name": trainingName,
+                                            "use_ai": false
+                                        }, setError, onClose)
+                                    }
+                                }}
+                            >
+                                <Text style={styles.workoutButtonText}>Generate From Zero</Text>
+                            </TouchableOpacity>}
+
+                            <TouchableOpacity
+                                style={[styles.workoutButton, { backgroundColor: '#999', marginBottom: 50 }]}
+                                onPress={onClose}
+                            >
+                                <Text style={styles.workoutButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </>
+                    }
+
+                </ScrollView>
+            </View>
+        </Modal>
+    )
+}
+
 const MyPlansScreen = ({ }) => {
     const { userToken } = useGlobalContext();
 
     const [online, setOnline] = useState(true);
-    const [plan, setPlan] = useState('training');
+    const [plan, setPlan] = useState('workout');
     const [plans, setPlans] = useState(null);
     const [planId, setPlanId] = useState(null);
     const [daysExercises, setDaysExercises] = useState({
@@ -1007,7 +1397,7 @@ const MyPlansScreen = ({ }) => {
     };
 
     useEffect(() => {
-        setExercisesList(Object.values(daysExercises).flatMap(day => Object.values(day).flatMap(part => Object.keys(part))))
+        setExercisesList(Object.values(daysExercises).flatMap(day => Object.values(day).flatMap(part => Object.keys(part))));
     }, [daysExercises]);
 
     useEffect(() => {
@@ -1026,402 +1416,20 @@ const MyPlansScreen = ({ }) => {
         }
     }, [planId]);
 
+    useEffect(()=>{
+        if(addNewMuscleGroup){
+            setAddNewMuscleGroup(false);
+        }
+    }, [selectedDay]);
+
     const trainCompleted = verifyAllExercisesDone(selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
-
-    const NewTrainingModal = ({ setNewTrainingModal }) => {
-        const [generating, setGenerating] = useState(false);
-        const [error, setError] = useState(false);
-        const [useAI, setUseAI] = useState(false);
-
-        const [trainingName, setTrainingName] = useState('');
-
-        const [workoutDays, setWorkoutDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-        const allWorkoutDaysNames = { 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday' };
-        const orderDays = (dayList) => {
-            const orderedDays = [];
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            for (let day of days) {
-                if (dayList.includes(day)) {
-                    orderedDays.push(day);
-                }
-            }
-            return orderedDays;
-        }
-        useEffect(() => {
-            const orderedDays = orderDays(workoutDays);
-            if (JSON.stringify(orderedDays) !== JSON.stringify(workoutDays)) {
-                setWorkoutDays(orderDays(workoutDays));
-            }
-        }, [workoutDays]);
-
-        const allRestOptions = ['short', 'medium', 'long'];
-        const allRestOptionsNames = { 'short': 'Short', 'medium': 'Medium', 'long': 'Long' }
-        const [rest, setRest] = useState(['medium']);
-
-        const allWorkoutTypes = ["home", "gym", "crossfit", "pilates", "yoga", "endurance"]
-        const allWorkoutTypesNames = { 'home': 'Home', 'gym': 'Gym', 'crossfit': 'Crossfit', 'pilates': 'Pilates', 'yoga': 'Yoga', 'endurance': 'Endurance' }
-        const [workoutType, setWorkoutType] = useState(['gym']);
-
-        const allFocusOrAvoid = ['neck', 'trapezius', 'shoulders', 'chest', 'back', 'erector_spinae', 'biceps', 'triceps', 'forearm', 'abs', 'leg', 'calf', 'hip', 'cardio', 'full_body'];
-        const allFocusOrAvoidNames = { 'neck': 'Neck', 'trapezius': 'Trapezius', 'shoulders': 'Shoulders', 'chest': 'Chest', 'back': 'Back', 'erector_spinae': 'Erector Spinae', 'biceps': 'Biceps', 'triceps': 'Triceps', 'forearm': 'Forearm', 'abs': 'Abs', 'leg': 'Leg', 'calf': 'Calf', 'hip': 'Hip', 'cardio': 'Cardio', 'full_body': 'Full Body' };
-        const [focus, setFocus] = useState([]);
-        const [avoid, setAvoid] = useState([]);
-
-        const allGoals = ['general_fitness', 'muscle_strength', 'weight_loss', 'core_strength_and_stability', 'body_recomposition', 'balance_and_coordination', 'athletic_performance_improvement', 'posture_correction', 'stress_reduction_and_relaxation', 'muscle_definition_and_toning', 'endurance_training', 'power_and_explosiveness', 'increase_energy_levels', 'enhance_overall_health_and_well_being', 'cardiovascular_endurance', 'muscle_hypertrophy', 'flexibility_and_mobility', 'injury_rehabilitation_and_prevention', 'functional_fitness', 'agility_and_speed'];
-        const allGoalsNames = { 'general_fitness': 'General Fitness', 'muscle_strength': 'Muscle Strength', 'weight_loss': 'Weight Loss', 'core_strength_and_stability': 'Core Strength and Stability', 'body_recomposition': 'Body Recomposition', 'balance_and_coordination': 'Balance and Coordination', 'athletic_performance_improvement': 'Athletic Performance Improvement', 'posture_correction': 'Posture Correction', 'stress_reduction_and_relaxation': 'Stress Reduction and Relaxation', 'muscle_definition_and_toning': 'Muscle Definition and Toning', 'endurance_training': 'Endurance Training', 'power_and_explosiveness': 'Power and Explosiveness', 'increase_energy_levels': 'Increase Energy Levels', 'enhance_overall_health_and_well_being': 'Enhance Overall Health and Well Being', 'cardiovascular_endurance': 'Cardiovascular Endurance', 'muscle_hypertrophy': 'Muscle Hypertrophy', 'flexibility_and_mobility': 'Flexibility and Mobility', 'injury_rehabilitation_and_prevention': 'Injury Rehabilitation and Prevention', 'functional_fitness': 'Functional Fitness', 'agility_and_speed': 'Agility and Speed' };
-        const [goals, setGoals] = useState([]);
-
-        const [newTrainingComment, setNewTrainingComment] = useState('');
-
-        const onClose = () => {
-            setNewTrainingModal(false);
-        }
-        const styles = StyleSheet.create({
-            container: {
-                flex: 1,
-                backgroundColor: 'rgba(0,0,0,0.4)',
-                paddingTop: 10,
-                paddingBottom: 10,
-                paddingHorizontal: 15,
-            },
-            newTrainingScroll: {
-                backgroundColor: 'rgba(0,0,0,0.7)',
-                borderRadius: 10,
-                padding: 10,
-                paddingTop: 10,
-            },
-            generating: {
-                width: '100%',
-                height: width * 1.5,
-                borderRadius: 10,
-                marginTop: width * 0.15,
-                backgroundColor: '#FFF',
-                justifyContent: 'center',
-                alignItems: 'center',
-            },
-            generatingText: {
-                color: '#000',
-                fontSize: width * 0.05,
-                fontWeight: 'bold',
-                marginHorizontal: '1%',
-            },
-            newTrainingTitle: {
-                width: '80%',
-                fontSize: width * 0.04,
-                color: '#000',
-                backgroundColor: '#FFF',
-                fontWeight: 'bold',
-                padding: 10,
-                borderRadius: 10,
-                marginLeft: '5%',
-                marginTop: useAI ? 10 : width*0.5,
-                marginBottom: 20,
-            },
-            selectBox: {
-                width: '90%',
-                marginLeft: '5%',
-                borderRadius: 5,
-                justifyContent: 'space-between',
-                marginBottom: 10,
-            },
-            textContainer: {
-                flex: 0,
-                borderTopRightRadius: 5,
-                borderTopLeftRadius: 5,
-                justifyContent: 'center',
-                backgroundColor: '#fff',
-                paddingVertical: 2,
-                paddingHorizontal: 15,
-                marginRight: 'auto',
-            },
-            itemsList: {
-                width: '100%',
-                padding: 10,
-                flexDirection: 'row',
-                justifyContent: 'space-evenly',
-                flexWrap: 'wrap',
-            },
-            selectedItems: {
-                borderTopRightRadius: 5,
-                backgroundColor: '#F0F0F0',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
-            },
-            unselectedItems: {
-                borderRadius: 5,
-                borderTopLeftRadius: 0,
-                borderTopEndRadius: 0,
-                backgroundColor: '#CCCCCC',
-            },
-            selectBoxItem: {
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingHorizontal: width * 0.02,
-                paddingVertical: width * 0.008,
-                borderRadius: width * 0.01,
-                margin: width * 0.01,
-                backgroundColor: '#DDD',
-            },
-            selectBoxItemText: {
-                color: '#000',
-                fontWeight: 'bold',
-                fontSize: width * 0.03
-            },
-            showAllButton: {
-                padding: 5,
-                width: '50%',
-                marginLeft: '5%',
-                borderRadius: 5,
-                backgroundColor: '#0000FF',
-            },
-            showAllText: {
-                color: '#fff',
-                fontWeight: 'bold',
-                fontSize: width * 0.03
-            },
-            workoutButton: {
-                flex: 0,
-                padding: 12,
-                borderRadius: 5,
-                marginHorizontal: '5%',
-                marginTop: 5,
-                alignItems: 'center',
-                justifyContent: 'center',
-            },
-            workoutButtonText: {
-                color: '#fff',
-                fontWeight: 'bold',
-                fontSize: width * 0.035
-            },
-            newTrainingComment: {
-                width: '90%',
-                fontSize: width * 0.03,
-                color: '#000',
-                backgroundColor: '#FFF',
-                fontWeight: 'bold',
-                padding: 10,
-                borderRadius: 10,
-                marginLeft: '5%',
-                marginBottom: 20,
-            }
-
-        });
-
-        const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem, obligatory = false }) => {
-            const onSelectItem = (item) => {
-                if (selectedOptions.includes(item)) {
-                    setSelectedItem(selectedOptions.filter(selected => selected !== item));
-                } else {
-                    setSelectedItem([...selectedOptions, item]);
-                }
-            }
-            const onRemoveItem = (item) => {
-                setSelectedItem(selectedOptions.filter(selected => selected !== item));
-            }
-            const alertMaxItems = (title) => {
-                alert(`You can only select ${max} "${title}" per training day. Please remove an item first.`);
-            }
-
-            return (
-                <View style={styles.selectBox}>
-                    <View style={styles.textContainer}>
-                        <Text style={{ fontWeight: 'bold', fontSize: width * 0.03, color: '#000' }}>{title}</Text>
-                    </View>
-                    <View style={[styles.itemsList, styles.selectedItems]}>
-                        {
-                            selectedOptions.length ? selectedOptions.map(option => {
-                                return (
-                                    <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
-                                        <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
-                                    </TouchableOpacity>
-                                )
-                            }) :
-                                <Text style={{ color: '#888', fontSize: width * 0.025 }}>Select an option to add.{obligatory && " Obligatory!"}</Text>
-                        }
-                    </View>
-                    <View style={[styles.itemsList, styles.unselectedItems]}>
-                        {
-                            allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
-                                return (
-                                    <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
-                                        <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
-                                    </TouchableOpacity>
-                                )
-                            })
-                        }
-                        {max && <Text style={{ position: 'absolute', bottom: 0, right: 3, color: '#888', fontSize: width * 0.03 }}>Max: {max}</Text>}
-                    </View>
-                </View>
-            )
-        }
-
-        function checkBeforeCreation(){
-            if (!trainingName) {
-                alert('Please enter a workout name')
-                return false
-            }
-            if(useAI){
-                if (workoutType.length === 0) {
-                    alert('Please select a workout type')
-                    return false
-                }
-                if (workoutDays.length === 0) {
-                    alert('Please select at least one day')
-                    return false
-                }
-                if (rest.length === 0) {
-                    alert('Please select a rest time')
-                    return false
-                }
-            }
-            return true
-        }
-
-        return (
-
-            <Modal
-                visible={newTrainingModal}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={onClose}
-            >
-                <View style={styles.container}>
-                    <ScrollView style={styles.newTrainingScroll}>
-
-                        {generating ?
-                            <View style={styles.generating}>
-                                {error ?
-                                    <>
-                                        <Text style={styles.generatingText}>Sorry, we got an error while Generating Workout... :/</Text>
-                                    </>
-                                    : <>
-                                        <ActivityIndicator size="large" color="#0000ff" />
-                                        <Text style={styles.generatingText}>Generating Workout...</Text>
-                                    </>
-
-                                }
-                            </View>
-                            : <>
-                                <TextInput style={styles.newTrainingTitle} placeholder="Workout Name" onChangeText={setTrainingName} />
-
-                                {useAI && <>
-                                    <SelectBox
-                                        title="Week Workout Days"
-                                        allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
-                                        allOptionsNames={allWorkoutDaysNames}
-                                        selectedOptions={workoutDays}
-                                        setSelectedItem={setWorkoutDays}
-                                        obligatory
-                                    />
-                                    <SelectBox
-                                        title="Workout Type"
-                                        max={1}
-                                        allOptions={allWorkoutTypes}
-                                        allOptionsNames={allWorkoutTypesNames}
-                                        selectedOptions={workoutType}
-                                        setSelectedItem={setWorkoutType}
-                                        obligatory
-                                    />
-                                    <SelectBox
-                                        title="Rest Time Among Sets"
-                                        max={1}
-                                        allOptions={allRestOptions}
-                                        allOptionsNames={allRestOptionsNames}
-                                        selectedOptions={rest}
-                                        setSelectedItem={setRest}
-                                        obligatory
-                                    />
-                                    <SelectBox
-                                        title="Goals"
-                                        max={3}
-                                        allOptions={allGoals}
-                                        allOptionsNames={allGoalsNames}
-                                        selectedOptions={goals}
-                                        setSelectedItem={setGoals}
-                                    />
-                                    <SelectBox
-                                        title="Muscles to Focus"
-                                        max={3}
-                                        allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
-                                        allOptionsNames={allFocusOrAvoidNames}
-                                        selectedOptions={focus}
-                                        setSelectedItem={setFocus}
-                                    />
-                                    <SelectBox
-                                        title="Muscles to Avoid"
-                                        max={3}
-                                        allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
-                                        allOptionsNames={allFocusOrAvoidNames}
-                                        selectedOptions={avoid}
-                                        setSelectedItem={setAvoid}
-                                    />
-                                    <TextInput style={styles.newTrainingComment} placeholder="Say what do you want about your workout.(Optional)" onChangeText={setNewTrainingComment} />
-                                </>}
-
-                                <TouchableOpacity
-                                    style={[styles.workoutButton, { backgroundColor: '#FF5733' }]}
-                                    onPress={() => {
-                                        if(useAI){
-                                            if(checkBeforeCreation()){
-                                                setGenerating(true);
-                                                GenerateWeekWorkoutPlan({
-                                                        "name": trainingName,
-                                                        "workout_days": workoutDays,
-                                                        "rest": rest,
-                                                        "workout_type": workoutType[0],
-                                                        "focus": focus,
-                                                        "avoid": avoid,
-                                                        "main_goal": '',
-                                                        "goals": goals,
-                                                        "comment": newTrainingComment,
-                                                        "use_ai": true
-                                                    }, setError, onClose)
-                                            }
-                                        } else {
-                                            setUseAI(true);
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.workoutButtonText}>Generate with AI (GPT)</Text>
-                                </TouchableOpacity>
-
-                                {!useAI && <TouchableOpacity
-                                    style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
-                                    onPress={() => {
-                                        if(checkBeforeCreation()){
-                                            setGenerating(true);
-                                            GenerateWeekWorkoutPlan({
-                                                "name": trainingName,
-                                                "use_ai": false
-                                            }, setError, onClose)
-                                        }
-                                    }}
-                                >
-                                    <Text style={styles.workoutButtonText}>Generate From Zero</Text>
-                                </TouchableOpacity>}
-
-                                <TouchableOpacity
-                                    style={[styles.workoutButton, { backgroundColor: '#999', marginBottom: 50 }]}
-                                    onPress={onClose}
-                                >
-                                    <Text style={styles.workoutButtonText}>Cancel</Text>
-                                </TouchableOpacity>
-                            </>
-                        }
-
-                    </ScrollView>
-                </View>
-            </Modal>
-        )
-    }
 
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <NewTrainingModal setNewTrainingModal={setNewTrainingModal} />
+            <NewTrainingModal newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} />
 
             <ScrollView
                 style={styles.contentContainer}
@@ -1533,18 +1541,19 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                        Object.values(muscle_groups).filter(group => !Object.keys(daysExercises[selectedDay.name]).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
+                        Object.values(muscle_groups).filter(group => !Object.keys(daysExercises[selectedDay.name].exercises).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
                     } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
                     {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
                             setDaysExercises(plans.find(plan => plan.id === planId).days);
                             setEdit(false);
+                            setAddNewMuscleGroup(false);
                         }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cancel Changes</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => updatePlans(planId, { "days": daysExercises })}>
+                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {updatePlans(planId, { "days": daysExercises }); setAddNewMuscleGroup(false);}}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
                         </TouchableOpacity>
 
