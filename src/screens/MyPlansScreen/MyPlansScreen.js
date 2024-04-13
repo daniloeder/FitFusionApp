@@ -726,14 +726,14 @@ const AddExerciseList = ({ dayName, muscleGroup, exercises, allExercises, addExe
     )
 }
 
-const NewTrainingModal = ({ newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan }) => {
+const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan }) => {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(false);
     const [useAI, setUseAI] = useState(false);
 
     const [trainingName, setTrainingName] = useState('');
 
-    const [workoutDays, setWorkoutDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    const [workoutDays, setWorkoutDays] = useState(plan === "workout" ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
     const allWorkoutDaysNames = { 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday' };
     const orderDays = (dayList) => {
         const orderedDays = [];
@@ -768,6 +768,10 @@ const NewTrainingModal = ({ newTrainingModal, setNewTrainingModal, GenerateWeekW
     const allGoals = ['general_fitness', 'muscle_strength', 'weight_loss', 'core_strength_and_stability', 'body_recomposition', 'balance_and_coordination', 'athletic_performance_improvement', 'posture_correction', 'stress_reduction_and_relaxation', 'muscle_definition_and_toning', 'endurance_training', 'power_and_explosiveness', 'increase_energy_levels', 'enhance_overall_health_and_well_being', 'cardiovascular_endurance', 'muscle_hypertrophy', 'flexibility_and_mobility', 'injury_rehabilitation_and_prevention', 'functional_fitness', 'agility_and_speed'];
     const allGoalsNames = { 'general_fitness': 'General Fitness', 'muscle_strength': 'Muscle Strength', 'weight_loss': 'Weight Loss', 'core_strength_and_stability': 'Core Strength and Stability', 'body_recomposition': 'Body Recomposition', 'balance_and_coordination': 'Balance and Coordination', 'athletic_performance_improvement': 'Athletic Performance Improvement', 'posture_correction': 'Posture Correction', 'stress_reduction_and_relaxation': 'Stress Reduction and Relaxation', 'muscle_definition_and_toning': 'Muscle Definition and Toning', 'endurance_training': 'Endurance Training', 'power_and_explosiveness': 'Power and Explosiveness', 'increase_energy_levels': 'Increase Energy Levels', 'enhance_overall_health_and_well_being': 'Enhance Overall Health and Well Being', 'cardiovascular_endurance': 'Cardiovascular Endurance', 'muscle_hypertrophy': 'Muscle Hypertrophy', 'flexibility_and_mobility': 'Flexibility and Mobility', 'injury_rehabilitation_and_prevention': 'Injury Rehabilitation and Prevention', 'functional_fitness': 'Functional Fitness', 'agility_and_speed': 'Agility and Speed' };
     const [goals, setGoals] = useState([]);
+
+    const allDietGoals = ['weight_loss', 'muscle_gain', 'healthy_eating', 'calorie_control', 'portion_control', 'balanced_nutrition', 'nutrient_density', 'hydration', 'mindful_eating'];
+    const allDietGoalsNames = { 'weight_loss': 'Weight Loss', 'muscle_gain': 'Muscle Gain', 'healthy_eating': 'Healthy Eating', 'calorie_control': 'Calorie Control', 'portion_control': 'Portion Control', 'balanced_nutrition': 'Balanced Nutrition', 'nutrient_density': 'Nutrient Density', 'hydration': 'Hydration', 'mindful_eating': 'Mindful Eating' };
+    const [dietGoals, setDietGoals] = useState([]);
 
     const [newTrainingComment, setNewTrainingComment] = useState('');
 
@@ -976,6 +980,12 @@ const NewTrainingModal = ({ newTrainingModal, setNewTrainingModal, GenerateWeekW
         return true
     }
 
+    useEffect(() => {
+        setGenerating(false);
+        setError(false);
+        setUseAI(false);
+    }, [newTrainingModal]);
+
     return (
 
         <Modal
@@ -1001,98 +1011,142 @@ const NewTrainingModal = ({ newTrainingModal, setNewTrainingModal, GenerateWeekW
                             }
                         </View>
                         : <>
-                            <TextInput style={styles.newTrainingTitle} placeholder="Workout Name" onChangeText={setTrainingName} />
+                            <TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
 
-                            {useAI && <>
-                                <SelectBox
-                                    title="Week Workout Days"
-                                    allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
-                                    allOptionsNames={allWorkoutDaysNames}
-                                    selectedOptions={workoutDays}
-                                    setSelectedItem={setWorkoutDays}
-                                    obligatory
-                                />
-                                <SelectBox
-                                    title="Workout Type"
-                                    max={1}
-                                    allOptions={allWorkoutTypes}
-                                    allOptionsNames={allWorkoutTypesNames}
-                                    selectedOptions={workoutType}
-                                    setSelectedItem={setWorkoutType}
-                                    obligatory
-                                />
-                                <SelectBox
-                                    title="Rest Time Among Sets"
-                                    max={1}
-                                    allOptions={allRestOptions}
-                                    allOptionsNames={allRestOptionsNames}
-                                    selectedOptions={rest}
-                                    setSelectedItem={setRest}
-                                    obligatory
-                                />
-                                <SelectBox
-                                    title="Goals"
-                                    max={3}
-                                    allOptions={allGoals}
-                                    allOptionsNames={allGoalsNames}
-                                    selectedOptions={goals}
-                                    setSelectedItem={setGoals}
-                                />
-                                <SelectBox
-                                    title="Muscles to Focus"
-                                    max={3}
-                                    allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
-                                    allOptionsNames={allFocusOrAvoidNames}
-                                    selectedOptions={focus}
-                                    setSelectedItem={setFocus}
-                                />
-                                <SelectBox
-                                    title="Muscles to Avoid"
-                                    max={3}
-                                    allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
-                                    allOptionsNames={allFocusOrAvoidNames}
-                                    selectedOptions={avoid}
-                                    setSelectedItem={setAvoid}
-                                />
-                                <TextInput style={styles.newTrainingComment} placeholder="Say what do you want about your workout.(Optional)" onChangeText={setNewTrainingComment} />
-                            </>}
+                            {useAI ?
+                                plan === "workout" ?
+                                    <>
+                                        <SelectBox
+                                            title="Week Workout Days"
+                                            allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                            allOptionsNames={allWorkoutDaysNames}
+                                            selectedOptions={workoutDays}
+                                            setSelectedItem={setWorkoutDays}
+                                            obligatory
+                                        />
+                                        <SelectBox
+                                            title="Workout Type"
+                                            max={1}
+                                            allOptions={allWorkoutTypes}
+                                            allOptionsNames={allWorkoutTypesNames}
+                                            selectedOptions={workoutType}
+                                            setSelectedItem={setWorkoutType}
+                                            obligatory
+                                        />
+                                        <SelectBox
+                                            title="Rest Time Among Sets"
+                                            max={1}
+                                            allOptions={allRestOptions}
+                                            allOptionsNames={allRestOptionsNames}
+                                            selectedOptions={rest}
+                                            setSelectedItem={setRest}
+                                            obligatory
+                                        />
+                                        <SelectBox
+                                            title="Goals"
+                                            max={3}
+                                            allOptions={allGoals}
+                                            allOptionsNames={allGoalsNames}
+                                            selectedOptions={goals}
+                                            setSelectedItem={setGoals}
+                                        />
+                                        <SelectBox
+                                            title="Muscles to Focus"
+                                            max={3}
+                                            allOptions={allFocusOrAvoid.filter(focus => !avoid.includes(focus))}
+                                            allOptionsNames={allFocusOrAvoidNames}
+                                            selectedOptions={focus}
+                                            setSelectedItem={setFocus}
+                                        />
+                                        <SelectBox
+                                            title="Muscles to Avoid"
+                                            max={3}
+                                            allOptions={allFocusOrAvoid.filter(avoid => !focus.includes(avoid))}
+                                            allOptionsNames={allFocusOrAvoidNames}
+                                            selectedOptions={avoid}
+                                            setSelectedItem={setAvoid}
+                                        />
+                                        <TextInput style={styles.newTrainingComment} placeholder="Say what do you want about your workout.(Optional)" onChangeText={setNewTrainingComment} />
+                                    </> :
+                                    <>
+                                        <SelectBox
+                                            title="Diet Days"
+                                            allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                            allOptionsNames={allWorkoutDaysNames}
+                                            selectedOptions={workoutDays}
+                                            setSelectedItem={setWorkoutDays}
+                                            obligatory
+                                        />
+                                        <SelectBox
+                                            title="Goals"
+                                            max={1}
+                                            allOptions={allDietGoals}
+                                            allOptionsNames={allDietGoalsNames}
+                                            selectedOptions={dietGoals}
+                                            setSelectedItem={setDietGoals}
+                                        />
+                                    </>
+                                : ''
+                            }
 
                             <TouchableOpacity
                                 style={[styles.workoutButton, { backgroundColor: '#FF5733' }]}
                                 onPress={() => {
                                     if (useAI) {
-                                        if (checkBeforeCreation()) {
-                                            setGenerating(true);
-                                            GenerateWeekWorkoutPlan({
-                                                "name": trainingName,
-                                                "workout_days": workoutDays,
-                                                "rest": rest,
-                                                "workout_type": workoutType[0],
-                                                "focus": focus,
-                                                "avoid": avoid,
-                                                "main_goal": '',
-                                                "goals": goals,
-                                                "comment": newTrainingComment,
-                                                "use_ai": true
-                                            }, setError, onClose)
+                                        if (plan === "workout") {
+                                            if (checkBeforeCreation()) {
+                                                setGenerating(true);
+                                                GenerateWeekWorkoutPlan({
+                                                    "name": trainingName,
+                                                    "workout_days": workoutDays,
+                                                    "rest": rest,
+                                                    "workout_type": workoutType[0],
+                                                    "focus": focus,
+                                                    "avoid": avoid,
+                                                    "main_goal": '',
+                                                    "goals": goals,
+                                                    "comment": newTrainingComment,
+                                                    "use_ai": true
+                                                }, setError, onClose)
+                                            }
+                                        } else {
+                                            if (checkBeforeCreation()) {
+                                                setGenerating(true);
+                                                GenerateWeekDietPlan({
+                                                    "name": trainingName,
+                                                    "diet_days": workoutDays,
+                                                    "goal": dietGoals[0],
+                                                    "use_ai": true
+                                                }, setError, onClose);
+                                            }
                                         }
                                     } else {
                                         setUseAI(true);
                                     }
                                 }}
                             >
-                                <Text style={styles.workoutButtonText}>Generate with AI (GPT)</Text>
+                                <Text style={styles.workoutButtonText}>{plan === "workout" ? "Generate with AI (GPT)" : "Automatic Generation"}</Text>
                             </TouchableOpacity>
 
                             {!useAI && <TouchableOpacity
                                 style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
                                 onPress={() => {
-                                    if (checkBeforeCreation()) {
-                                        setGenerating(true);
-                                        GenerateWeekWorkoutPlan({
-                                            "name": trainingName,
-                                            "use_ai": false
-                                        }, setError, onClose)
+                                    if (plan === "workout") {
+                                        if (checkBeforeCreation()) {
+                                            setGenerating(true);
+                                            GenerateWeekWorkoutPlan({
+                                                "name": trainingName,
+                                                "use_ai": false
+                                            }, setError, onClose)
+                                        }
+                                    } else {
+                                        if (checkBeforeCreation()) {
+                                            setGenerating(true);
+                                            GenerateWeekDietPlan({
+                                                "name": trainingName,
+                                                "use_ai": false
+                                            }, setError, onClose);
+                                        }
                                     }
                                 }}
                             >
@@ -1240,7 +1294,7 @@ const MyPlansScreen = ({ }) => {
                 }
             },
             Tue: {
-                
+
                 items: {
                     breakfast: {
                         'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
@@ -1262,7 +1316,7 @@ const MyPlansScreen = ({ }) => {
                 }
             },
             Wed: {
-                
+
                 items: {
                     breakfast: {
                         'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
@@ -1284,7 +1338,7 @@ const MyPlansScreen = ({ }) => {
                 }
             },
             Thu: {
-                
+
                 items: {
                     breakfast: {
                         'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
@@ -1306,7 +1360,7 @@ const MyPlansScreen = ({ }) => {
                 }
             },
             Fri: {
-                
+
                 items: {
                     breakfast: {
                         'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
@@ -1328,7 +1382,7 @@ const MyPlansScreen = ({ }) => {
                 }
             },
             Sat: {
-                
+
                 items: {
                     breakfast: {
                         'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
@@ -1366,8 +1420,7 @@ const MyPlansScreen = ({ }) => {
     const [unavailableExercises, setUnavailableExercises] = useState([]);
 
     const [selectedDay, setSelectedDay] = useState(null);
-    const [allExercises, setAllExercises] = useState(null);
-    const [allFoods, setAllFoods] = useState(null);
+    const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
     const [newTrainingModal, setNewTrainingModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
@@ -1381,7 +1434,7 @@ const MyPlansScreen = ({ }) => {
             },
         });
         const data = await response.json();
-        setAllExercises(data);
+        setAllItems(prevItems => ({ ...prevItems, "workout": data }));
     }
     const fetchAllFoods = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/all-foods/`, {
@@ -1392,12 +1445,12 @@ const MyPlansScreen = ({ }) => {
             },
         });
         const data = await response.json();
-        setAllFoods(data);
+        setAllItems(prevItems => ({ ...prevItems, "diet": data }));
     }
 
     const updatePlans = async () => {
         try {
-            const response = await fetch(BASE_URL + `/api/exercises/training-plans/${planId}/`, {
+            const response = await fetch(BASE_URL + `/api/exercises/${plan === "workout" ? "training-plans" : "diet-plans"}/${planId}/`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -1406,7 +1459,8 @@ const MyPlansScreen = ({ }) => {
                 body: JSON.stringify({ "days": daysItems[plan] })
             });
             const data = await response.json();
-            setPlans(prevPlans => prevPlans.map(plan => plan.id === planId ? data : plan));
+
+            setPlans(prevPlans => ({ ...prevPlans, [plan]: plans[plan].map(plan => plan.id === planId ? data : plan) }));
             if (response.ok) {
                 setEdit(false);
             }
@@ -1416,7 +1470,7 @@ const MyPlansScreen = ({ }) => {
     }
     const deleteTrainingPlan = async (training_id) => {
         try {
-            const response = await fetch(BASE_URL + `/api/exercises/training-plans/${training_id}/`, {
+            const response = await fetch(BASE_URL + `/api/exercises/${plan === "workout" ? "training-plans" : "diet-plans"}/${training_id}/`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -1424,9 +1478,8 @@ const MyPlansScreen = ({ }) => {
                 },
             });
             if (response.ok && response.status === 204) {
-                const newPlans = plans.filter(plan => plan.id !== training_id);
-                setPlans(newPlans);
-                setPlanId(newPlans[0].id);;
+                setPlans(prevPlans => ({ ...prevPlans, [plan]: plans[plan].filter(plan => plan.id !== training_id) }));
+                setPlanId(plans[plan].find(plan => plan.id !== training_id).id);
             }
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
@@ -1434,7 +1487,7 @@ const MyPlansScreen = ({ }) => {
     }
     const GenerateWeekWorkoutPlan = async (requestBody, setError, onClose) => {
         try {
-            const response = await fetch(BASE_URL + '/api/exercises/generate-exercises/', {
+            const response = await fetch(BASE_URL + '/api/exercises/generate-workout-plan/', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -1444,8 +1497,11 @@ const MyPlansScreen = ({ }) => {
             });
             const data = await response.json();
 
-            if (response.ok && data.id && plans) {
-                setPlans(prevPlans => [...prevPlans, data]);
+            if (response.ok && data.id && plans[plan]) {
+                setPlans(prevPlans => ({
+                    ...prevPlans,
+                    [plan]: [...prevPlans[plan], data]
+                }));
                 setDaysItems(prevDays => ({
                     ...prevDays,
                     [plan]: data.days
@@ -1459,8 +1515,42 @@ const MyPlansScreen = ({ }) => {
                 setError(true);
                 throw new Error('Failed to generate exercises');
             }
-
         } catch (error) {
+            setError(true);
+            console.error('There was a problem with the fetch operation:', error);
+            throw error;
+        }
+    };
+    const GenerateWeekDietPlan = async (requestBody, setError, onClose) => {
+        try {
+            const response = await fetch(BASE_URL + '/api/exercises/generate-diet-plan/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Token ${userToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+            const data = await response.json();
+            if (response.ok && data.id && plans[plan]) {
+                setPlans(prevPlans => ({
+                    ...prevPlans,
+                    [plan]: [...prevPlans[plan], data]
+                }));
+                setDaysItems(prevDays => ({
+                    ...prevDays,
+                    [plan]: data.days
+                }));
+                setPlanId(data.id);
+                onClose();
+                if (requestBody.use_ai) {
+                    setSelectedDay({ name: requestBody.diet_days[0], items: data.days[requestBody.diet_days[0]].items })
+                }
+            } else {
+                setError(true);
+            }
+        } catch (error) {
+            setError(true);
             console.error('There was a problem with the fetch operation:', error);
             throw error;
         }
@@ -1474,14 +1564,13 @@ const MyPlansScreen = ({ }) => {
             },
         });
         const data = await response.json();
-        setPlans(data.training_plans);
-        if (!planId && data.training_plans.length > 0) {
-            setPlanId(data.training_plans[0].id);
+        setPlans(data);
+        if (!planId && data[plan].length > 0) {
+            setPlanId(data[plan][0].id);
             setDaysItems(prevDays => ({
                 ...prevDays,
-                [plan]: data.training_plans[0].days
+                [plan]: data[plan][0].days
             }));
-
         }
         setUnavailableExercises(data.unavailable_exercises);
     }
@@ -1610,7 +1699,7 @@ const MyPlansScreen = ({ }) => {
         }
     };
     const getAlternativeExercise = (dayName, muscleGroup, exercise, salt = 0) => {
-        const all_exercises = Object.values(allExercises)
+        const all_exercises = Object.values(allItems[plan])
         const exercises_from_muscle = all_exercises.filter(exercise => exercise.item_groups.some(muscle => muscle.muscle_group_id === muscleGroup))
             .map(exercise => exercise.item_id)
 
@@ -1724,25 +1813,25 @@ const MyPlansScreen = ({ }) => {
         } else {
             setPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId));
         }
-        setPlanId(plans.length ? plans[0].id : 0);
+        setPlanId(plans[plan].length ? plans[plan][0].id : 0);
         setDaysItems(prevDays => ({
             ...prevDays,
-            [plan]: plans.length ? plans[0].days : {}
+            [plan]: plans[plan].length ? plans[plan][0].days : {}
         }));
     };
 
     useEffect(() => {
+        fetchPlans();
         if (plan === "workout") {
             fetchAllExercises();
-            fetchPlans();
         } else {
             fetchAllFoods();
         }
     }, [plan]);
 
     useEffect(() => {
-        if (planId) {
-            const selectedPlan = plans.find(plan => plan.id === planId);
+        if (planId && plans[plan]) {
+            const selectedPlan = plans[plan].find(plan => plan.id === planId);
             const newDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].find(day => !selectedPlan.days[day].rest) || 'Sun';
             setSelectedDay({ name: newDay, items: selectedPlan.days[newDay] });
         }
@@ -1761,7 +1850,7 @@ const MyPlansScreen = ({ }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <NewTrainingModal newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} />
+            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} />
 
             <ScrollView
                 style={styles.contentContainer}
@@ -1780,14 +1869,12 @@ const MyPlansScreen = ({ }) => {
                                 index={index}
                                 name={planOption.plan_name}
                                 setSelectedTab={() => {
-                                    setPlan(planOption.plan_id)
-                                    if (daysItems) {
-                                    } else {
-                                        setDaysItems(prevDays => ({
-                                            ...prevDays,
-                                            [plan]: plans[0].days
-                                        }));
-                                    }
+                                    setPlan(planOption.plan_id);
+                                    setPlanId(plans[planOption.plan_id][0].id);
+                                    setDaysItems(prevDays => ({
+                                        ...prevDays,
+                                        [planOption.plan_id]: plans[planOption.plan_id][0].days
+                                    }));
                                 }}
                                 isSelected={planOption.plan_id === plan}
                                 len={fit_plans.length}
@@ -1797,11 +1884,11 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                        {plans && plans.map((plan, index) =>
+                        {plans && plans[plan] && plans[plan].map((tabPlan, index) =>
                             <Tabs
                                 key={index}
                                 index={index}
-                                name={plan.name}
+                                name={tabPlan.name}
                                 setSelectedTab={() => {
                                     if (edit) {
                                         alert('You must save or cancel changes before moving to another plan.');
@@ -1809,13 +1896,13 @@ const MyPlansScreen = ({ }) => {
                                     }
                                     setDaysItems(prevDays => ({
                                         ...prevDays,
-                                        [plan]: plans.days
+                                        [plan]: tabPlan.days
                                     }));
-                                    setPlanId(plan.id);
+                                    setPlanId(tabPlan.id);
                                 }}
-                                isSelected={plan.id === planId}
-                                len={plans.length}
-                                TabSize={width * 0.89 / plans.length * 0.9}
+                                isSelected={tabPlan.id === planId}
+                                len={plans[plan].length}
+                                TabSize={width * 0.89 / plans[plan].length * 0.9}
                             />
                         )}
                     </View>
@@ -1844,7 +1931,7 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View>
-                        {selectedDay && (plan === "workout" ? allExercises : allFoods) && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
+                        {selectedDay && allItems[plan] && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
                             if (selectedDay.name === dayName.slice(0, 3)) {
                                 return (
                                     <View key={dayName}>
@@ -1852,11 +1939,11 @@ const MyPlansScreen = ({ }) => {
                                             return <TrainingMember key={muscleGroup} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
                                                 exercises={
                                                     Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
-                                                        return { ...exerciseDetails, item_id: exerciseId, title: (plan === "workout" ? allExercises : allFoods)[exerciseId].title }
+                                                        return { ...exerciseDetails, item_id: exerciseId, title: allItems[plan][exerciseId].title }
                                                     }).filter(Boolean)
                                                 }
-                                                allExercises={(plan === "workout" ? allExercises : allFoods) ?
-                                                    Object.values((plan === "workout" ? allExercises : allFoods))
+                                                allExercises={allItems[plan] ?
+                                                    Object.values(allItems[plan])
                                                         .filter(exercise => {
                                                             return exercise.item_groups.some(group => group.group_id === muscleGroup)
                                                         })
@@ -1901,7 +1988,7 @@ const MyPlansScreen = ({ }) => {
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
                             setDaysItems(prevDays => ({
                                 ...prevDays,
-                                [plan]: plans.find(plan => plan.id === planId).days
+                                [plan]: plans[plan].find(plan => plan.id === planId).days
                             }));
                             setEdit(false);
                             setAddNewMuscleGroup(false);
@@ -1921,7 +2008,7 @@ const MyPlansScreen = ({ }) => {
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout" : "New Diet Plan"}</Text>
                     </TouchableOpacity>
 
-                    {plans && plans.length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
+                    {plans && plans[plan].length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
                         Alert.alert(
                             "Confirm Deletion",
                             "Are you sure you want to delete this training plan?",
