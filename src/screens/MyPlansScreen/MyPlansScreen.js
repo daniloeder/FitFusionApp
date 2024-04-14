@@ -149,28 +149,22 @@ const FoodDetails = ({ food, showFoodDetails, setShowFoodDetails }) => {
             <View style={styles.details_container}>
                 <ScrollView style={stylesFood.details_itemscroll}>
                     <Text style={stylesFood.details_title}>{food.title}</Text>
-                    <Text>{food.description}</Text>
-                    <Text style={stylesFood.details_sectionTitle}>Benefits:</Text>
+                    {food.description && <Text>{food.description}</Text>}
+                    {food.benefits && <><Text style={stylesFood.details_sectionTitle}>Benefits:</Text>
                     {food.benefits.map((benefit, index) => (
                         <Text style={stylesFood.detail} key={index}>- {benefit}</Text>
-                    ))}
-
-                    {food.calories && food.amount &&
-                        <Text style={stylesFood.details_sectionTitle}>Calories: {food.calories}/{food.amount}g</Text>
-                    }
-
-                    <Text style={stylesFood.details_sectionTitle}>Comments and Tips:</Text>
+                    ))}</>}
+                    {food.calories && food.amount && <Text style={stylesFood.details_sectionTitle}>Calories: {food.calories}/{food.amount}g</Text>}
+                    {food.comments_and_tips && <><Text style={stylesFood.details_sectionTitle}>Comments and Tips:</Text>
                     {food.comments_and_tips.map((comment, index) => (
                         <Text key={index}>- {comment}</Text>
-                    ))}
-                    <Text style={stylesFood.details_sectionTitle}>How to Make:</Text>
+                    ))}</>}
+                    {food.how_to_make && <><Text style={stylesFood.details_sectionTitle}>How to Make:</Text>
                     {food.how_to_make.map((step, index) => (
                         <Text key={index}>- {step}</Text>
-                    ))}
-                    <Text style={stylesFood.details_sectionTitle}>Meals:</Text>
-                    {food.item_groups.map((group, index) => (
-                        <Text key={index}>- {group.name}</Text>
-                    ))}
+                    ))}</>}
+                    {food.item_groups && <><Text style={stylesFood.details_sectionTitle}>Meals:</Text>
+                    {food.item_groups.map((group, index) =><Text key={index}>- {group.name}</Text>)}</>}
                 </ScrollView>
                 <View style={{ width: '90%', left: '5%', bottom: 10, position: 'absolute', flexDirection: 'row', justifyContent: 'space-between' }}>
                     <TouchableOpacity style={[styles.details_closeButton, { marginLeft: 'auto' }]} onPress={() => onClose()}>
@@ -354,8 +348,6 @@ const ExerciseSetsIndicators = ({ plan, edit, dayName, muscleGroup, exercise, up
                         setShowSetsEditModal(true);
                         if (plan === "workout") {
                             setRestTime(exercise.rest); setUpdate(false);
-                        } else {
-
                         }
                     }}
                     onPress={() => {
@@ -397,7 +389,12 @@ const ExerciseSetsIndicators = ({ plan, edit, dayName, muscleGroup, exercise, up
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[stylesSetsIndicator.touchableOpacity, { right: width * 0.016 }]}
-                    onLongPress={() => setShowSetsEditModal(true)}
+                    onLongPress={() => {
+                        setShowSetsEditModal(true);
+                        if (plan === "workout") {
+                            setRestTime(exercise.rest); setUpdate(false);
+                        }
+                    }}
                     onPress={() => {
                         if (plan === "workout") {
                             if (!exercise.done) {
@@ -524,18 +521,20 @@ const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit
     return (
         <View>
             {showExerciseDetails ?
-                plan === "workout" ? <TrainDetails
-                    dayName={dayName}
-                    muscleGroup={muscleGroup}
-                    allExercises={allExercises}
-                    exercise={alternativeExercise || allExercises.find(e => e.item_id === exercise.item_id)}
-                    showExerciseDetails={showExerciseDetails}
-                    setShowExerciseDetails={setShowExerciseDetails}
-                    setAlternativeExercise={setAlternativeExercise}
-                    getAlternativeExercise={getAlternativeExercise}
-                    removeExercise={removeExercise}
-                />
-                    : <FoodDetails
+                plan === "workout" ?
+                    <TrainDetails
+                        dayName={dayName}
+                        muscleGroup={muscleGroup}
+                        allExercises={allExercises}
+                        exercise={alternativeExercise || allExercises.find(e => e.item_id === exercise.item_id)}
+                        showExerciseDetails={showExerciseDetails}
+                        setShowExerciseDetails={setShowExerciseDetails}
+                        setAlternativeExercise={setAlternativeExercise}
+                        getAlternativeExercise={getAlternativeExercise}
+                        removeExercise={removeExercise}
+                    />
+                    :
+                    <FoodDetails
                         dayName={dayName}
                         foodGroup={muscleGroup}
                         food={{ ...allExercises.find(f => f.item_id === exercise.item_id), calories: exercise.calories, amount: exercise.amount }}
@@ -667,6 +666,7 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
             </TouchableOpacity>}
 
             {add && <AddExerciseList
+                plan={plan}
                 dayName={dayName}
                 muscleGroup={muscleGroup}
                 exercises={allExercises.filter(exercise => !exercises.map(exercise => exercise.item_id).includes(exercise.item_id) && !unavailableExercises.includes(exercise.item_id))}
@@ -697,7 +697,7 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
     )
 }
 
-const AddExerciseList = ({ dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises }) => {
+const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises }) => {
     return (
         <View style={{ width: '100%' }}>
             <ScrollView
@@ -710,6 +710,7 @@ const AddExerciseList = ({ dayName, muscleGroup, exercises, allExercises, addExe
                         return (
                             <ExerciseItem
                                 key={index}
+                                plan={plan}
                                 dayName={dayName}
                                 muscleGroup={muscleGroup}
                                 exercise={exercise}
@@ -1172,8 +1173,8 @@ const MyPlansScreen = ({ }) => {
     const { userToken } = useGlobalContext();
 
     const [online, setOnline] = useState(true);
-    const [plan, setPlan] = useState('diet');
-    const [plans, setPlans] = useState(null);
+    const [plan, setPlan] = useState('workout');
+    const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
     const muscle_groups = {
         chest: { id: 'chest', name: 'Chest' },
@@ -1497,10 +1498,10 @@ const MyPlansScreen = ({ }) => {
             });
             const data = await response.json();
 
-            if (response.ok && data.id && plans[plan]) {
+            if (response.ok && data.id) {
                 setPlans(prevPlans => ({
                     ...prevPlans,
-                    [plan]: [...prevPlans[plan], data]
+                    [plan]: prevPlans[plan] ? [...prevPlans[plan], data] : [data]
                 }));
                 setDaysItems(prevDays => ({
                     ...prevDays,
@@ -1535,7 +1536,7 @@ const MyPlansScreen = ({ }) => {
             if (response.ok && data.id && plans[plan]) {
                 setPlans(prevPlans => ({
                     ...prevPlans,
-                    [plan]: [...prevPlans[plan], data]
+                    [plan]: prevPlans[plan] ? [...prevPlans[plan], data] : [data]
                 }));
                 setDaysItems(prevDays => ({
                     ...prevDays,
@@ -1700,7 +1701,7 @@ const MyPlansScreen = ({ }) => {
     };
     const getAlternativeExercise = (dayName, muscleGroup, exercise, salt = 0) => {
         const all_exercises = Object.values(allItems[plan])
-        const exercises_from_muscle = all_exercises.filter(exercise => exercise.item_groups.some(muscle => muscle.muscle_group_id === muscleGroup))
+        const exercises_from_muscle = all_exercises.filter(exercise => exercise.item_groups.some(muscle => muscle.group_id === muscleGroup))
             .map(exercise => exercise.item_id)
 
         const not_selected_exercises = exercises_from_muscle.filter(e =>
@@ -1870,11 +1871,13 @@ const MyPlansScreen = ({ }) => {
                                 name={planOption.plan_name}
                                 setSelectedTab={() => {
                                     setPlan(planOption.plan_id);
-                                    setPlanId(plans[planOption.plan_id][0].id);
-                                    setDaysItems(prevDays => ({
-                                        ...prevDays,
-                                        [planOption.plan_id]: plans[planOption.plan_id][0].days
-                                    }));
+                                    if (plans[planOption.plan_id]) {
+                                        setPlanId(plans[planOption.plan_id][0].id);
+                                        setDaysItems(prevDays => ({
+                                            ...prevDays,
+                                            [planOption.plan_id]: plans[planOption.plan_id][0].days
+                                        }));
+                                    }
                                 }}
                                 isSelected={planOption.plan_id === plan}
                                 len={fit_plans.length}
@@ -1884,7 +1887,7 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                        {plans && plans[plan] && plans[plan].map((tabPlan, index) =>
+                        {plans[plan] && plans[plan].map((tabPlan, index) =>
                             <Tabs
                                 key={index}
                                 index={index}
@@ -1908,7 +1911,7 @@ const MyPlansScreen = ({ }) => {
                     </View>
 
                     <View style={styles.headerSectionContent}>
-                        {Object.entries(daysItems[plan]).sort((a, b) => {
+                        {plans[plan] && Object.entries(daysItems[plan]).sort((a, b) => {
                             const order = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                             return order.indexOf(a[0]) - order.indexOf(b[0]);
                         }).map(([dayName, dayDetails], index) =>
@@ -1969,7 +1972,7 @@ const MyPlansScreen = ({ }) => {
                         })}
                     </View>
 
-                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                    {plans[plan] && <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                         {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "workout" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
                             updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(plan, selectedDay.name));
                         }}>
@@ -1978,7 +1981,7 @@ const MyPlansScreen = ({ }) => {
                         <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: '#6495ED' }]} onPress={() => setAddNewMuscleGroup(!addNewMuscleGroup)}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "Add Muscle Group" : "Add New Meal"}</Text>
                         </TouchableOpacity>
-                    </View>
+                    </View>}
 
                     {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
                         Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
@@ -2005,10 +2008,10 @@ const MyPlansScreen = ({ }) => {
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
                         setNewTrainingModal(true);
                     }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout" : "New Diet Plan"}</Text>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout Plan" : "New Diet Plan"}</Text>
                     </TouchableOpacity>
 
-                    {plans && plans[plan].length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
+                    {plans[plan] && plans[plan].length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
                         Alert.alert(
                             "Confirm Deletion",
                             "Are you sure you want to delete this training plan?",
@@ -2074,6 +2077,7 @@ const styles = StyleSheet.create({
         marginTop: -width * 0.02,
         marginRight: 'auto',
         marginBottom: width * 0.015,
+        maxHeight: width * 0.095,
     },
     muscleGroupText: {
         fontSize: 15,
