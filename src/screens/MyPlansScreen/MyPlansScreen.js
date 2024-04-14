@@ -446,7 +446,13 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
 
                     {adding ?
                         <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
-                            addExercise(dayName, muscleGroup, exerciseId);
+                            if(plan === "workout"){
+                                addExercise(dayName, muscleGroup, exerciseId, { sets: 4, reps: 10, rest: 120, done: false, edit: false });
+                            } else {
+                                const e = allExercises.find(e => e.item_id === exerciseId);
+                                addExercise(dayName, muscleGroup, exerciseId, e.amount ? e : {...e, calories: e.calories * 0.2, amount: 200 });
+                            }
+                            
                             setShowBallon(false);
                         }}>
                             <Text style={{ color: '#FFF' }}>
@@ -1713,9 +1719,7 @@ const MyPlansScreen = ({ }) => {
         return not_selected_exercises.length > exercise_index ? not_selected_exercises[exercise_index] : false;
     };
 
-    const addExercise = (dayName, muscleGroup, exerciseId) => {
-        const newExercise = { sets: 4, reps: 10, rest: 120, done: false, edit: false };
-
+    const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
         setEdit(true);
 
         setDaysItems(prevDays => ({
