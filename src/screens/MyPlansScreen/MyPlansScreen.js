@@ -5,6 +5,7 @@ import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -151,20 +152,20 @@ const FoodDetails = ({ food, showFoodDetails, setShowFoodDetails }) => {
                     <Text style={stylesFood.details_title}>{food.title}</Text>
                     {food.description && <Text>{food.description}</Text>}
                     {food.benefits && <><Text style={stylesFood.details_sectionTitle}>Benefits:</Text>
-                    {food.benefits.map((benefit, index) => (
-                        <Text style={stylesFood.detail} key={index}>- {benefit}</Text>
-                    ))}</>}
+                        {food.benefits.map((benefit, index) => (
+                            <Text style={stylesFood.detail} key={index}>- {benefit}</Text>
+                        ))}</>}
                     {food.calories && food.amount && <Text style={stylesFood.details_sectionTitle}>Calories: {food.calories}/{food.amount}g</Text>}
                     {food.comments_and_tips && <><Text style={stylesFood.details_sectionTitle}>Comments and Tips:</Text>
-                    {food.comments_and_tips.map((comment, index) => (
-                        <Text key={index}>- {comment}</Text>
-                    ))}</>}
+                        {food.comments_and_tips.map((comment, index) => (
+                            <Text key={index}>- {comment}</Text>
+                        ))}</>}
                     {food.how_to_make && <><Text style={stylesFood.details_sectionTitle}>How to Make:</Text>
-                    {food.how_to_make.map((step, index) => (
-                        <Text key={index}>- {step}</Text>
-                    ))}</>}
+                        {food.how_to_make.map((step, index) => (
+                            <Text key={index}>- {step}</Text>
+                        ))}</>}
                     {food.item_groups && <><Text style={stylesFood.details_sectionTitle}>Meals:</Text>
-                    {food.item_groups.map((group, index) =><Text key={index}>- {group.name}</Text>)}</>}
+                        {food.item_groups.map((group, index) => <Text key={index}>- {group.name}</Text>)}</>}
                 </ScrollView>
                 <View style={{ width: '90%', left: '5%', bottom: 10, position: 'absolute', flexDirection: 'row', justifyContent: 'space-between' }}>
                     <TouchableOpacity style={[styles.details_closeButton, { marginLeft: 'auto' }]} onPress={() => onClose()}>
@@ -446,13 +447,13 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
 
                     {adding ?
                         <TouchableOpacity style={{ padding: 10, backgroundColor: done ? '#aaa' : '#4CAF50', borderRadius: 10 }} onPress={() => {
-                            if(plan === "workout"){
+                            if (plan === "workout") {
                                 addExercise(dayName, muscleGroup, exerciseId, { sets: 4, reps: 10, rest: 120, done: false, edit: false });
                             } else {
                                 const e = allExercises.find(e => e.item_id === exerciseId);
-                                addExercise(dayName, muscleGroup, exerciseId, e.amount ? e : {...e, calories: e.calories * 0.2, amount: 200 });
+                                addExercise(dayName, muscleGroup, exerciseId, e.amount ? e : { ...e, calories: e.calories * 0.2, amount: 200 });
                             }
-                            
+
                             setShowBallon(false);
                         }}>
                             <Text style={{ color: '#FFF' }}>
@@ -675,7 +676,7 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
                 plan={plan}
                 dayName={dayName}
                 muscleGroup={muscleGroup}
-                exercises={allExercises.filter(exercise => !exercises.map(exercise => exercise.item_id).includes(exercise.item_id) && !unavailableExercises.includes(exercise.item_id))}
+                exercises={allExercises.filter(exercise => (!exercises.map(exercise => exercise.item_id).includes(exercise.item_id) && !unavailableExercises.includes(exercise.item_id)))}
                 allExercises={allExercises}
                 addExercise={addExercise}
                 updateUnavailableExercises={updateUnavailableExercises}
@@ -686,7 +687,7 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
 }
 
 const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMuscleGroup }) => {
-
+    
     return (
         <View style={[styles.trainingMemberGroup, { marginBottom: 20 }]}>
             {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
@@ -704,6 +705,7 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
 }
 
 const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises }) => {
+
     return (
         <View style={{ width: '100%' }}>
             <ScrollView
@@ -729,6 +731,102 @@ const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, 
                     }) : ''}
                 </View>
             </ScrollView>
+        </View>
+    )
+}
+
+const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem, obligatory = false }) => {
+    const onSelectItem = (item) => {
+        if (selectedOptions.includes(item)) {
+            setSelectedItem(selectedOptions.filter(selected => selected !== item));
+        } else {
+            setSelectedItem([...selectedOptions, item]);
+        }
+    }
+    const onRemoveItem = (item) => {
+        setSelectedItem(selectedOptions.filter(selected => selected !== item));
+    }
+    const alertMaxItems = (title) => {
+        alert(`You can only select ${max} "${title}" per training day. Please remove an item first.`);
+    }
+
+    const styles = StyleSheet.create({
+        selectBox: {
+            width: '90%',
+            marginLeft: '5%',
+            borderRadius: 5,
+            justifyContent: 'space-between',
+            marginBottom: 10,
+            padding: 3,
+            borderRadius: 8,
+            backgroundColor: '#eee'
+        },
+        itemsList: {
+            width: '100%',
+            padding: 10,
+            flexDirection: 'row',
+            justifyContent: 'space-evenly',
+            flexWrap: 'wrap',
+        },
+        selectedItems: {
+            borderTopRightRadius: 5,
+            backgroundColor: '#F0F0F0',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+        },
+        unselectedItems: {
+            borderRadius: 5,
+            borderTopLeftRadius: 0,
+            borderTopEndRadius: 0,
+            backgroundColor: '#CCCCCC',
+        },
+        selectBoxItem: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: width * 0.02,
+            paddingVertical: width * 0.008,
+            borderRadius: width * 0.01,
+            margin: width * 0.01,
+            backgroundColor: '#DDD',
+        },
+        selectBoxItemText: {
+            color: '#000',
+            fontWeight: 'bold',
+            fontSize: width * 0.03
+        },
+
+    });
+
+    return (
+        <View style={styles.selectBox}>
+            <View style={styles.textContainer}>
+                <Text style={{ fontWeight: 'bold', fontSize: width * 0.03, color: '#000' }}>{title}</Text>
+            </View>
+            <View style={[styles.itemsList, styles.selectedItems]}>
+                {
+                    selectedOptions.length ? selectedOptions.map(option => {
+                        return (
+                            <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
+                                <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
+                            </TouchableOpacity>
+                        )
+                    }) :
+                        <Text style={{ color: '#888', fontSize: width * 0.025 }}>Select an option to add.{obligatory && " Obligatory!"}</Text>
+                }
+            </View>
+            <View style={[styles.itemsList, styles.unselectedItems]}>
+                {
+                    allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
+                        return (
+                            <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
+                                <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
+                            </TouchableOpacity>
+                        )
+                    })
+                }
+                {max && <Text style={{ position: 'absolute', bottom: 0, right: 3, color: '#888', fontSize: width * 0.03 }}>Max: {max}</Text>}
+            </View>
         </View>
     )
 }
@@ -826,13 +924,6 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
             marginTop: useAI ? 10 : width * 0.5,
             marginBottom: 20,
         },
-        selectBox: {
-            width: '90%',
-            marginLeft: '5%',
-            borderRadius: 5,
-            justifyContent: 'space-between',
-            marginBottom: 10,
-        },
         textContainer: {
             flex: 0,
             borderTopRightRadius: 5,
@@ -842,40 +933,6 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
             paddingVertical: 2,
             paddingHorizontal: 15,
             marginRight: 'auto',
-        },
-        itemsList: {
-            width: '100%',
-            padding: 10,
-            flexDirection: 'row',
-            justifyContent: 'space-evenly',
-            flexWrap: 'wrap',
-        },
-        selectedItems: {
-            borderTopRightRadius: 5,
-            backgroundColor: '#F0F0F0',
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-        },
-        unselectedItems: {
-            borderRadius: 5,
-            borderTopLeftRadius: 0,
-            borderTopEndRadius: 0,
-            backgroundColor: '#CCCCCC',
-        },
-        selectBoxItem: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: width * 0.02,
-            paddingVertical: width * 0.008,
-            borderRadius: width * 0.01,
-            margin: width * 0.01,
-            backgroundColor: '#DDD',
-        },
-        selectBoxItemText: {
-            color: '#000',
-            fontWeight: 'bold',
-            fontSize: width * 0.03
         },
         showAllButton: {
             padding: 5,
@@ -916,54 +973,6 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         }
 
     });
-
-    const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, setSelectedItem, obligatory = false }) => {
-        const onSelectItem = (item) => {
-            if (selectedOptions.includes(item)) {
-                setSelectedItem(selectedOptions.filter(selected => selected !== item));
-            } else {
-                setSelectedItem([...selectedOptions, item]);
-            }
-        }
-        const onRemoveItem = (item) => {
-            setSelectedItem(selectedOptions.filter(selected => selected !== item));
-        }
-        const alertMaxItems = (title) => {
-            alert(`You can only select ${max} "${title}" per training day. Please remove an item first.`);
-        }
-
-        return (
-            <View style={styles.selectBox}>
-                <View style={styles.textContainer}>
-                    <Text style={{ fontWeight: 'bold', fontSize: width * 0.03, color: '#000' }}>{title}</Text>
-                </View>
-                <View style={[styles.itemsList, styles.selectedItems]}>
-                    {
-                        selectedOptions.length ? selectedOptions.map(option => {
-                            return (
-                                <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
-                                    <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
-                                </TouchableOpacity>
-                            )
-                        }) :
-                            <Text style={{ color: '#888', fontSize: width * 0.025 }}>Select an option to add.{obligatory && " Obligatory!"}</Text>
-                    }
-                </View>
-                <View style={[styles.itemsList, styles.unselectedItems]}>
-                    {
-                        allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
-                            return (
-                                <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
-                                    <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
-                                </TouchableOpacity>
-                            )
-                        })
-                    }
-                    {max && <Text style={{ position: 'absolute', bottom: 0, right: 3, color: '#888', fontSize: width * 0.03 }}>Max: {max}</Text>}
-                </View>
-            </View>
-        )
-    }
 
     function checkBeforeCreation() {
         if (!trainingName) {
@@ -1175,6 +1184,153 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     )
 }
 
+const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
+    const [foodName, setFoodName] = useState('');
+    const [foodAmount, setFoodAmount] = useState(0);
+    const [foodCalories, setFoodCalories] = useState(0);
+    const [status, setStatus] = useState('none');
+
+    const allMeals = ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'];
+    const allMealsNames = { 'breakfast': "Breakfast", 'lunch': "Lunch", 'dinner': "Dinner", 'snack': "Snack", 'pre_workout': "Pre Workout", 'post_workout': "Post Workout" };;
+    const [meals, setMeals] = useState([]);
+
+    const onClose = () => {
+        setNewFoodModal(false);
+        setStatus('none');
+        setFoodName('');
+        setFoodAmount(0);
+        setFoodCalories(0);
+        setMeals([]);
+    }
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            justifyContent: 'center',
+        },
+        section: {
+            padding: 10,
+            backgroundColor: '#dddeee',
+            borderRadius: 5,
+            borderWidth: 2,
+            borderColor: '#fff',
+            marginHorizontal: 20,
+        },
+        title: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#333',
+            marginBottom: 10,
+        },
+        textInput: {
+            height: 40,
+            borderWidth: 1,
+            borderColor: '#eee',
+            backgroundColor: '#FFF',
+            borderRadius: 5,
+            paddingHorizontal: 10,
+            marginHorizontal: 15,
+            marginVertical: 10,
+            fontSize: 14,
+            color: '#111',
+        },
+        addButton: {
+            flex: 1,
+            height: 40,
+            flexDirection: 'row',
+            borderRadius: 5,
+            marginHorizontal: 5,
+            marginVertical: 10,
+            justifyContent: 'center',
+            alignItems: 'center'
+        },
+        addButtonText: {
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 'bold',
+        },
+    });
+
+    return (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={newFoodModal}
+            onRequestClose={onClose}
+        >
+            <View style={styles.container}>
+                <View style={styles.section}>
+                    {status === "creating" ? <>
+                        <Text style={styles.title}>Creating Food...</Text>
+                    </> : status === "created" ? <>
+                        <Text style={styles.title}>Food Created! You will see this option available when adding a new food to a meal.</Text>
+                    </> : status === "error" ? <>
+                        <Text style={styles.title}>Error Creating Food, try again later.</Text>
+                    </> :
+                        <>
+                            <Text style={styles.title}>Add Food</Text>
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="Name"
+                                placeholderTextColor="#999"
+                                autoCapitalize="none"
+                                onChangeText={setFoodName}
+                            />
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="Amount"
+                                placeholderTextColor="#999"
+                                autoCapitalize="none"
+                                onChangeText={setFoodAmount}
+                                keyboardType="numeric"
+                                maxLength={4}
+                            />
+                            <TextInput
+                                style={styles.textInput}
+                                placeholder="Calories"
+                                placeholderTextColor="#999"
+                                autoCapitalize="none"
+                                onChangeText={setFoodCalories}
+                                keyboardType="numeric"
+                                maxLength={4}
+                            />
+
+                            <SelectBox
+                                title="Meals"
+                                allOptions={allMeals}
+                                allOptionsNames={allMealsNames}
+                                selectedOptions={meals}
+                                setSelectedItem={setMeals}
+                            />
+                        </>}
+                    <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                        {status === "none" && <TouchableOpacity style={[styles.addButton, { backgroundColor: '#4CAF50' }]} onPress={() => {
+                            if (foodName === '') {
+                                Alert.alert("Error", "Please enter a name.");
+                            } else if(foodAmount < 10){
+                                Alert.alert("Error", "Please enter an amount in grams.");
+                            } else if(meals.length === 0){
+                                Alert.alert("Error", "Please select at least one meal.");
+                            } else {
+                                setStatus('creating');
+                                createFood({ "title": foodName, "amount": foodAmount, "calories": foodCalories, "meals": meals }, setStatus);
+                            }
+                        }}>
+                            <Text style={styles.addButtonText}>Add</Text>
+                        </TouchableOpacity>}
+                        <TouchableOpacity style={[styles.addButton, { backgroundColor: '#AAA' }]} onPress={() => {
+                            onClose();
+                        }}>
+                            <Text style={styles.addButtonText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        </Modal>
+    )
+};
+
 const MyPlansScreen = ({ }) => {
     const { userToken } = useGlobalContext();
 
@@ -1183,21 +1339,21 @@ const MyPlansScreen = ({ }) => {
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
     const muscle_groups = {
-        chest: { id: 'chest', name: 'Chest' },
-        back: { id: 'back', name: 'Back' },
-        neck: { id: 'neck', name: 'Neck' },
-        trapezius: { id: 'trapezius', name: 'Trapezius' },
-        shoulders: { id: 'shoulders', name: 'Shoulders' },
-        biceps: { id: 'biceps', name: 'Biceps' },
-        triceps: { id: 'triceps', name: 'Triceps' },
-        forearm: { id: 'forearm', name: 'Forearm' },
-        abs: { id: 'abs', name: 'Abs' },
-        leg: { id: 'leg', name: 'Leg' },
-        hip: { id: 'hip', name: 'Hip' },
-        cardio: { id: 'cardio', name: 'Cardio' },
-        full_body: { id: 'full_body', name: 'Full Body' },
-        calf: { id: 'calf', name: 'Calf' },
-        erector_spinae: { id: 'erector_spinae', name: 'Erector Spinae' },
+        chest: { group_id: 'chest', name: 'Chest' },
+        back: { group_id: 'back', name: 'Back' },
+        neck: { group_id: 'neck', name: 'Neck' },
+        trapezius: { group_id: 'trapezius', name: 'Trapezius' },
+        shoulders: { group_id: 'shoulders', name: 'Shoulders' },
+        biceps: { group_id: 'biceps', name: 'Biceps' },
+        triceps: { group_id: 'triceps', name: 'Triceps' },
+        forearm: { group_id: 'forearm', name: 'Forearm' },
+        abs: { group_id: 'abs', name: 'Abs' },
+        leg: { group_id: 'leg', name: 'Leg' },
+        hip: { group_id: 'hip', name: 'Hip' },
+        cardio: { group_id: 'cardio', name: 'Cardio' },
+        full_body: { group_id: 'full_body', name: 'Full Body' },
+        calf: { group_id: 'calf', name: 'Calf' },
+        erector_spinae: { group_id: 'erector_spinae', name: 'Erector Spinae' },
     };
     const [daysItems, setDaysItems] = useState({
         workout: {
@@ -1414,12 +1570,12 @@ const MyPlansScreen = ({ }) => {
     }
     );
     const meal_groups = {
-        breakfast: { id: 'breakfast', name: 'Breakfast' },
-        lunch: { id: 'lunch', name: 'Lunch' },
-        dinner: { id: 'dinner', name: 'Dinner' },
-        snack: { id: 'snack', name: 'Snack' },
-        pre_workout: { id: 'pre_workout', name: 'Pre Workout' },
-        post_workout: { id: 'post_workout', name: 'Post Workout' },
+        breakfast: { group_id: 'breakfast', name: 'Breakfast' },
+        lunch: { group_id: 'lunch', name: 'Lunch' },
+        dinner: { group_id: 'dinner', name: 'Dinner' },
+        snack: { group_id: 'snack', name: 'Snack' },
+        pre_workout: { group_id: 'pre_workout', name: 'Pre Workout' },
+        post_workout: { group_id: 'post_workout', name: 'Post Workout' },
     };
 
     const [edit, setEdit] = useState(false);
@@ -1430,6 +1586,7 @@ const MyPlansScreen = ({ }) => {
     const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
     const [newTrainingModal, setNewTrainingModal] = useState(false);
+    const [newFoodModal, setNewFoodModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
 
     const fetchAllExercises = async () => {
@@ -1824,6 +1981,34 @@ const MyPlansScreen = ({ }) => {
             [plan]: plans[plan].length ? plans[plan][0].days : {}
         }));
     };
+    const createFood = async ({ title, amount, calories, meals }, setStatus) => {
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/user-plans/update_foods/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`
+                },
+                body: JSON.stringify({
+                    "action": "add",
+                    "item": {
+                        "title": title,
+                        "amount": amount,
+                        "calories": calories,
+                        "item_groups": Object.values(meal_groups).filter(group => meals.includes(group.group_id))
+                    }
+                })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setAllItems(prevItems => ({ ...prevItems, [plan]: { [data.item_id]: data, ...allItems[plan] } }));
+                setStatus("created");
+            }
+        } catch (error) {
+            console.error(error);
+            setStatus("error");
+        }
+    };
 
     useEffect(() => {
         fetchPlans();
@@ -1856,6 +2041,7 @@ const MyPlansScreen = ({ }) => {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} />
+            <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} />
 
             <ScrollView
                 style={styles.contentContainer}
@@ -1982,13 +2168,18 @@ const MyPlansScreen = ({ }) => {
                         }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
                         </TouchableOpacity>}
+                        {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "diet" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
+                            setNewFoodModal(true);
+                        }}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Custom Food Option</Text>
+                        </TouchableOpacity>}
                         <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: '#6495ED' }]} onPress={() => setAddNewMuscleGroup(!addNewMuscleGroup)}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "Add Muscle Group" : "Add New Meal"}</Text>
                         </TouchableOpacity>
                     </View>}
 
                     {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                        Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.id)).map(group => ({ id: group.id, name: group.name }))
+                        Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
                     } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
                     {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
