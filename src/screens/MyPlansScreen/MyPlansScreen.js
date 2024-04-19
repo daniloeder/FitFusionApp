@@ -5,7 +5,7 @@ import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
-import { set } from 'firebase/database';
+import StripePayment from '../../components/Payment/StripePayment';
 
 const width = Dimensions.get('window').width;
 
@@ -687,7 +687,7 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
 }
 
 const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMuscleGroup }) => {
-    
+
     return (
         <View style={[styles.trainingMemberGroup, { marginBottom: 20 }]}>
             {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
@@ -805,9 +805,9 @@ const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, s
             </View>
             <View style={[styles.itemsList, styles.selectedItems]}>
                 {
-                    selectedOptions.length ? selectedOptions.map(option => {
+                    selectedOptions.length ? selectedOptions.map((option, index) => {
                         return (
-                            <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
+                            <TouchableOpacity key={index} style={styles.selectBoxItem} onPress={() => onRemoveItem(option)}>
                                 <Text style={styles.selectBoxItemText}>{allOptionsNames[option]}</Text>
                             </TouchableOpacity>
                         )
@@ -817,9 +817,9 @@ const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, s
             </View>
             <View style={[styles.itemsList, styles.unselectedItems]}>
                 {
-                    allOptions.filter(option => !selectedOptions.includes(option)).map(option => {
+                    allOptions.filter(option => !selectedOptions.includes(option)).map((option, index) => {
                         return (
-                            <TouchableOpacity key={option} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
+                            <TouchableOpacity key={index} style={styles.selectBoxItem} onPress={() => !max || selectedOptions.length < max ? onSelectItem(option) : alertMaxItems(title)}>
                                 <Text style={[styles.selectBoxItemText, { color: '#888' }]}>{allOptionsNames[option]}</Text>
                             </TouchableOpacity>
                         )
@@ -1308,9 +1308,9 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
                         {status === "none" && <TouchableOpacity style={[styles.addButton, { backgroundColor: '#4CAF50' }]} onPress={() => {
                             if (foodName === '') {
                                 Alert.alert("Error", "Please enter a name.");
-                            } else if(foodAmount < 10){
+                            } else if (foodAmount < 10) {
                                 Alert.alert("Error", "Please enter an amount in grams.");
-                            } else if(meals.length === 0){
+                            } else if (meals.length === 0) {
                                 Alert.alert("Error", "Please select at least one meal.");
                             } else {
                                 setStatus('creating');
@@ -1327,6 +1327,276 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
                     </View>
                 </View>
             </View>
+        </Modal>
+    )
+};
+
+const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlans, setCompletedPaymentData }) => {
+    const [status, setStatus] = useState('plans');
+    const allPlans = subscriptionPlans.map(plan => plan.id);
+    const allPlansNames = subscriptionPlans.reduce((obj, plan) => {
+        obj[plan.id] = plan.name;
+        return obj;
+    }, {});
+
+    const [plans, setPlans] = useState([]);
+    const subscriptionPlan = plans.length ? subscriptionPlans.find(plan => plan.id === plans[0]) : undefined;
+
+    const [useCreditCard, setUseCreditCard] = useState(false);
+
+    const onClose = () => {
+        setStatus('plans');
+        setUseCreditCard(false);
+        setUpdatePlanModal(false);
+    };
+
+    const PricePlanTable = () => {
+
+        const styles = StyleSheet.create({
+            tableContainer: {
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginVertical: 10,
+                flexWrap: 'wrap',
+            },
+            tableColumn: {
+                width: width * 0.8 / 3,
+                backgroundColor: '#fff',
+                borderRadius: 8,
+                margin: 5,
+                padding: 3,
+                marginHorizontal: 4,
+                elevation: 4,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+            },
+            planTitle: {
+                fontSize: 15,
+                fontWeight: 'bold',
+                textAlign: 'center',
+                marginBottom: 2,
+            },
+            planPrice: {
+                fontSize: 12,
+                fontWeight: 'bold',
+                textAlign: 'center',
+                color: '#555',
+            },
+            planDescription: {
+                fontSize: 10,
+                marginBottom: 8,
+            },
+            planBenefits: {
+                marginTop: 5,
+            },
+        });
+
+        return (
+            <View style={styles.tableContainer}>
+                {subscriptionPlans.map((plan, index) => (
+                    <View key={index} style={styles.tableColumn}>
+                        <Text style={styles.planTitle}>{plan.name}</Text>
+                        <Text style={styles.planPrice}>${plan.price} {plan.currency}</Text>
+                        <View style={styles.planBenefits}>
+                            {plan.details && plan.details.map((benefit) => (
+                                <Text key={benefit} style={styles.planDescription}>
+                                    ✓ {benefit}
+                                </Text>
+                            ))}
+                        </View>
+                    </View>
+                ))}
+            </View>
+        );
+    };
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        section: {
+            width: '96%',
+            backgroundColor: '#ddd',
+            borderRadius: 10,
+            padding: 10,
+            marginVertical: width * 0.2,
+        },
+        title: {
+            fontSize: 20,
+            fontWeight: 'bold',
+            marginBottom: 10,
+        },
+        selectedPlanText: {
+            fontSize: 15,
+            fontWeight: 'bold',
+            marginBottom: 10,
+        },
+        confirmButton: {
+            width: '100%',
+            height: 40,
+            backgroundColor: '#000',
+            borderRadius: 5,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginTop: 20,
+        },
+        confirmButtonText: {
+            fontSize: 15,
+            fontWeight: 'bold',
+            color: '#fff',
+        },
+
+        creditCardContainer: {
+            backgroundColor: '#fff',
+            borderRadius: 8,
+            padding: 16,
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        },
+        creditCardInput: {
+            height: 48,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 4,
+            paddingHorizontal: 12,
+            marginBottom: 12,
+            fontSize: 16,
+        },
+        creditCardName: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginBottom: 8,
+        },
+        creditCardNumber: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginBottom: 8,
+        },
+        creditCardExpiration: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+        },
+        creditCardExpirationDate: {
+            flex: 1,
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+        creditCardCVV: {
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+        creditCardContainer: {
+            backgroundColor: '#fff',
+            borderRadius: 8,
+            padding: 16,
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+        },
+        creditCardInput: {
+            height: 48,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 4,
+            paddingHorizontal: 12,
+            marginBottom: 12,
+            fontSize: 16,
+        },
+        creditCardName: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginBottom: 8,
+        },
+        creditCardNumber: {
+            fontSize: 16,
+            fontWeight: 'bold',
+            marginBottom: 8,
+        },
+        creditCardExpiration: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            marginBottom: 8,
+        },
+        creditCardExpirationDate: {
+            flex: 1,
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+        creditCardCVV: {
+            fontSize: 16,
+            fontWeight: 'bold',
+        },
+    });
+    if (status === 'success') {
+        Alert.alert(
+            'Success!', 'Your plan has been updated!'
+        );
+        onClose();
+    } else if (status === 'error') {
+        Alert.alert(
+            'Error!', 'There was an error updating your plan.'
+        );
+        setStatus('creditCard');
+    }
+
+    useEffect(() => {
+        if (useCreditCard) {
+            setUseCreditCard(plans.length > 0);
+        }
+    }, [plans])
+
+    return (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={updatePlanModal}
+            onRequestClose={onClose}
+        >
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={styles.container}>
+                    <View style={styles.section}>
+                        <Text style={styles.title}>Upgrade Plan</Text>
+                        {status === 'plans' ?
+                            <View>
+                                <PricePlanTable />
+                                <SelectBox
+                                    title="Select a Plan:"
+                                    max={1}
+                                    allOptions={allPlans}
+                                    allOptionsNames={allPlansNames}
+                                    selectedOptions={plans}
+                                    setSelectedItem={setPlans}
+                                />
+                                <TouchableOpacity style={styles.confirmButton} onPress={() => {
+                                    if (plans.length > 0) {
+                                        setUseCreditCard(true);
+                                        return;
+                                    }
+                                    Alert.alert('Error!', 'Please select a plan.');
+                                }}>
+                                    <Text style={styles.confirmButtonText}>Next</Text>
+                                </TouchableOpacity>
+                                {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
+                            </View>
+                            : status === 'loading' ?
+                                <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /></View>
+                                : ''
+                        }
+                    </View>
+                </View>
+            </ScrollView>
         </Modal>
     )
 };
@@ -1585,9 +1855,14 @@ const MyPlansScreen = ({ }) => {
     const [selectedDay, setSelectedDay] = useState(null);
     const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
+    const [updatePlanModal, setUpdatePlanModal] = useState(false);
+    const [completedPaymentData, setCompletedPaymentData] = useState(null);
+
     const [newTrainingModal, setNewTrainingModal] = useState(false);
     const [newFoodModal, setNewFoodModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
+
+    const [subscriptionPlans, setSubscriptionPlans] = useState([]);
 
     const fetchAllExercises = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/all-exercises/`, {
@@ -1737,6 +2012,37 @@ const MyPlansScreen = ({ }) => {
             }));
         }
         setUnavailableExercises(data.unavailable_exercises);
+        fetchSubscriptionPlans();
+    }
+
+    const fetchSubscriptionPlans = async () => {
+        const response = await fetch(BASE_URL + `/api/payments/plans/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Token ${userToken}`,
+            },
+        });
+        const data = await response.json();
+        setSubscriptionPlans(data);
+    }
+    const confirmSubscriptionPlan = async () => {
+        try {
+            const response = await fetch(BASE_URL + `/api/payments/confirm-subscription-plan/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`
+                },
+                body: JSON.stringify(completedPaymentData)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
     }
 
     const updateExerciseDone = (dayName, muscleGroup, exerciseIndex, done) => {
@@ -2033,6 +2339,13 @@ const MyPlansScreen = ({ }) => {
         }
     }, [selectedDay]);
 
+    useEffect(() => {
+        if (completedPaymentData) {
+            setCompletedPaymentData(null);
+            confirmSubscriptionPlan();
+        }
+    }, [completedPaymentData]);
+
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
@@ -2040,6 +2353,7 @@ const MyPlansScreen = ({ }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
+            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlans={subscriptionPlans} setCompletedPaymentData={setCompletedPaymentData} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} />
             <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} />
 
@@ -2207,21 +2521,17 @@ const MyPlansScreen = ({ }) => {
                     </TouchableOpacity>
 
                     {plans[plan] && plans[plan].length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
-                        Alert.alert(
-                            "Confirm Deletion",
-                            "Are you sure you want to delete this training plan?",
-                            [
-                                {
-                                    text: "Cancel",
-                                    style: "cancel"
-                                },
-                                { text: "Delete", onPress: () => removeTrainingPlan(planId) }
-                            ]
-                        );
-
+                        Alert.alert("Confirm Deletion", "Are you sure you want to delete this training plan?",
+                            [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => removeTrainingPlan(planId) }]);
                     }}>
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Delete Train</Text>
                     </TouchableOpacity>}
+
+                    <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
+                        setUpdatePlanModal(true);
+                    }}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Plan</Text>
+                    </TouchableOpacity>
 
                 </View>
             </ScrollView>
