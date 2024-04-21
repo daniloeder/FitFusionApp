@@ -453,7 +453,6 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
                                 const e = allExercises.find(e => e.item_id === exerciseId);
                                 addExercise(dayName, muscleGroup, exerciseId, e.amount ? e : { ...e, calories: e.calories * 0.2, amount: 200 });
                             }
-
                             setShowBallon(false);
                         }}>
                             <Text style={{ color: '#FFF' }}>
@@ -831,7 +830,7 @@ const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, s
     )
 }
 
-const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan }) => {
+const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength }) => {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(false);
     const [useAI, setUseAI] = useState(false);
@@ -975,6 +974,12 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     });
 
     function checkBeforeCreation() {
+        if (userSubscriptionPlan.features[plan].max[0] && plansLength >= userSubscriptionPlan.features[plan].max[1]) {
+            Alert.alert('You need to upgrate to create a new plan.', `Max of ${userSubscriptionPlan.features[plan].max[1]} plans with "${userSubscriptionPlan.name}" plan.`,
+                [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
+            );
+            return;
+        }
         if (!trainingName) {
             alert('Please enter a workout name')
             return false
@@ -1026,14 +1031,23 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
 
                             }
                         </View>
-                        : <>
-                            <TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
+                        : <><TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
+                            {userSubscriptionPlan && userSubscriptionPlan.features[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
+                                You can have {userSubscriptionPlan.features[plan].max[1]} plans with "{userSubscriptionPlan.name}" subscription.
+                            </Text>
+                                <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
+                                    setUpdatePlanModal(true);
+                                }}>
+                                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
+                                </TouchableOpacity>
+                            </>}
 
                             {useAI ?
                                 plan === "workout" ?
                                     <>
                                         <SelectBox
-                                            title="Week Workout Days"
+                                            title={"Week Workout Days" + (userSubscriptionPlan.features[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.features[plan].max_days} with your "${userSubscriptionPlan.name}" plan.)` : '')}
+                                            max={userSubscriptionPlan.features[plan].max_days < 7 ? userSubscriptionPlan.features[plan].max_days : undefined}
                                             allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
                                             allOptionsNames={allWorkoutDaysNames}
                                             selectedOptions={workoutDays}
@@ -1111,6 +1125,12 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     if (useAI) {
                                         if (plan === "workout") {
                                             if (checkBeforeCreation()) {
+                                                if (userSubscriptionPlan.features[plan].use_ai === 0) {
+                                                    Alert.alert('You need to upgrate to continue to use AI.', 'Press Upgrade Plan to continue.',
+                                                        [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
+                                                    );
+                                                    return;
+                                                }
                                                 setGenerating(true);
                                                 GenerateWeekWorkoutPlan({
                                                     "name": trainingName,
@@ -1141,7 +1161,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     }
                                 }}
                             >
-                                <Text style={styles.workoutButtonText}>{plan === "workout" ? "Generate with AI (GPT)" : "Automatic Generation"}</Text>
+                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (userSubscriptionPlan && userSubscriptionPlan.features[plan].use_ai < 6 ? ` (${userSubscriptionPlan.features[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
                             </TouchableOpacity>
 
                             {!useAI && <TouchableOpacity
@@ -1331,16 +1351,16 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
     )
 };
 
-const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlans, setCompletedPaymentData }) => {
+const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData }) => {
     const [status, setStatus] = useState('plans');
-    const allPlans = subscriptionPlans.map(plan => plan.id);
-    const allPlansNames = subscriptionPlans.reduce((obj, plan) => {
+    const allPlans = subscriptionPlansOptions.map(plan => plan.id);
+    const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
         return obj;
     }, {});
 
     const [plans, setPlans] = useState([]);
-    const subscriptionPlan = plans.length ? subscriptionPlans.find(plan => plan.id === plans[0]) : undefined;
+    const subscriptionPlan = plans.length ? subscriptionPlansOptions.find(plan => plan.id === plans[0]) : undefined;
 
     const [useCreditCard, setUseCreditCard] = useState(false);
 
@@ -1396,7 +1416,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
 
         return (
             <View style={styles.tableContainer}>
-                {subscriptionPlans.map((plan, index) => (
+                {subscriptionPlansOptions.map((plan, index) => (
                     <View key={index} style={styles.tableColumn}>
                         <Text style={styles.planTitle}>{plan.name}</Text>
                         <Text style={styles.planPrice}>${plan.price} {plan.currency}</Text>
@@ -1602,9 +1622,8 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
 };
 
 const MyPlansScreen = ({ }) => {
-    const { userToken } = useGlobalContext();
+    const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
 
-    const [online, setOnline] = useState(true);
     const [plan, setPlan] = useState('workout');
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
@@ -1703,138 +1722,37 @@ const MyPlansScreen = ({ }) => {
                         'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
                         'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
                     }
-                }
+                },
+                rest: false
             },
             Mon: {
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
             Tue: {
 
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
             Wed: {
 
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
             Thu: {
 
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
             Fri: {
 
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
             Sat: {
 
-                items: {
-                    breakfast: {
-                        'oatmeal': { quantity: 1, amount: 180, done: false, edit: false, calories: 350 },
-                    },
-                    lunch: {
-                        'tuna_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'chicken_wrap': { quantity: 1, amount: 220, done: false, edit: false, calories: 380 },
-                        'turkey_sandwich': { quantity: 1, amount: 230, done: false, edit: false, calories: 390 },
-                        'egg_salad_sandwich': { quantity: 1, amount: 210, done: false, edit: false, calories: 370 },
-                        'quinoa_salad': { quantity: 1, amount: 280, done: false, edit: false, calories: 430 },
-                        'caprese_salad': { quantity: 1, amount: 200, done: false, edit: false, calories: 400 },
-                        'cucumber_salad': { quantity: 1, amount: 150, done: false, edit: false, calories: 300 },
-                    },
-                    dinner: {
-                        'pasta_carbonara': { quantity: 1, amount: 400, done: false, edit: false, calories: 550 },
-                        'vegetable_stir_fry': { quantity: 1, amount: 320, done: false, edit: false, calories: 470 },
-                        'rice_bowl': { quantity: 1, amount: 350, done: false, edit: false, calories: 500 },
-                    }
-                }
+                items: {},
+                rest: true
             },
         }
     }
@@ -1862,7 +1780,7 @@ const MyPlansScreen = ({ }) => {
     const [newFoodModal, setNewFoodModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
 
-    const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+    const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
 
     const fetchAllExercises = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/all-exercises/`, {
@@ -1924,6 +1842,7 @@ const MyPlansScreen = ({ }) => {
             console.error('There was a problem with the fetch operation:', error);
         }
     }
+
     const GenerateWeekWorkoutPlan = async (requestBody, setError, onClose) => {
         try {
             const response = await fetch(BASE_URL + '/api/exercises/generate-workout-plan/', {
@@ -1946,10 +1865,27 @@ const MyPlansScreen = ({ }) => {
                     [plan]: data.days
                 }));
                 setPlanId(data.id);
+                Alert.alert(
+                    "Success. Your workout plan has been generated successfully.",
+                    "Be aware that this is a workout plan generated by AI and do not replace a professional support of a certified trainer.",
+                    [{ text: "I Understand!", onPress: () => { } }], { cancelable: true },
+                )
                 onClose();
                 if (requestBody.use_ai) {
                     setSelectedDay({ name: requestBody.workout_days[0], items: data.days[requestBody.workout_days[0]].items })
                 }
+                setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
+                    ...prevUserSubscriptionPlan,
+                    update: true,
+                    features: {
+                        ...prevUserSubscriptionPlan.features,
+                        workout: {
+                            ...prevUserSubscriptionPlan.features.workout,
+                            use_ai: prevUserSubscriptionPlan.features.workout.use_ai - 1
+                        }
+                    }
+                }))
+
             } else {
                 setError(true);
                 throw new Error('Failed to generate exercises');
@@ -2024,7 +1960,7 @@ const MyPlansScreen = ({ }) => {
             },
         });
         const data = await response.json();
-        setSubscriptionPlans(data);
+        setSubscriptionPlansOptions(data);
     }
     const confirmSubscriptionPlan = async () => {
         try {
@@ -2038,7 +1974,7 @@ const MyPlansScreen = ({ }) => {
             });
             const data = await response.json();
             if (response.ok) {
-                
+                setUserSubscriptionPlan(data.plan.current_data);
             }
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
@@ -2183,6 +2119,20 @@ const MyPlansScreen = ({ }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
+        if (Object.keys(daysItems[plan][dayName].items[muscleGroup]).length >= userSubscriptionPlan.features[plan].max_items_per_group) {
+            Alert.alert('You need to upgrate to add more exercises.', `Max ${userSubscriptionPlan.features[plan].max_items_per_group} exercises per Muscle Group with "${userSubscriptionPlan.name}" plan.`,
+                [{
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Upgrade Plan',
+                    onPress: () => setUpdatePlanModal(true)
+                }]
+            );
+            return;
+        }
+
         setEdit(true);
 
         setDaysItems(prevDays => ({
@@ -2217,6 +2167,14 @@ const MyPlansScreen = ({ }) => {
 
         setEdit(true);
 
+        if (replace && userSubscriptionPlan.features[plan].items_alternatives[0]) {
+            if (userSubscriptionPlan.features[plan].items_alternatives[1] >= userSubscriptionPlan.features[plan].items_alternatives[2]) {
+                Alert.alert('You need to upgrate to set new Alternatives.', `Max ${userSubscriptionPlan.features[plan].items_alternatives[2]} Alternatives changes with "${userSubscriptionPlan.name}" plan.`,
+                    [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]);
+                return
+            }
+        }
+
         setDaysItems(prevDays => ({
             ...prevDays,
             [plan]: {
@@ -2230,7 +2188,22 @@ const MyPlansScreen = ({ }) => {
                 }
             }
         }));
-
+        Alert.alert('Alternative Updated!', `You need to upgrate to set new Alternatives.\nMax ${userSubscriptionPlan.features[plan].items_alternatives[2] - userSubscriptionPlan.features[plan].items_alternatives[1] - 1} Alternatives changes left with "${userSubscriptionPlan.name}" plan.`);
+        setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
+            ...prevUserSubscriptionPlan,
+            update: true,
+            features: {
+                ...prevUserSubscriptionPlan.features,
+                workout: {
+                    ...prevUserSubscriptionPlan.features.workout,
+                    items_alternatives: [
+                        userSubscriptionPlan.features.workout.items_alternatives[0],
+                        userSubscriptionPlan.features.workout.items_alternatives[1] + 1,
+                        userSubscriptionPlan.features.workout.items_alternatives[2],
+                    ]
+                }
+            }
+        }))
     };
 
     const removeMuscleGroup = (dayName, muscleGroup) => {
@@ -2254,10 +2227,26 @@ const MyPlansScreen = ({ }) => {
     };
 
     const addMuscleGroup = (dayName, muscleGroup) => {
-        if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
-            console.error(`Day: ${dayName} not found.`);
+
+        if (Object.keys(daysItems[plan][dayName].items).length >= userSubscriptionPlan.features[plan].max_groups_per_day) {
+            Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${userSubscriptionPlan.features[plan].max_groups_per_day} Muscle Groups per Day with "${userSubscriptionPlan.name}" plan.`,
+                [{
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Upgrade Plan',
+                    onPress: () => setUpdatePlanModal(true)
+                }]
+            );
             return;
         }
+        if (Object.keys(daysItems[plan][dayName].items).length === 0)
+
+            if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
+                console.error(`Day: ${dayName} not found.`);
+                return;
+            }
         setEdit(true);
         setDaysItems(prevDays => ({
             ...prevDays,
@@ -2353,8 +2342,8 @@ const MyPlansScreen = ({ }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlans={subscriptionPlans} setCompletedPaymentData={setCompletedPaymentData} />
-            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} />
+            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} />
+            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
             <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} />
 
             <ScrollView
@@ -2424,6 +2413,19 @@ const MyPlansScreen = ({ }) => {
                                 index={index}
                                 name={dayName}
                                 setSelectedTab={() => {
+                                    if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.features[plan].max_days) {
+                                        Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
+                                            [{
+                                                text: 'Cancel',
+                                                style: 'cancel'
+                                            },
+                                            {
+                                                text: 'Upgrade Plan',
+                                                onPress: () => setUpdatePlanModal(true)
+                                            }]
+                                        );
+                                        return;
+                                    }
                                     if (plan === 'workout') {
                                         setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
                                     } else {
@@ -2464,12 +2466,10 @@ const MyPlansScreen = ({ }) => {
                                                 unavailableExercises={unavailableExercises}
                                                 updateUnavailableExercises={updateUnavailableExercises}
                                                 getAlternativeExercise={getAlternativeExercise}
+                                                userSubscriptionPlan={userSubscriptionPlan}
                                             />
                                         }
-                                        ) :
-                                            <View>
-                                                <Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text>
-                                            </View>}
+                                        ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
                                     </View>
                                 )
                             }
@@ -2508,7 +2508,40 @@ const MyPlansScreen = ({ }) => {
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cancel Changes</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => { updatePlans(); setAddNewMuscleGroup(false); }}>
+                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {
+                            if (userSubscriptionPlan.features[plan].max_saves[2] < userSubscriptionPlan.features[plan].max_saves[1]) {
+                                Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
+                                    [{
+                                        text: 'Cancel',
+                                        style: 'cancel'
+                                    },
+                                    {
+                                        text: 'Upgrade Plan',
+                                        onPress: () => setUpdatePlanModal(true)
+                                    }]
+                                );
+                                return;
+                            }
+                            updatePlans();
+                            setAddNewMuscleGroup(false);
+                            if (userSubscriptionPlan.features[plan].max_saves[0]) {
+                                Alert.alert('Plan Saved', `You are able to Save more ${userSubscriptionPlan.features[plan].max_saves[2] - userSubscriptionPlan.features[plan].max_saves[1]} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
+                                setUserSubscriptionPlan(prevState => {
+                                    const updatedFeatures = { ...prevState.features };
+                                    const maxSaves = [...updatedFeatures[plan].max_saves];
+                                    maxSaves[1] += 1;
+                                    updatedFeatures[plan] = {
+                                        ...updatedFeatures[plan],
+                                        max_saves: maxSaves,
+                                    };
+                                    return {
+                                        ...prevState,
+                                        update: true,
+                                        features: updatedFeatures,
+                                    };
+                                });
+                            }
+                        }}>
                             <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
                         </TouchableOpacity>
 
@@ -2530,7 +2563,7 @@ const MyPlansScreen = ({ }) => {
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
                         setUpdatePlanModal(true);
                     }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Plan</Text>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
                     </TouchableOpacity>
 
                 </View>

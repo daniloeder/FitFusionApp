@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, View, Text, ActivityIndicator, Modal, Alert } from 'react-native';
-import { StripeProvider, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
-import { BASE_URL } from '@env';
-
-const PUBLISHABLE_KEY = 'pk_test_51P6fmMP5bCDI1xDhaESHnplrFIAxbAdpZjirO31Cc18qBj3em1Qpgx6VSHwI8SIf3djkZHrQThPGOeuCBS68qgOc00jbWRKKaw';
+import { View, Text, ActivityIndicator, Modal, Alert } from 'react-native';
+import { StripeProvider, useStripe } from '@stripe/stripe-react-native';
+import { BASE_URL, PUBLISHABLE_STRIPE_KEY } from '@env';
 
 const StripePayment = ({ userToken, amount, currency, item, setCompletedPaymentData }) => {
     const [clientSecret, setClientSecret] = useState(null);
@@ -83,7 +81,7 @@ const StripePayment = ({ userToken, amount, currency, item, setCompletedPaymentD
     }, []);
 
     return (
-        <StripeProvider publishableKey={PUBLISHABLE_KEY}>
+        <StripeProvider publishableKey={PUBLISHABLE_STRIPE_KEY}>
             <View style={{ alignItems: 'center', justifyContent: 'center', flex: 1 }}>
                 {isLoading ?
                     <Modal visible={true} animationType="fade" transparent={true} >

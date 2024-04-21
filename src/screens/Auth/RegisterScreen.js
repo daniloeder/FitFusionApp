@@ -115,7 +115,7 @@ function RegisterScreen({ navigation }) {
                 },
 
                 body: JSON.stringify(socialToken ? {
-                    social: true, token: socialToken, email: socialData.email, username: socialData.email.split('@')[0], name: socialData.name
+                    social: true, token: socialToken, email: socialData.email, username: 'daniloeder', name: socialData.name
                 } : {
                     social: false, email, password: !socialToken ? password : "", username, name, date_of_birth: dateOfBirth, gender
                 })

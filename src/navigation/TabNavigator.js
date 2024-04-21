@@ -12,7 +12,6 @@ import { BASE_URL } from '@env';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
-import MyPlansScreen from '../screens/MyPlansScreen/MyPlansScreen';
 import OtherUserProfileScreen from '../screens/ProfileScreen/OtherUserProfileScreen';
 import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
 import ManagePlace from '../screens/PlaceScreen/ManagePlace'
@@ -51,7 +50,6 @@ const GradientHeader = () => (
     <Rect x="0" y="0" width="100%" height="100%" fill="url(#horizontalGrad)" />
   </Svg>
 );
-
 const NavGradientBackground = () => {
   return (
     <Svg style={StyleSheet.absoluteFill}>
@@ -101,7 +99,6 @@ async function registerForPushNotificationsAsync(userToken) {
 
   const token = (await Notifications.getExpoPushTokenAsync()).data;
 
-
   try {
     const response = await fetch(BASE_URL + '/api/users/update/', {
       method: 'PATCH',
@@ -129,10 +126,70 @@ const TabNavigator = () => {
   const navigation = useNavigation();
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
-
   const [currentChat, setCurrentChat] = useState(0);
-
   const [notifications, setNotifications] = useState([]);
+
+  const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
+    type: 'free',
+    name: 'Free Plan',
+    features: {
+      workout: {
+        max: [true, 2],
+        max_items_per_group: 4,
+        max_groups_per_day: 2,
+        max_days: 5,
+        max_saves: [true, 0, 5],
+        change_indicators: false,
+        use_ai: 1,
+        items_alternatives: [true, 0, 5],
+      },
+      diet: {
+        max: [true, 1],
+        max_items_per_group: 4,
+        max_groups_per_day: 4,
+        max_days: 1,
+        max_saves: [true, 0, 5],
+        change_indicators: false,
+      },
+      add_max_feed_images: 2,
+    }
+  });
+
+  const fetchSubscriptionPlans = async (token) => {
+    try {
+      const response = await fetch(BASE_URL + '/api/users/get-subscrisption-data/', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${token}`,
+        },
+      });
+      const data = await response.json();
+      setUserSubscriptionPlan(data);
+    } catch (error) {
+      console.error('There was an error:', error);
+    }
+  };
+  const updateUserSubscriptionPlan = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/api/payments/update-subscription-data/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${userToken}`,
+        },
+        body: JSON.stringify({ subscription_data: {...userSubscriptionPlan, update: false } }),
+      });
+    } catch (error) {
+      console.error('There was an error:', error);
+    }
+  };
+  useEffect(() => {
+    if(userSubscriptionPlan.update){
+      updateUserSubscriptionPlan();
+    }
+  }, [userSubscriptionPlan]);
+
   const addNotification = (notification) => {
     setNotifications(currentNotifications => [...currentNotifications, notification]);
   };
@@ -155,6 +212,7 @@ const TabNavigator = () => {
               if (id && token) {
                 setUserToken(token);
                 registerForPushNotificationsAsync(token);
+                fetchSubscriptionPlans(token);
               } else {
                 navigation.navigate('Auth', { screen: 'LoginScreen' });
               }
@@ -185,7 +243,7 @@ const TabNavigator = () => {
 
     // This listener is fired whenever a notification is received while the app is foregrounded
     Notifications.addNotificationReceivedListener(notification => {
-      
+
     });
 
     // This listener is fired whenever a user taps on or interacts with a notification
@@ -200,7 +258,6 @@ const TabNavigator = () => {
   }, [currentChat]);
 
   useEffect(() => {
-
     Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
@@ -221,7 +278,7 @@ const TabNavigator = () => {
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <GlobalProvider userToken={userToken} addNotification={addNotification} markAllAsRead={markAllAsRead} setCurrentChat={setCurrentChat}>
+    <GlobalProvider userToken={userToken} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification} markAllAsRead={markAllAsRead} setCurrentChat={setCurrentChat}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
@@ -394,16 +451,6 @@ const TabNavigator = () => {
           name="Profile"
           initialParams={{ userToken, id: false }}
           component={ProfileScreen}
-          options={({ navigation }) => ({
-            tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          })
-          }
-        />
-        <Tab.Screen
-          name="MyPlansScreen"
-          initialParams={{ userToken, id: false }}
-          component={MyPlansScreen}
           options={({ navigation }) => ({
             tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
