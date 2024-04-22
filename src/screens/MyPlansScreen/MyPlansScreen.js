@@ -12,6 +12,8 @@ const width = Dimensions.get('window').width;
 const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100 }) => {
     const styles = StyleSheet.create({
         dayContainer: {
+            flex: 1,
+            maxHeight: width*0.2,
             backgroundColor: isSelected ? '#FFF' : '#DDD',
             padding: width * 0.01,
             borderTopLeftRadius: width * 0.01,
@@ -23,7 +25,6 @@ const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100 }) =
         },
         dayText: {
             color: '#1C274C',
-            fontSize: width * 0.035,
             fontWeight: 'bold',
         },
     });
@@ -31,7 +32,10 @@ const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100 }) =
     return (
         <TouchableOpacity onPress={setSelectedTab} style={{ width: TabSize }} activeOpacity={1}>
             <View style={styles.dayContainer}>
-                <Text style={styles.dayText}>{name}</Text>
+                <Text style={styles.dayText}
+                    adjustsFontSizeToFit={true}
+                    numberOfLines={2}
+                >{name}</Text>
             </View>
         </TouchableOpacity>
     );
