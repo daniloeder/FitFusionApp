@@ -708,6 +708,7 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
 }
 
 const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises }) => {
+    const [search, setSearch] = useState('');
 
     return (
         <View style={{ width: '100%' }}>
@@ -717,7 +718,15 @@ const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, 
                 showsHorizontalScrollIndicator={false}
             >
                 <View style={styles.addExercisesListContainer}>
-                    {exercises.length > 0 ? exercises.map((exercise, index) => {
+                    <View style={styles.searchInputContainer}>
+                        <Icons name="Search" fill={"#000"} size={width * 0.05} />
+                        <TextInput
+                            style={searchInput}
+                            placeholder="Search"
+                            onChangeText={text => setSearch(text)}
+                        />
+                    </View>
+                    {exercises.length > 0 ? exercises.filter(exercise => exercise.title.toLowerCase().includes(search.toLowerCase())).map((exercise, index) => {
                         return (
                             <ExerciseItem
                                 key={index}
@@ -1577,8 +1586,8 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
         }
     }, [plans])
 
-    useEffect(()=>{
-        if(!updatePlanModal){
+    useEffect(() => {
+        if (!updatePlanModal) {
             onClose();
         }
     }, [updatePlanModal]);
@@ -1983,7 +1992,7 @@ const MyPlansScreen = ({ }) => {
             });
             const data = await response.json();
             if (response.ok) {
-                setUserSubscriptionPlan({...data.plan.current_data, plan_id: data.plan.plan});
+                setUserSubscriptionPlan({ ...data.plan.current_data, plan_id: data.plan.plan });
                 setUpdatePlanModal(false);
                 Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
             }
@@ -2716,6 +2725,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         width: width * 3,
+    },
+    searchInputContainer: {
+        width: width * 0.5,
+        height: width * 0.07,
+        borderRadius: 5,
+        backgroundColor: '#ddd',
+        paddingHorizontal: 10,
+        margin: width*0.01,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    searchInput: {
+        width: '85%',
+        color: '#000',
+        fontWeight: 'bold',
+        marginLeft: 10,
     },
     addMuscleGroupButton: {
         width: '80%',
