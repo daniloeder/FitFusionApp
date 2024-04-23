@@ -721,7 +721,7 @@ const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, 
                     <View style={styles.searchInputContainer}>
                         <Icons name="Search" fill={"#000"} size={width * 0.05} />
                         <TextInput
-                            style={searchInput}
+                            style={styles.searchInput}
                             placeholder="Search"
                             onChangeText={text => setSearch(text)}
                         />
@@ -1217,7 +1217,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     )
 }
 
-const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
+const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscriptionPlan }) => {
     const [foodName, setFoodName] = useState('');
     const [foodAmount, setFoodAmount] = useState(0);
     const [foodCalories, setFoodCalories] = useState(0);
@@ -1226,6 +1226,8 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
     const allMeals = ['breakfast', 'lunch', 'dinner', 'snack', 'pre_workout', 'post_workout'];
     const allMealsNames = { 'breakfast': "Breakfast", 'lunch': "Lunch", 'dinner': "Dinner", 'snack': "Snack", 'pre_workout': "Pre Workout", 'post_workout': "Post Workout" };;
     const [meals, setMeals] = useState([]);
+
+    const add_custom_food = !userSubscriptionPlan.features.diet.add_custom_food[0] || userSubscriptionPlan.features.diet.add_custom_food[1] < userSubscriptionPlan.features.diet.add_custom_food[2]
 
     const onClose = () => {
         setNewFoodModal(false);
@@ -1336,7 +1338,9 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
                                 selectedOptions={meals}
                                 setSelectedItem={setMeals}
                             />
-                        </>}
+                        </>
+                    }
+                    {!add_custom_food && <Text style={{color:'#FF0000',fontSize:10,fontWeight:'bold',marginLeft:'2%'}}>* You need to upgrade your subscription to add custom food.</Text>}
                     <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                         {status === "none" && <TouchableOpacity style={[styles.addButton, { backgroundColor: '#4CAF50' }]} onPress={() => {
                             if (foodName === '') {
@@ -1346,6 +1350,10 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
                             } else if (meals.length === 0) {
                                 Alert.alert("Error", "Please select at least one meal.");
                             } else {
+                                if(!add_custom_food){
+                                    Alert.alert("Error", "You need to upgrade your subscription to add custom food.");
+                                    return;
+                                }
                                 setStatus('creating');
                                 createFood({ "title": foodName, "amount": foodAmount, "calories": foodCalories, "meals": meals }, setStatus);
                             }
@@ -1366,7 +1374,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
 
 const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData, currentPlanId }) => {
     const [status, setStatus] = useState('plans');
-    const allPlans = subscriptionPlansOptions.filter(plan => plan.price > 1 && currentPlanId !== plan.id).map(plan => plan.id);
+    const allPlans = subscriptionPlansOptions.filter(plan => plan.price >= 1 && currentPlanId !== plan.id).map(plan => plan.id);
     const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
         return obj;
@@ -2364,7 +2372,7 @@ const MyPlansScreen = ({ }) => {
 
             <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
-            <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} />
+            <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
 
             <ScrollView
                 style={styles.contentContainer}
@@ -2732,7 +2740,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: '#ddd',
         paddingHorizontal: 10,
-        margin: width*0.01,
+        margin: width * 0.01,
         flexDirection: 'row',
         alignItems: 'center',
     },
