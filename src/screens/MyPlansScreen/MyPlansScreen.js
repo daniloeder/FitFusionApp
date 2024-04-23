@@ -13,7 +13,7 @@ const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100 }) =
     const styles = StyleSheet.create({
         dayContainer: {
             flex: 1,
-            maxHeight: width*0.2,
+            maxHeight: width * 0.2,
             backgroundColor: isSelected ? '#FFF' : '#DDD',
             padding: width * 0.01,
             borderTopLeftRadius: width * 0.01,
@@ -1355,9 +1355,9 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
     )
 };
 
-const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData }) => {
+const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData, currentPlanId }) => {
     const [status, setStatus] = useState('plans');
-    const allPlans = subscriptionPlansOptions.map(plan => plan.id);
+    const allPlans = subscriptionPlansOptions.filter(plan => plan.price > 2 && currentPlanId !== plan.id).map(plan => plan.id);
     const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
         return obj;
@@ -1372,8 +1372,8 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
         setStatus('plans');
         setUseCreditCard(false);
         setUpdatePlanModal(false);
+        setPlans([]);
     };
-
     const PricePlanTable = () => {
 
         const styles = StyleSheet.create({
@@ -1389,7 +1389,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
                 backgroundColor: '#fff',
                 borderRadius: 8,
                 margin: 5,
-                padding: 3,
+                padding: 1,
                 marginHorizontal: 4,
                 elevation: 4,
                 shadowColor: '#000',
@@ -1411,10 +1411,14 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
             },
             planDescription: {
                 fontSize: 10,
+                fontWeight: 'bold',
                 marginBottom: 8,
             },
             planBenefits: {
                 marginTop: 5,
+                padding: 2,
+                borderRadius: 8,
+                backgroundColor: '#555',
             },
         });
 
@@ -1425,12 +1429,15 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
                         <Text style={styles.planTitle}>{plan.name}</Text>
                         <Text style={styles.planPrice}>${plan.price} {plan.currency}</Text>
                         <View style={styles.planBenefits}>
-                            {plan.details && plan.details.map((benefit) => (
-                                <Text key={benefit} style={styles.planDescription}>
-                                    ✓ {benefit}
-                                </Text>
-                            ))}
+                            {plan.benefits && plan.benefits.map((benefit) => {
+                                return (
+                                    <Text key={benefit} style={[styles.planDescription, { color: ['#FF0000', '#FF7F00', '#FFFF00', '#B2FF59', '#00FF00'][benefit[0]] }]}>
+                                        ✓ {benefit[1]}
+                                    </Text>
+                                )
+                            })}
                         </View>
+                        {currentPlanId === plan.id && <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 13, color: '#888' }}>Current</Text>}
                     </View>
                 ))}
             </View>
@@ -1563,23 +1570,18 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
             fontWeight: 'bold',
         },
     });
-    if (status === 'success') {
-        Alert.alert(
-            'Success!', 'Your plan has been updated!'
-        );
-        onClose();
-    } else if (status === 'error') {
-        Alert.alert(
-            'Error!', 'There was an error updating your plan.'
-        );
-        setStatus('creditCard');
-    }
 
     useEffect(() => {
         if (useCreditCard) {
             setUseCreditCard(plans.length > 0);
         }
     }, [plans])
+
+    useEffect(()=>{
+        if(!updatePlanModal){
+            onClose();
+        }
+    }, [updatePlanModal]);
 
     return (
         <Modal
@@ -1626,6 +1628,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
 };
 
 const MyPlansScreen = ({ }) => {
+
     const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
 
     const [plan, setPlan] = useState('workout');
@@ -1869,11 +1872,13 @@ const MyPlansScreen = ({ }) => {
                     [plan]: data.days
                 }));
                 setPlanId(data.id);
-                Alert.alert(
-                    "Success. Your workout plan has been generated successfully.",
-                    "Be aware that this is a workout plan generated by AI and do not replace a professional support of a certified trainer.",
-                    [{ text: "I Understand!", onPress: () => { } }], { cancelable: true },
-                )
+                if (requestBody.use_ai) {
+                    Alert.alert(
+                        "Success. Your workout plan has been generated successfully.",
+                        "Be aware that this is a workout plan generated by AI and do not replace a professional support of a certified trainer.",
+                        [{ text: "I Understand!", onPress: () => { } }], { cancelable: true },
+                    )
+                }
                 onClose();
                 if (requestBody.use_ai) {
                     setSelectedDay({ name: requestBody.workout_days[0], items: data.days[requestBody.workout_days[0]].items })
@@ -1978,7 +1983,9 @@ const MyPlansScreen = ({ }) => {
             });
             const data = await response.json();
             if (response.ok) {
-                setUserSubscriptionPlan(data.plan.current_data);
+                setUserSubscriptionPlan({...data.plan.current_data, plan_id: data.plan.plan});
+                setUpdatePlanModal(false);
+                Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
             }
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
@@ -2341,12 +2348,13 @@ const MyPlansScreen = ({ }) => {
 
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
+    //console.log(userSubscriptionPlan)
 
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} />
+            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
             <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} />
 

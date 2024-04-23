@@ -165,7 +165,9 @@ const TabNavigator = () => {
         },
       });
       const data = await response.json();
-      setUserSubscriptionPlan(data);
+      if (data.plan){
+        setUserSubscriptionPlan({ ...data.current_data, plan_id: data.plan });
+      }
     } catch (error) {
       console.error('There was an error:', error);
     }
@@ -178,14 +180,14 @@ const TabNavigator = () => {
           'Content-Type': 'application/json',
           Authorization: `Token ${userToken}`,
         },
-        body: JSON.stringify({ subscription_data: {...userSubscriptionPlan, update: false } }),
+        body: JSON.stringify({ subscription_data: { ...userSubscriptionPlan, update: false } }),
       });
     } catch (error) {
       console.error('There was an error:', error);
     }
   };
   useEffect(() => {
-    if(userSubscriptionPlan.update){
+    if (userSubscriptionPlan.update) {
       updateUserSubscriptionPlan();
     }
   }, [userSubscriptionPlan]);
