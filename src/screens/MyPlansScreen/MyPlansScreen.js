@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator, Settings } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -893,6 +894,14 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     const [newTrainingComment, setNewTrainingComment] = useState('');
 
     const onClose = () => {
+        setTrainingName('');
+        setRest(['medium']);
+        setWorkoutType(['gym']);
+        setFocus([]);
+        setAvoid([]);
+        setGoals([]);
+        setDietGoals([]);
+        setNewTrainingComment('');
         setNewTrainingModal(false);
     }
     const styles = StyleSheet.create({
@@ -1340,7 +1349,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
                             />
                         </>
                     }
-                    {!add_custom_food && <Text style={{color:'#FF0000',fontSize:10,fontWeight:'bold',marginLeft:'2%'}}>* You need to upgrade your subscription to add custom food.</Text>}
+                    {!add_custom_food && <Text style={{ color: '#FF0000', fontSize: 10, fontWeight: 'bold', marginLeft: '2%' }}>* You need to upgrade your subscription to add custom food.</Text>}
                     <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
                         {status === "none" && <TouchableOpacity style={[styles.addButton, { backgroundColor: '#4CAF50' }]} onPress={() => {
                             if (foodName === '') {
@@ -1350,7 +1359,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
                             } else if (meals.length === 0) {
                                 Alert.alert("Error", "Please select at least one meal.");
                             } else {
-                                if(!add_custom_food){
+                                if (!add_custom_food) {
                                     Alert.alert("Error", "You need to upgrade your subscription to add custom food.");
                                     return;
                                 }
@@ -1644,6 +1653,119 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
     )
 };
 
+const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrainingPlan, setPlans, updatePlans }) => {
+    const [title, setTitle] = useState("");
+    const onClose = () => {
+        setSettings(false);
+    }
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        section: {
+            width: '96%',
+            backgroundColor: '#ddd',
+            borderRadius: 10,
+            padding: 10,
+            marginVertical: width * 0.2,
+        },
+        title: {
+            fontSize: 24,
+            fontWeight: 'bold',
+            marginBottom: 12,
+        },
+        trainCompleteButton: {
+            padding: width * 0.02,
+            borderRadius: width * 0.025,
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        confirmButton: {
+            width: '20%',
+            height: 40,
+            marginTop: 12,
+            backgroundColor: '#AAA',
+            borderRadius: 5,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginLeft: 'auto',
+        },
+        confirmButtonText: {
+            fontSize: 15,
+            fontWeight: 'bold',
+            color: '#fff',
+        },
+    });
+
+    return (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={settings}
+            onRequestClose={onClose}
+        >
+            <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                <View style={styles.container}>
+                    <View style={styles.section}>
+                        <Text style={styles.title}>Settings</Text>
+                        <TextInput
+                            style={{
+                                width: '100%',
+                                height: 40,
+                                backgroundColor: '#fff',
+                                borderRadius: 5,
+                                paddingLeft: 10,
+                                marginBottom: 10,
+                            }}
+                            placeholder="Workout Title"
+                            onChangeText={text => setTitle(text)}
+                            defaultValue={plans[plan].find(plan => plan.id === planId).name}
+                        />
+
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#888', marginTop: 5 }]} onPress={() => {
+                                onClose();
+                            }}>
+                                <Text style={styles.confirmButtonText}>Close</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
+                                Alert.alert("Confirm Deletion", "Are you sure you want to delete this workout plan?",
+                                    [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => { removeTrainingPlan(planId); onClose(); } }]);
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "Delete Workout" : "Delete Diet"}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', marginTop: 5 }]} onPress={() => {
+                                setPlans(prevPlans => {
+                                    const updatedPlans = { ...prevPlans };
+
+                                    updatedPlans[plan].forEach(plan => {
+                                        if (plan.id === planId) {
+                                            plan.name = title;
+                                        }
+                                    });
+
+                                    return updatedPlans;
+                                });
+                                updatePlans();
+                                onClose();
+                            }}>
+                                <Text style={styles.confirmButtonText}>Set Changes</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </ScrollView>
+        </Modal>
+    )
+}
+
 const MyPlansScreen = ({ }) => {
 
     const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
@@ -1806,6 +1928,8 @@ const MyPlansScreen = ({ }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
 
+    const [setting, setSettings] = useState(false);
+
     const fetchAllExercises = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/all-exercises/`, {
             method: 'GET',
@@ -1830,6 +1954,39 @@ const MyPlansScreen = ({ }) => {
     }
 
     const updatePlans = async () => {
+        if (userSubscriptionPlan.features[plan].max_saves[2] < userSubscriptionPlan.features[plan].max_saves[1]) {
+            Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
+                [{
+                    text: 'Cancel',
+                    style: 'cancel'
+                },
+                {
+                    text: 'Upgrade Plan',
+                    onPress: () => setUpdatePlanModal(true)
+                }]
+            );
+            return;
+        }
+        setAddNewMuscleGroup(false);
+        const maxSaves = userSubscriptionPlan.features[plan].max_saves[2] - userSubscriptionPlan.features[plan].max_saves[1]
+        if (userSubscriptionPlan.features[plan].max_saves[0] && maxSaves < 10) {
+            Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
+            setUserSubscriptionPlan(prevState => {
+                const updatedFeatures = { ...prevState.features };
+                const maxSaves = [...updatedFeatures[plan].max_saves];
+                maxSaves[1] += 1;
+                updatedFeatures[plan] = {
+                    ...updatedFeatures[plan],
+                    max_saves: maxSaves,
+                };
+                return {
+                    ...prevState,
+                    update: true,
+                    features: updatedFeatures,
+                };
+            });
+        }
+
         try {
             const response = await fetch(BASE_URL + `/api/exercises/${plan === "workout" ? "training-plans" : "diet-plans"}/${planId}/`, {
                 method: 'PUT',
@@ -1837,7 +1994,7 @@ const MyPlansScreen = ({ }) => {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ "days": daysItems[plan] })
+                body: JSON.stringify({ "days": daysItems[plan], "name": selectedPlan.name })
             });
             const data = await response.json();
 
@@ -1859,8 +2016,8 @@ const MyPlansScreen = ({ }) => {
                 },
             });
             if (response.ok && response.status === 204) {
-                setPlans(prevPlans => ({ ...prevPlans, [plan]: plans[plan].filter(plan => plan.id !== training_id) }));
-                setPlanId(plans[plan].find(plan => plan.id !== training_id).id);
+                setPlans(prevPlans => ({ ...prevPlans, [plan]: plans[plan].length > 1 ? plans[plan].filter(plan => plan.id !== training_id) : null }));
+                setPlanId(plans[plan].length > 1 ? plans[plan].find(plan => plan.id !== training_id).id : null);
             }
         } catch (error) {
             console.error('There was a problem with the fetch operation:', error);
@@ -1895,11 +2052,9 @@ const MyPlansScreen = ({ }) => {
                         "Be aware that this is a workout plan generated by AI and do not replace a professional support of a certified trainer.",
                         [{ text: "I Understand!", onPress: () => { } }], { cancelable: true },
                     )
-                }
-                onClose();
-                if (requestBody.use_ai) {
                     setSelectedDay({ name: requestBody.workout_days[0], items: data.days[requestBody.workout_days[0]].items })
                 }
+                onClose();
                 setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
                     ...prevUserSubscriptionPlan,
                     update: true,
@@ -1907,7 +2062,7 @@ const MyPlansScreen = ({ }) => {
                         ...prevUserSubscriptionPlan.features,
                         workout: {
                             ...prevUserSubscriptionPlan.features.workout,
-                            use_ai: prevUserSubscriptionPlan.features.workout.use_ai - 1
+                            use_ai: prevUserSubscriptionPlan.features.workout.use_ai - (requestBody.use_ai ? 1 : 0)
                         }
                     }
                 }))
@@ -2366,13 +2521,18 @@ const MyPlansScreen = ({ }) => {
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
+    const selectedPlan = plans[plan] && plans[plan].find(plan => plan.id === planId);
+
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
             <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
-            <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
+            {selectedPlan && <>
+                <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
+                <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
+            </>}
 
             <ScrollView
                 style={styles.contentContainer}
@@ -2392,7 +2552,7 @@ const MyPlansScreen = ({ }) => {
                                 name={planOption.plan_name}
                                 setSelectedTab={() => {
                                     setPlan(planOption.plan_id);
-                                    if (plans[planOption.plan_id]) {
+                                    if (plans[planOption.plan_id].length) {
                                         setPlanId(plans[planOption.plan_id][0].id);
                                         setDaysItems(prevDays => ({
                                             ...prevDays,
@@ -2429,164 +2589,134 @@ const MyPlansScreen = ({ }) => {
                                 TabSize={width * 0.89 / plans[plan].length * 0.9}
                             />
                         )}
+
+                        {selectedPlan && <TouchableOpacity style={{ position: 'absolute', right: 2, top: 8, alignItems: 'center', justifyContent: 'center', padding: 6, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.5)' }} onPress={() => {
+                            setSettings(true);
+                        }}>
+                            <Icons name="Edit" size={15} />
+                        </TouchableOpacity>}
                     </View>
 
-                    <View style={styles.headerSectionContent}>
-                        {plans[plan] && Object.entries(daysItems[plan]).sort((a, b) => {
-                            const order = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                            return order.indexOf(a[0]) - order.indexOf(b[0]);
-                        }).map(([dayName, dayDetails], index) =>
-                            <Tabs
-                                key={index}
-                                index={index}
-                                name={dayName}
-                                setSelectedTab={() => {
-                                    if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.features[plan].max_days) {
-                                        Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
-                                            [{
-                                                text: 'Cancel',
-                                                style: 'cancel'
-                                            },
-                                            {
-                                                text: 'Upgrade Plan',
-                                                onPress: () => setUpdatePlanModal(true)
-                                            }]
-                                        );
-                                        return;
-                                    }
-                                    if (plan === 'workout') {
-                                        setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
-                                    } else {
-                                        setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
-                                    }
-                                }}
-                                isSelected={selectedDay && selectedDay.name === dayName.slice(0, 3)}
-                                len={7}
-                                TabSize={width * 0.89 / 7}
-                            />
-                        )}
-                    </View>
-
-                    <View>
-                        {selectedDay && allItems[plan] && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
-                            if (selectedDay.name === dayName.slice(0, 3)) {
-                                return (
-                                    <View key={dayName}>
-                                        {Object.keys(dayInfo.items).length > 0 ? Object.entries(dayInfo.items).map(([muscleGroup, exercises_list]) => {
-                                            return <TrainingMember key={muscleGroup} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
-                                                exercises={
-                                                    Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
-                                                        return { ...exerciseDetails, item_id: exerciseId, title: allItems[plan][exerciseId].title }
-                                                    }).filter(Boolean)
-                                                }
-                                                allExercises={allItems[plan] ?
-                                                    Object.values(allItems[plan])
-                                                        .filter(exercise => {
-                                                            return exercise.item_groups.some(group => group.group_id === muscleGroup)
-                                                        })
-                                                    : []
-                                                }
-                                                addExercise={addExercise}
-                                                removeExercise={removeExercise}
-                                                removeMuscleGroup={removeMuscleGroup}
-                                                updateExerciseDone={updateExerciseDone}
-                                                updateExerciseSetsDone={updateExerciseSetsDone}
-                                                unavailableExercises={unavailableExercises}
-                                                updateUnavailableExercises={updateUnavailableExercises}
-                                                getAlternativeExercise={getAlternativeExercise}
-                                                userSubscriptionPlan={userSubscriptionPlan}
-                                            />
+                    {selectedPlan && <>
+                        <View style={styles.headerSectionContent}>
+                            {plans[plan] && Object.entries(daysItems[plan]).sort((a, b) => {
+                                const order = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                return order.indexOf(a[0]) - order.indexOf(b[0]);
+                            }).map(([dayName, dayDetails], index) =>
+                                <Tabs
+                                    key={index}
+                                    index={index}
+                                    name={dayName}
+                                    setSelectedTab={() => {
+                                        if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.features[plan].max_days) {
+                                            Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
+                                                [{
+                                                    text: 'Cancel',
+                                                    style: 'cancel'
+                                                },
+                                                {
+                                                    text: 'Upgrade Plan',
+                                                    onPress: () => setUpdatePlanModal(true)
+                                                }]
+                                            );
+                                            return;
                                         }
-                                        ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
-                                    </View>
-                                )
-                            }
-                        })}
-                    </View>
+                                        if (plan === 'workout') {
+                                            setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
+                                        } else {
+                                            setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
+                                        }
+                                    }}
+                                    isSelected={selectedDay && selectedDay.name === dayName.slice(0, 3)}
+                                    len={7}
+                                    TabSize={width * 0.89 / 7}
+                                />
+                            )}
+                        </View>
 
-                    {plans[plan] && <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
-                        {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "workout" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
-                            updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(plan, selectedDay.name));
-                        }}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
-                        </TouchableOpacity>}
-                        {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "diet" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
-                            setNewFoodModal(true);
-                        }}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Custom Food Option</Text>
-                        </TouchableOpacity>}
-                        <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: '#6495ED' }]} onPress={() => setAddNewMuscleGroup(!addNewMuscleGroup)}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "Add Muscle Group" : "Add New Meal"}</Text>
-                        </TouchableOpacity>
-                    </View>}
+                        <View>
+                            {selectedDay && allItems[plan] && selectedPlan && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
+                                if (selectedDay.name === dayName.slice(0, 3)) {
+                                    return (
+                                        <View key={dayName}>
+                                            {Object.keys(dayInfo.items).length > 0 ? Object.entries(dayInfo.items).map(([muscleGroup, exercises_list]) => {
+                                                return <TrainingMember key={muscleGroup} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
+                                                    exercises={
+                                                        Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
+                                                            return { ...exerciseDetails, item_id: exerciseId, title: allItems[plan][exerciseId].title }
+                                                        }).filter(Boolean)
+                                                    }
+                                                    allExercises={allItems[plan] ?
+                                                        Object.values(allItems[plan])
+                                                            .filter(exercise => {
+                                                                return exercise.item_groups.some(group => group.group_id === muscleGroup)
+                                                            })
+                                                        : []
+                                                    }
+                                                    addExercise={addExercise}
+                                                    removeExercise={removeExercise}
+                                                    removeMuscleGroup={removeMuscleGroup}
+                                                    updateExerciseDone={updateExerciseDone}
+                                                    updateExerciseSetsDone={updateExerciseSetsDone}
+                                                    unavailableExercises={unavailableExercises}
+                                                    updateUnavailableExercises={updateUnavailableExercises}
+                                                    getAlternativeExercise={getAlternativeExercise}
+                                                    userSubscriptionPlan={userSubscriptionPlan}
+                                                />
+                                            }
+                                            ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
+                                        </View>
+                                    )
+                                }
+                            })}
+                        </View>
 
-                    {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                        Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
-                    } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
+                        {plans[plan] && <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }}>
+                            {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "workout" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
+                                updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(plan, selectedDay.name));
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
+                            </TouchableOpacity>}
+                            {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "diet" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
+                                setNewFoodModal(true);
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Add Custom Food Option</Text>
+                            </TouchableOpacity>}
+                            <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: '#6495ED' }]} onPress={() => setAddNewMuscleGroup(!addNewMuscleGroup)}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "Add Muscle Group" : "Add New Meal"}</Text>
+                            </TouchableOpacity>
+                        </View>}
 
-                    {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
-                            setDaysItems(prevDays => ({
-                                ...prevDays,
-                                [plan]: plans[plan].find(plan => plan.id === planId).days
-                            }));
-                            setEdit(false);
-                            setAddNewMuscleGroup(false);
-                        }}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cancel Changes</Text>
-                        </TouchableOpacity>
+                        {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
+                            Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
+                        } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {
-                            if (userSubscriptionPlan.features[plan].max_saves[2] < userSubscriptionPlan.features[plan].max_saves[1]) {
-                                Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
-                                    [{
-                                        text: 'Cancel',
-                                        style: 'cancel'
-                                    },
-                                    {
-                                        text: 'Upgrade Plan',
-                                        onPress: () => setUpdatePlanModal(true)
-                                    }]
-                                );
-                                return;
-                            }
-                            updatePlans();
-                            setAddNewMuscleGroup(false);
-                            if (userSubscriptionPlan.features[plan].max_saves[0]) {
-                                Alert.alert('Plan Saved', `You are able to Save more ${userSubscriptionPlan.features[plan].max_saves[2] - userSubscriptionPlan.features[plan].max_saves[1]} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
-                                setUserSubscriptionPlan(prevState => {
-                                    const updatedFeatures = { ...prevState.features };
-                                    const maxSaves = [...updatedFeatures[plan].max_saves];
-                                    maxSaves[1] += 1;
-                                    updatedFeatures[plan] = {
-                                        ...updatedFeatures[plan],
-                                        max_saves: maxSaves,
-                                    };
-                                    return {
-                                        ...prevState,
-                                        update: true,
-                                        features: updatedFeatures,
-                                    };
-                                });
-                            }
-                        }}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
-                        </TouchableOpacity>
+                        {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#BDBDBD', flex: 1, marginRight: 5 }]} onPress={() => {
+                                setDaysItems(prevDays => ({
+                                    ...prevDays,
+                                    [plan]: plans[plan].find(plan => plan.id === planId).days
+                                }));
+                                setEdit(false);
+                                setAddNewMuscleGroup(false);
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Cancel Changes</Text>
+                            </TouchableOpacity>
 
-                    </View>}
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {
+                                updatePlans();
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
+                            </TouchableOpacity>
 
+                        </View>}
+
+                    </>}
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
                         setNewTrainingModal(true);
                     }}>
                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout Plan" : "New Diet Plan"}</Text>
                     </TouchableOpacity>
-
-                    {plans[plan] && plans[plan].length > 1 && <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
-                        Alert.alert("Confirm Deletion", "Are you sure you want to delete this training plan?",
-                            [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => removeTrainingPlan(planId) }]);
-                    }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Delete Train</Text>
-                    </TouchableOpacity>}
 
                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
                         setUpdatePlanModal(true);
