@@ -1357,7 +1357,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood }) => {
 
 const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData, currentPlanId }) => {
     const [status, setStatus] = useState('plans');
-    const allPlans = subscriptionPlansOptions.filter(plan => plan.price > 2 && currentPlanId !== plan.id).map(plan => plan.id);
+    const allPlans = subscriptionPlansOptions.filter(plan => plan.price > 1 && currentPlanId !== plan.id).map(plan => plan.id);
     const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
         return obj;
@@ -2348,7 +2348,6 @@ const MyPlansScreen = ({ }) => {
 
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
-    //console.log(userSubscriptionPlan)
 
     return (
         <View style={styles.container}>

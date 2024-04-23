@@ -67,7 +67,11 @@ const StripePayment = ({ userToken, amount, currency, item, setCompletedPaymentD
                 return;
             }
 
-            await presentPaymentSheet();
+            const paymentResponse = await presentPaymentSheet();
+            
+            if (paymentResponse.error) {
+                return;
+            }
 
             setCompletedPaymentData(intentData);
 
