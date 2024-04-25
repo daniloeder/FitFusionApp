@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator, Settings } from 'react-native';
+import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator, Button } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useGlobalContext } from './../../services/GlobalContext';
+import UsersBall from '../../components/UsersBall/UsersBall';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
-import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
-const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100 }) => {
+const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100, textColor = "#1C274C", selectedColor = "#FFF", unselectedColor = "#DDD" }) => {
     const styles = StyleSheet.create({
         dayContainer: {
             flex: 1,
             maxHeight: width * 0.2,
-            backgroundColor: isSelected ? '#FFF' : '#DDD',
+            backgroundColor: isSelected ? selectedColor : unselectedColor,
             padding: width * 0.01,
             borderTopLeftRadius: width * 0.01,
             borderTopEndRadius: width * 0.045,
             borderBottomLeftRadius: index == 0 ? width * 0.02 : 0,
             borderBottomEndRadius: index == len - 1 ? width * 0.008 : 0,
             borderBottomWidth: width * 0.03,
-            borderBottomColor: '#FFF',
+            borderBottomColor: selectedColor,
         },
         dayText: {
-            color: '#1C274C',
+            color: textColor,
             fontWeight: 'bold',
         },
     });
@@ -1766,6 +1766,239 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
+const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
+
+    const [members, setMembers] = useState([]);
+    const [personalRooms, setPersonalRooms] = useState([]);
+    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [selectedMemberId, setSelectedMemberId] = useState(null);
+
+    const fetchUserProfileImages = async (participants) => {
+        if (participants.length) {
+            try {
+                const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+                const data = await response.json();
+                if (response.ok) {
+                    setMembers(prevMembers => {
+                        const updatedMembers = [...prevMembers];
+                        for (const member of data) {
+                            const index = updatedMembers.map(user => user.id).indexOf(parseInt(member.user_id));
+                            updatedMembers[index].profile_image = member.profile_image;
+                        }
+                        return updatedMembers;
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching user profile images:', error);
+            }
+        }
+    };
+
+    const fetchPersonalData = async () => {
+        const response = await fetch(BASE_URL + '/api/exercises/personal-rooms/1/', {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Token ' + userToken,
+                'Content-Type': 'application/json'
+            },
+        });
+
+        const data = await response.json();
+        setPersonalRooms(data);
+    }
+
+    useEffect(() => {
+        fetchPersonalData();
+    }, []);
+    useEffect(() => {
+        if (personalRooms.length > 0) {
+            if (!selectedRoom) {
+                setSelectedRoom(personalRooms[0]);
+            }
+            let new_members = [];
+            for (const room of personalRooms) {
+                for (const member of room.members) {
+                    if (!members.map(user => user.id).includes(member.id) && !new_members.map(user => user.id).includes(member.id)) {
+                        new_members = [...new_members, member];
+                    }
+                }
+            }
+            setMembers([...members, ...new_members]);
+        }
+    }, [personalRooms]);
+
+    useEffect(() => {
+        if (members.length > 0) {
+            const members_without_image = members.filter(member => {
+                return member.profile_image === undefined
+            }).map(member => {
+                return member.id
+            })
+            if (members_without_image.length > 0) {
+                fetchUserProfileImages(members_without_image);
+            }
+        }
+    }, [members]);
+
+    const styles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+        },
+        section: {
+            width: '96%',
+            minHeight: '70%',
+            backgroundColor: 'rgba(26, 32, 44, 0.7)',
+            borderRadius: 10,
+            borderWidth: 2,
+            borderColor: '#DDD',
+            padding: 5,
+            marginVertical: width * 0.2,
+            alignItems: 'center',
+        },
+        title: {
+            fontSize: 18,
+            fontWeight: 'bold',
+            color: '#FFF',
+        },
+        usersContainer: {
+            maxWidth: width * 2,
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-start',
+        },
+        userButtons: {
+            padding: 4,
+            borderRadius: 5,
+            margin: 3
+        }
+    });
+    const onClose = () => {
+        setPersonal(false);
+    }
+    if (!personal) {
+        return (
+            <TouchableOpacity
+                style={{
+                    position: 'absolute',
+                    right: 20,
+                    top: 20,
+                    width: width * 0.12,
+                    height: width * 0.12,
+                    borderRadius: width * 0.06,
+                    backgroundColor: '#FFF',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    zIndex: 1
+                }}
+                onPress={() => setPersonal(true)}
+            >
+                <Icons name="Paste" size={width * 0.08} />
+            </TouchableOpacity>
+        )
+    }
+    const selectedMember = selectedMemberId && members.find(member => member.id === selectedMemberId);
+
+    STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
+
+    return (
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={personal}
+            onRequestClose={onClose}
+        >
+            <View style={styles.container}>
+                <View style={styles.section}>
+                    <Text style={styles.title}>Paste Workout</Text>
+                    {selectedRoom && <View style={{ width: '100%' }}>
+                        <ScrollView horizontal>
+                            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40 }}>
+                                {personalRooms.map((room, index) => {
+                                    return (
+                                        <Tabs
+                                            key={index}
+                                            index={index}
+                                            name={room.name}
+                                            setSelectedTab={() => {
+                                                setSelectedRoom(room);
+                                                setSelectedMemberId(null);
+                                            }}
+                                            isSelected={room.id === selectedRoom.id}
+                                            len={personalRooms.length}
+                                            TabSize={width * 0.89 / personalRooms.length * 0.9}
+                                            textColor='#222'
+                                            selectedColor='#FFF'
+                                            unselectedColor='#DDD'
+                                        />
+                                    )
+                                })}
+                            </View>
+                        </ScrollView>
+                        <ScrollView horizontal>
+                            <View style={styles.usersContainer}>
+                                {members.filter(member => selectedRoom.members.map(member => member.id).includes(member.id)).map((member, index) =>
+                                    <UsersBall key={member.id} user={member} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                )}
+                            </View>
+                        </ScrollView>
+
+                        {selectedMemberId &&
+                            <View style={{ flexDirection: 'row', padding: 4, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.25)' }}>
+                                <UsersBall user={selectedMember} name="username" size={1.5} nameColor="#EEE" />
+                                <View style={{ marginLeft: 5, flex: 1 }}>
+                                    <Text style={{ color: '#FFF' }}>{selectedMember.name}, {selectedMember.age}</Text>
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                        {selectedMember.request.training_plan ?
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Workout</Text>
+                                            </TouchableOpacity>
+                                            :
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Workout</Text>
+                                            </TouchableOpacity>}
+                                        {selectedMember.request.diet_plan ?
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
+                                            </TouchableOpacity>
+                                            :
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Diet</Text>
+                                            </TouchableOpacity>
+                                        }
+                                        {selectedMember.request.assistance ?
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
+                                            </TouchableOpacity>
+                                            :
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
+                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Assistance</Text>
+                                            </TouchableOpacity>
+                                        }
+                                    </View>
+                                    <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
+                                        <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Subscription Data</Text>
+                                        {selectedMember.request.subscription ? <>
+                                            <Text style={{ fontSize: 9, color: 'gray' }}>Price: {selectedMember.request.subscription.amount}</Text>
+                                            <Text style={{ fontSize: 9, color: 'gray' }}>Date: {selectedMember.request.subscription.date_start + (selectedMember.request.subscription.date_end ? " => " + selectedMember.request.subscription.date_end : "...")}</Text>
+                                            <Text style={{ fontSize: 9, fontWeight: 'bold', color: selectedMember.request.subscription.status === 'active' ? 'green' : '#000' }}>Status: {STATUS_CHOICES[selectedMember.request.subscription.status]}</Text>
+                                        </> : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
+                                    </View>
+
+
+                                </View>
+                            </View>
+                        }
+                    </View>
+                    }
+                </View>
+            </View>
+        </Modal>
+    )
+}
+
 const MyPlansScreen = ({ }) => {
 
     const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
@@ -1773,6 +2006,7 @@ const MyPlansScreen = ({ }) => {
     const [plan, setPlan] = useState('workout');
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
+    const [personal, setPersonal] = useState(false);
     const muscle_groups = {
         chest: { group_id: 'chest', name: 'Chest' },
         back: { group_id: 'back', name: 'Back' },
@@ -2527,6 +2761,7 @@ const MyPlansScreen = ({ }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
+            <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} />
             <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
             {selectedPlan && <>

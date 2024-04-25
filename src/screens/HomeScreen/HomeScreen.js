@@ -4,6 +4,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
+import UsersBall from '../../components/UsersBall/UsersBall.js';
 import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
 
@@ -46,28 +47,13 @@ const HomeScreen = ({ route, navigation }) => {
   const [joinedEvents, setJoinedEvents] = useState([]);
   const [joinedPlaces, setJoinedPlaces] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
-  const [closerUsers, setCloserUsers] = useState(null);
-  const [closerUsersPicture, setCloserUsersPicture] = useState(null);
+  const [closerUsers, setCloserUsers] = useState([]);
   const [closerPlaces, setCloserPlaces] = useState(null);
   const [closerEvents, setCloserEvents] = useState(null);
 
   const [placeModalVisible, setPlaceModalVisible] = useState(false);
 
-  const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
-
-  const fetchUserProfileImages = async (participants) => {
-    if (participants.length) {
-      try {
-        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
-        const data = await response.json();
-        if (response.ok) {
-          setCloserUsersPicture(data)
-        }
-      } catch (error) {
-        console.error('Error fetching user profile images:', error);
-      }
-    }
-  };
+  const [clickedUser, setClickedUser] = useState(null);
 
   const fetchNearbyUsers = async (userToken, location) => {
     try {
@@ -84,13 +70,32 @@ const HomeScreen = ({ route, navigation }) => {
       const data = await response.json();
       if (response.ok) {
         setCloserUsers(data);
-        fetchUserProfileImages(data.map((user) => user.id));
       }
     } catch (error) {
       console.error('Error fetching nearby users:', error);
     }
     return null;
   };
+  const fetchUserProfileImages = async (participants) => {
+    if (participants.length) {
+        try {
+            const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+            const data = await response.json();
+            if (response.ok) {
+                setCloserUsers(prevCloserUsers => {
+                    const updatedCloserUsers = [...prevCloserUsers];
+                    for (const member of data) {
+                        const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
+                        updatedCloserUsers[index].profile_image = member.profile_image;
+                    }
+                    return updatedCloserUsers;
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching user profile images:', error);
+        }
+    }
+};
 
   const fetchNearbyPlaces = async (userToken, location) => {
     try {
@@ -134,7 +139,7 @@ const HomeScreen = ({ route, navigation }) => {
 
   const fetchHome = async () => {
     try {
-      const response = await fetch(BASE_URL + '/api/users/home', {
+      const response = await fetch(BASE_URL + '/api/users/home/', {
         method: 'GET',
         headers: {
           Authorization: `Token ${userToken}`,
@@ -174,6 +179,20 @@ const HomeScreen = ({ route, navigation }) => {
       });
   }, []);
 
+
+  useEffect(() => {
+    if (closerUsers.length > 0) {
+        const closerUsers_without_image = closerUsers.filter(member => {
+            return member.profile_image === undefined
+        }).map(member => {
+            return member.id
+        })
+        if (closerUsers_without_image.length > 0) {
+            fetchUserProfileImages(closerUsers_without_image);
+        }
+    }
+}, [closerUsers]);
+
   useEffect(() => {
     if (userLocation) {
       fetchNearbyUsers(userToken, userLocation);
@@ -189,6 +208,12 @@ const HomeScreen = ({ route, navigation }) => {
       setJoinedPlaces(data.joined_places);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (clickedUser) {
+      navigation.navigate('User Profile', { id: clickedUser });
+    }
+  }, [clickedUser]);
 
   return (
     <View style={styles.gradientContainer}>
@@ -299,41 +324,12 @@ const HomeScreen = ({ route, navigation }) => {
         {closerUsers ?
           <>
             {places.length ? <Text style={styles.subtitle}>Near Users:</Text> : ''}
-            <View style={styles.closerUsersContainer}>
-              {closerUsers.slice(0, 8).map((user, index) => {
-                return (
-                  <View key={index} style={styles.userCard}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        navigation.navigate('User Profile', { id: user.id })
-                      }}
-                      style={[styles.userCardInner, { borderColor: user.gender === 'M' ? '#0033FF' : user.gender === 'F' ? '#FF3399' : '#DDD' }]}
-                    >
-                      {closerUsersPicture && closerUsersPicture.length > index && closerUsersPicture[index].success && closerUsersPicture[index].user_id == user.id ?
-                        <Image
-                          source={{ uri: `data:image/jpeg;base64,${closerUsersPicture[index].profile_image}` }}
-                          style={styles.userImage}
-                          onError={(error) => console.error('Image Error:', error)}
-                        />
-                        :
-                        <Icons name="Profile" size={width * 0.14} fill={"#1C274C"} />
-                      }
-
-                      <View style={styles.userCardIcons}>
-                        {user.favorite_sports.slice(0, 3).map((sport, index) => {
-                          return (
-                            <View key={sport} style={[styles.favoriteSportIcon, index === 1 ? styles.favoriteSportIconSpecial : {}]}>
-                              <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05} />
-                            </View>
-                          )
-                        })}
-                      </View>
-                    </TouchableOpacity>
-                    <Text style={styles.usernameText}>{user.username}</Text>
-                  </View>
-                )
+            <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'}}>
+              {closerUsers.slice(0, 8).map(user => {
+                return <UsersBall key={user.id} user={user} onPress={setClickedUser} size={0.9} />
               })}
             </View>
+
           </>
           : ''
         }
@@ -590,55 +586,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     marginRight: '5%',
-  },
-  closerUsersContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: width * 0.05,
-  },
-  userCard: {
-    width: width * 0.2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: width * 0.03,
-  },
-  userCardInner: {
-    width: width * 0.2,
-    height: width * 0.2,
-    borderRadius: width * 0.1,
-    backgroundColor: '#FFF',
-    borderWidth: 3,
-    borderColor: '#DDD',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: width * 0.1,
-  },
-  userCardIcons: {
-    position: 'absolute',
-    width: '100%',
-    bottom: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  favoriteSportIcon: {
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    padding: width * 0.005,
-  },
-  favoriteSportIconSpecial: {
-    position: 'absolute',
-    right: 0,
-    top: -width * 0.14,
-  },
-  usernameText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    marginBottom: 'auto',
   },
 
   nearPlacesContainer: {

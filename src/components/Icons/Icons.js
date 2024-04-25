@@ -77,6 +77,7 @@ import Camera from './../../../assets/icons/camera.svg';
 import QRCode from './../../../assets/icons/qrcode.svg';
 import OkV from './../../../assets/icons/ok-v.svg';
 import Add from './../../../assets/icons/add.svg';
+import Paste from './../../../assets/icons/paste.svg';
 
 import GradientCircle from './../../../assets/icons/gradientCircle.svg';
 
@@ -168,6 +169,7 @@ const Icons = ({
     QRCode: QRCode,
     OkV: OkV,
     Add: Add,
+    Paste: Paste,
 
     GradientCircle: GradientCircle,
 
