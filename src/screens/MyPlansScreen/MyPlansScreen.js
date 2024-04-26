@@ -7,6 +7,7 @@ import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -844,7 +845,7 @@ const SelectBox = ({ title, max, allOptions, allOptionsNames, selectedOptions, s
     )
 }
 
-const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength }) => {
+const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength, room }) => {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(false);
     const [useAI, setUseAI] = useState(false);
@@ -1164,7 +1165,9 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                                     "main_goal": '',
                                                     "goals": goals,
                                                     "comment": newTrainingComment,
-                                                    "use_ai": true
+                                                    "use_ai": true,
+                                                    "plan": "workout",
+                                                    "manager_room": room
                                                 }, setError, onClose)
                                             }
                                         } else {
@@ -1174,7 +1177,9 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                                     "name": trainingName,
                                                     "diet_days": workoutDays,
                                                     "goal": dietGoals[0],
-                                                    "use_ai": true
+                                                    "use_ai": true,
+                                                    "plan": "diet",
+                                                    "manager_room": room
                                                 }, setError, onClose);
                                             }
                                         }
@@ -1194,7 +1199,9 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                             setGenerating(true);
                                             GenerateWeekWorkoutPlan({
                                                 "name": trainingName,
-                                                "use_ai": false
+                                                "use_ai": false,
+                                                "plan": "workout",
+                                                "manager_room": room
                                             }, setError, onClose)
                                         }
                                     } else {
@@ -1202,7 +1209,9 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                             setGenerating(true);
                                             GenerateWeekDietPlan({
                                                 "name": trainingName,
-                                                "use_ai": false
+                                                "use_ai": false,
+                                                "plan": "diet",
+                                                "manager_room": room
                                             }, setError, onClose);
                                         }
                                     }
@@ -1744,16 +1753,15 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
                             <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', marginTop: 5 }]} onPress={() => {
                                 setPlans(prevPlans => {
                                     const updatedPlans = { ...prevPlans };
-
-                                    updatedPlans[plan].forEach(plan => {
+                                    updatedPlans[plan] = updatedPlans[plan].map(plan => {
                                         if (plan.id === planId) {
                                             plan.name = title;
                                         }
+                                        return plan;
                                     });
-
                                     return updatedPlans;
                                 });
-                                updatePlans();
+                                updatePlans(title);
                                 onClose();
                             }}>
                                 <Text style={styles.confirmButtonText}>Set Changes</Text>
@@ -1766,12 +1774,23 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
+const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData }) => {
 
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [selectedMemberId, setSelectedMemberId] = useState(null);
+    const [manage, setManage] = useState(false);
+
+    const updateRoomUserPlan = (room_id, user_id, plan_id, newPlan) => {
+        setPersonalRooms(prevRooms => {
+            const updatedRooms = [...prevRooms];
+            const roomIndex = updatedRooms.map(room => room.id).indexOf(room_id);
+            const userIndex = updatedRooms[roomIndex].members.map(member => member.id).indexOf(user_id);
+            updatedRooms[roomIndex].members[userIndex].request[plan_id === 'workout' ? 'training_plan' : 'diet_plan'] = [newPlan];
+            return updatedRooms;
+        })
+    }
 
     const fetchUserProfileImages = async (participants) => {
         if (participants.length) {
@@ -1780,11 +1799,10 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
                 const data = await response.json();
                 if (response.ok) {
                     setMembers(prevMembers => {
-                        const updatedMembers = [...prevMembers];
-                        for (const member of data) {
-                            const index = updatedMembers.map(user => user.id).indexOf(parseInt(member.user_id));
-                            updatedMembers[index].profile_image = member.profile_image;
-                        }
+                        const updatedMembers = { ...prevMembers };
+                        data.forEach(user => {
+                            updatedMembers[user.user_id].profile_image = user.profile_image;
+                        });
                         return updatedMembers;
                     });
                 }
@@ -1807,38 +1825,59 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
         setPersonalRooms(data);
     }
 
-    useEffect(() => {
-        fetchPersonalData();
-    }, []);
+    useEffect(() => { fetchPersonalData() }, []);
+
     useEffect(() => {
         if (personalRooms.length > 0) {
             if (!selectedRoom) {
                 setSelectedRoom(personalRooms[0]);
             }
-            let new_members = [];
             for (const room of personalRooms) {
                 for (const member of room.members) {
-                    if (!members.map(user => user.id).includes(member.id) && !new_members.map(user => user.id).includes(member.id)) {
-                        new_members = [...new_members, member];
+                    if (!members[member.id]) {
+                        setMembers(prevMembers => {
+                            const updatedMembers = { ...prevMembers };
+                            updatedMembers[member.id] = { id: member.id, username: member.username, name: member.name, gender: member.gender, favorite_sports: member.favorite_sports, profile_image: member.profile_image };
+                            return updatedMembers;
+                        });
                     }
                 }
             }
-            setMembers([...members, ...new_members]);
         }
     }, [personalRooms]);
 
     useEffect(() => {
-        if (members.length > 0) {
-            const members_without_image = members.filter(member => {
-                return member.profile_image === undefined
-            }).map(member => {
-                return member.id
-            })
-            if (members_without_image.length > 0) {
-                fetchUserProfileImages(members_without_image);
-            }
+        const members_without_image = Object.values(members).filter(member => {
+            return member.profile_image === undefined;
+        }).map(member => {
+            return member.id;
+        });
+        if (members_without_image.length > 0) {
+            fetchUserProfileImages(members_without_image);
         }
     }, [members]);
+
+    const selectedMember = selectedMemberId && selectedRoom.members.find(member => member.id === selectedMemberId);
+
+    useEffect(() => {
+        if (manage) {
+            const plans = {}
+            if (manage === 'workout' || (selectedMemberId && selectedMember.request.training_plan)) {
+                plans['workout'] = selectedMember.request.training_plan ? [selectedMember.request.training_plan] : null;
+            }
+            if (manage === 'diet' || (selectedMemberId && selectedMember.request.diet_plan)) {
+                plans['diet'] = selectedMember.request.diet_plan ? [selectedMember.request.diet_plan] : null;
+            }
+            setManagerData({
+                plan_id: manage,
+                room: { request_id: selectedMember.request.id, room_id: selectedRoom.id, user_id: selectedMember.id },
+                user: members[selectedMemberId],
+                plans: plans,
+                updateRoomUserPlan: updateRoomUserPlan
+            });
+            setManage(null);
+        }
+    }, [manage]);
 
     const styles = StyleSheet.create({
         container: {
@@ -1870,7 +1909,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
             justifyContent: 'flex-start',
         },
         userButtons: {
-            padding: 4,
+            flex: 0,
+            padding: 5,
             borderRadius: 5,
             margin: 3
         }
@@ -1882,16 +1922,13 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
         return (
             <TouchableOpacity
                 style={{
-                    position: 'absolute',
-                    right: 20,
-                    top: 20,
                     width: width * 0.12,
                     height: width * 0.12,
                     borderRadius: width * 0.06,
                     backgroundColor: '#FFF',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    zIndex: 1
+                    marginLeft: 'auto',
                 }}
                 onPress={() => setPersonal(true)}
             >
@@ -1899,7 +1936,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
             </TouchableOpacity>
         )
     }
-    const selectedMember = selectedMemberId && members.find(member => member.id === selectedMemberId);
 
     STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
 
@@ -1939,44 +1975,52 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
                         </ScrollView>
                         <ScrollView horizontal>
                             <View style={styles.usersContainer}>
-                                {members.filter(member => selectedRoom.members.map(member => member.id).includes(member.id)).map((member, index) =>
-                                    <UsersBall key={member.id} user={member} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                {selectedRoom.members.map(member =>
+                                    <UsersBall key={member.id} user={members[member.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
                                 )}
                             </View>
                         </ScrollView>
 
                         {selectedMemberId &&
                             <View style={{ flexDirection: 'row', padding: 4, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.25)' }}>
-                                <UsersBall user={selectedMember} name="username" size={1.5} nameColor="#EEE" />
+                                <UsersBall user={members[selectedMemberId]} name="username" size={1.5} nameColor="#EEE" />
                                 <View style={{ marginLeft: 5, flex: 1 }}>
                                     <Text style={{ color: '#FFF' }}>{selectedMember.name}, {selectedMember.age}</Text>
                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                        {selectedMember.request.training_plan ?
-                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                        {selectedMember.request.training_plan &&
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
+                                                onPress={() => { setManage('workout'); onClose(); }}
+                                            >
                                                 <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Workout</Text>
-                                            </TouchableOpacity>
-                                            :
-                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
-                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Workout</Text>
                                             </TouchableOpacity>}
-                                        {selectedMember.request.diet_plan ?
-                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                        {selectedMember.request.diet_plan &&
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
+                                                onPress={() => { setManage('diet'); onClose(); }}
+                                            >
                                                 <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
-                                            </TouchableOpacity>
-                                            :
-                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
-                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Diet</Text>
-                                            </TouchableOpacity>
-                                        }
-                                        {selectedMember.request.assistance ?
-                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3' }]}>
+                                            </TouchableOpacity>}
+                                        {selectedMember.request.assistance &&
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}>
                                                 <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
-                                            </TouchableOpacity>
-                                            :
+                                            </TouchableOpacity>}
+                                    </View>
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                        {!selectedMember.request.training_plan &&
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
+                                                onPress={() => { setManage('workout'); onClose(); }}
+                                            >
+                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Workout</Text>
+                                            </TouchableOpacity>}
+                                        {!selectedMember.request.diet_plan &&
+                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
+                                                onPress={() => { setManage('diet'); onClose(); }}
+                                            >
+                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
+                                            </TouchableOpacity>}
+                                        {!selectedMember.request.assistance &&
                                             <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
-                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Create Assistance</Text>
-                                            </TouchableOpacity>
-                                        }
+                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Assistance</Text>
+                                            </TouchableOpacity>}
                                     </View>
                                     <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
                                         <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Subscription Data</Text>
@@ -1986,8 +2030,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal }) => {
                                             <Text style={{ fontSize: 9, fontWeight: 'bold', color: selectedMember.request.subscription.status === 'active' ? 'green' : '#000' }}>Status: {STATUS_CHOICES[selectedMember.request.subscription.status]}</Text>
                                         </> : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
                                     </View>
-
-
                                 </View>
                             </View>
                         }
@@ -2007,6 +2049,7 @@ const MyPlansScreen = ({ }) => {
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
     const [personal, setPersonal] = useState(false);
+    const [managerData, setManagerData] = useState(null);
     const muscle_groups = {
         chest: { group_id: 'chest', name: 'Chest' },
         back: { group_id: 'back', name: 'Back' },
@@ -2072,7 +2115,7 @@ const MyPlansScreen = ({ }) => {
             Fri: {
                 items: {
                     neck: {
-                        'diagonal-neck-stretch': { sets: 4, reps: 10, rest: 120, done: false, edit: false }
+                        'diagonal-neck-stretch': { sets: 4, reps: 10, rest: 130, done: false, edit: false }
                     }
                 },
                 rest: false
@@ -2187,7 +2230,7 @@ const MyPlansScreen = ({ }) => {
         setAllItems(prevItems => ({ ...prevItems, "diet": data }));
     }
 
-    const updatePlans = async () => {
+    const updatePlans = async (name=selectedPlan.name, room=(managerData && managerData.room)) => {
         if (userSubscriptionPlan.features[plan].max_saves[2] < userSubscriptionPlan.features[plan].max_saves[1]) {
             Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
                 [{
@@ -2220,15 +2263,14 @@ const MyPlansScreen = ({ }) => {
                 };
             });
         }
-
         try {
-            const response = await fetch(BASE_URL + `/api/exercises/${plan === "workout" ? "training-plans" : "diet-plans"}/${planId}/`, {
+            const response = await fetch(BASE_URL + `/api/exercises/plan/${planId}/`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ "days": daysItems[plan], "name": selectedPlan.name })
+                body: JSON.stringify({ "days": daysItems[plan], "name": name, 'plan': plan, "manager_room": room })
             });
             const data = await response.json();
 
@@ -2242,14 +2284,15 @@ const MyPlansScreen = ({ }) => {
     }
     const deleteTrainingPlan = async (training_id) => {
         try {
-            const response = await fetch(BASE_URL + `/api/exercises/${plan === "workout" ? "training-plans" : "diet-plans"}/${training_id}/`, {
+            const response = await fetch(BASE_URL + `/api/exercises/plan/`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'application/json'
                 },
+                body: JSON.stringify({ "plan": plan, "plan_id": training_id})
             });
-            if (response.ok && response.status === 204) {
+            if (response.ok && response.status === 200) {
                 setPlans(prevPlans => ({ ...prevPlans, [plan]: plans[plan].length > 1 ? plans[plan].filter(plan => plan.id !== training_id) : null }));
                 setPlanId(plans[plan].length > 1 ? plans[plan].find(plan => plan.id !== training_id).id : null);
             }
@@ -2260,7 +2303,7 @@ const MyPlansScreen = ({ }) => {
 
     const GenerateWeekWorkoutPlan = async (requestBody, setError, onClose) => {
         try {
-            const response = await fetch(BASE_URL + '/api/exercises/generate-workout-plan/', {
+            const response = await fetch(BASE_URL + '/api/exercises/plan/', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -2271,6 +2314,9 @@ const MyPlansScreen = ({ }) => {
             const data = await response.json();
 
             if (response.ok && data.id) {
+                if (managerData && managerData.updateRoomUserPlan) {
+                    managerData.updateRoomUserPlan(managerData.room.room_id, managerData.room.user_id, plan, data);
+                }
                 setPlans(prevPlans => ({
                     ...prevPlans,
                     [plan]: prevPlans[plan] ? [...prevPlans[plan], data] : [data]
@@ -2299,8 +2345,7 @@ const MyPlansScreen = ({ }) => {
                             use_ai: prevUserSubscriptionPlan.features.workout.use_ai - (requestBody.use_ai ? 1 : 0)
                         }
                     }
-                }))
-
+                }));
             } else {
                 setError(true);
                 throw new Error('Failed to generate exercises');
@@ -2313,7 +2358,7 @@ const MyPlansScreen = ({ }) => {
     };
     const GenerateWeekDietPlan = async (requestBody, setError, onClose) => {
         try {
-            const response = await fetch(BASE_URL + '/api/exercises/generate-diet-plan/', {
+            const response = await fetch(BASE_URL + '/api/exercises/plan/', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -2322,7 +2367,10 @@ const MyPlansScreen = ({ }) => {
                 body: JSON.stringify(requestBody)
             });
             const data = await response.json();
-            if (response.ok && data.id && plans[plan]) {
+            if (response.ok && data.id) {
+                if (managerData && managerData.updateRoomUserPlan) {
+                    managerData.updateRoomUserPlan(managerData.room.room_id, managerData.room.user_id, plan, data);
+                }
                 setPlans(prevPlans => ({
                     ...prevPlans,
                     [plan]: prevPlans[plan] ? [...prevPlans[plan], data] : [data]
@@ -2345,6 +2393,7 @@ const MyPlansScreen = ({ }) => {
             throw error;
         }
     };
+
     const fetchPlans = async () => {
         const response = await fetch(BASE_URL + `/api/exercises/user-plans/`, {
             method: 'GET',
@@ -2723,13 +2772,29 @@ const MyPlansScreen = ({ }) => {
     };
 
     useEffect(() => {
-        fetchPlans();
-        if (plan === "workout") {
-            fetchAllExercises();
-        } else {
-            fetchAllFoods();
+        if (!managerData) {
+            fetchPlans();
+            if (plan === "workout") {
+                fetchAllExercises();
+            } else {
+                fetchAllFoods();
+            }
         }
     }, [plan]);
+
+    useEffect(() => {
+        if (managerData) {
+            setPlans(managerData.plans);
+            setPlanId(managerData.plans[managerData.plan_id] ? managerData.plans[managerData.plan_id][0].id : null);
+            setPlan(managerData.plan_id);
+            if (managerData.plans[managerData.plan_id]) {
+                setDaysItems(prevDays => ({
+                    ...prevDays,
+                    [managerData.plan_id]: managerData.plans[managerData.plan_id][0].days
+                }));
+            }
+        }
+    }, [managerData]);
 
     useEffect(() => {
         if (planId && plans[plan]) {
@@ -2753,17 +2818,16 @@ const MyPlansScreen = ({ }) => {
     }, [completedPaymentData]);
 
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
-    const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
+    const fit_plans = managerData ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
-    const selectedPlan = plans[plan] && plans[plan].find(plan => plan.id === planId);
+    const selectedPlan = plans[plan] && plans[plan][0] && plans[plan].find(plan => plan.id === planId);
 
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} />
             <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
-            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} />
+            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
                 <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
@@ -2778,16 +2842,20 @@ const MyPlansScreen = ({ }) => {
 
                 <View style={styles.sectionContainer}>
 
-                    <Text style={styles.sectionTitle}>Fitness Plan</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        {managerData && managerData.user && <View style={{ top: 5 }}><UsersBall user={managerData.user} size={0.6} /></View>}
+                        <Text style={styles.sectionTitle}>Fitness Plan</Text>
+                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                    </View>
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                        {fit_plans.map((planOption, index) =>
-                            <Tabs
+                        {fit_plans.map((planOption, index) => {
+                            return <Tabs
                                 key={index}
                                 index={index}
                                 name={planOption.plan_name}
                                 setSelectedTab={() => {
                                     setPlan(planOption.plan_id);
-                                    if (plans[planOption.plan_id].length) {
+                                    if (plans[planOption.plan_id] && plans[planOption.plan_id].length) {
                                         setPlanId(plans[planOption.plan_id][0].id);
                                         setDaysItems(prevDays => ({
                                             ...prevDays,
@@ -2799,11 +2867,11 @@ const MyPlansScreen = ({ }) => {
                                 len={fit_plans.length}
                                 TabSize={width * 0.89 / fit_plans.length * 0.8}
                             />
-                        )}
+                        })}
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-                        {plans[plan] && plans[plan].map((tabPlan, index) =>
+                        {selectedPlan && plans[plan] && plans[plan].map((tabPlan, index) =>
                             <Tabs
                                 key={index}
                                 index={index}
@@ -2943,21 +3011,33 @@ const MyPlansScreen = ({ }) => {
                             }}>
                                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
                             </TouchableOpacity>
-
                         </View>}
-
                     </>}
-                    <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
-                        setNewTrainingModal(true);
-                    }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout Plan" : "New Diet Plan"}</Text>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
-                        setUpdatePlanModal(true);
-                    }}>
-                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
-                    </TouchableOpacity>
+                    {(!managerData || (managerData && !plans[plan])) &&
+                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
+                            setNewTrainingModal(true);
+                        }}>
+                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === "workout" ? "New Workout Plan" : "New Diet Plan"}</Text>
+                        </TouchableOpacity>}
+
+                    {managerData ?
+                        selectedPlan ?
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', marginTop: 5 }]} onPress={() => {
+                                updatePlans(selectedPlan.name, { ...managerData.room, send_to_user: true });
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{edit ? "Save and Notify User" : "Send to User"}</Text>
+                            </TouchableOpacity>
+                            :
+                            ''
+                        : <>
+                            <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
+
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
+                            </TouchableOpacity>
+                        </>
+                    }
 
                 </View>
             </ScrollView>
@@ -2982,6 +3062,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
         color: '#FFFFFF',
+        marginLeft: 10,
     },
     headerSectionContent: {
         flexDirection: 'row',
