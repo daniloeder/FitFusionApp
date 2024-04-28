@@ -1,13 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { deleteAuthToken } from './../../store/store';
+import { BASE_URL } from '@env';
 
-const SettingsScreen = () => {
-  const navigation = useNavigation();
+const SettingsScreen = ({ route, navigation }) => {
+  const { userToken } = route.params;
   const [isNotificationEnabled, setNotificationEnabled] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
+
+  const createPersonalTrainerAccount = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/api/exercises/personal-trainer/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${userToken}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        navigation.navigate('MyPlansScreen', { personalTrainer: true })
+      } else {
+        console.error('Error creating personal trainer account:', data);
+      }
+    } catch (error) {
+      console.error('Error creating personal trainer account:', error);
+    }
+  };
 
   const handleLogout = () => {
     deleteAuthToken();
@@ -42,6 +63,36 @@ const SettingsScreen = () => {
           <Text style={styles.settingText}>Language</Text>
           <Text style={styles.valueText}>{selectedLanguage}</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={{
+          justifyContent: 'center',
+          backgroundColor: '#2196F3',
+          padding: 10,
+          borderRadius: 5,
+          alignItems: 'center',
+          marginTop: 10,
+        }}
+        onPress={() => {
+          Alert.alert('Create Personal Trainer Account', 'Are you a professional personal trainer?', [
+            {
+              text: 'Yes',
+              onPress: () => createPersonalTrainerAccount(),
+            },
+            {
+              text: 'No',
+            },
+          ]);
+        }}
+        >
+          <Text style={{
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 'bold',
+          }}>
+            Create Personal Trainer Account
+          </Text>
+        </TouchableOpacity>
+
 
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
