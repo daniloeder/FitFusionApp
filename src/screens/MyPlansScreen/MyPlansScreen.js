@@ -1389,9 +1389,79 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subscriptionPlansOptions, setCompletedPaymentData, currentPlanId }) => {
+const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setCompletedPaymentData, currentPlanId, object, manager = false }) => {
+
+    const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    const fetchSubscriptionPlans = async (object) => {
+        setLoading(true);
+        try {
+            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.key + '=' + object.id : ''}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const data = await response.json();
+            if (response.ok){
+                if (data.length) {
+                    setSubscriptionPlansOptions(data);
+                } else {
+                    Alert.alert('Error', 'There are no subscription plans available.');
+                    setUpdatePlanModal(false);
+                }
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+        setLoading(false);
+    }
+    const updateSubscriptionData = async (planData) => {
+        setLoading(true);
+        try {
+            const response = await fetch(BASE_URL + `/api/payments/manage-subscription-plan/`, {
+                method: planData.is_new ? 'POST' : (planData.delete ? 'DELETE' : 'PUT'),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`
+                },
+                body: JSON.stringify(planData)
+            });
+            const data = await response.json();
+            setEdit(false);
+            setPlans([]);
+            if (response.ok) {
+                if (planData.delete) {
+                    setSubscriptionPlansOptions([
+                        ...subscriptionPlansOptions.filter(plan => plan.id !== planData.id)
+                    ]);
+                } else {
+                    setSubscriptionPlansOptions([
+                        data,
+                        ...subscriptionPlansOptions.filter(plan => plan.id !== planData.id)
+                    ]);
+                }
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+        setLoading(false);
+    }
+
+    useEffect(() => {
+        if (!subscriptionPlansOptions.length) {
+            fetchSubscriptionPlans(object || null);
+        }
+    }, [subscriptionPlansOptions]);
+
+    const [edit, setEdit] = useState(false);
     const [status, setStatus] = useState('plans');
-    const allPlans = subscriptionPlansOptions.filter(plan => plan.price >= 1 && currentPlanId !== plan.id).map(plan => plan.id);
+
+    const allPlans = subscriptionPlansOptions.filter(plan => {
+        return manager || (plan.price >= 1 && currentPlanId !== plan.id)
+    }).map(plan => plan.id);
     const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
         return obj;
@@ -1402,34 +1472,41 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
 
     const [useCreditCard, setUseCreditCard] = useState(false);
 
+    const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#B2FF59', '#00FF00'];
+    const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NZD', 'NOK', 'BRL'];
+    const plans_periods = { 'dayly': 'Dayly', 'weekly': 'Weekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly' };
+
     const onClose = () => {
         setStatus('plans');
         setUseCreditCard(false);
         setUpdatePlanModal(false);
         setPlans([]);
     };
-    const PricePlanTable = () => {
+    const PricePlanTable = ({ options }) => {
 
         const styles = StyleSheet.create({
             tableContainer: {
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
                 marginVertical: 10,
                 flexWrap: 'wrap',
             },
             tableColumn: {
-                width: width * 0.8 / 3,
+                width: '98%',
                 backgroundColor: '#fff',
                 borderRadius: 8,
                 margin: 5,
-                padding: 1,
+                padding: 3,
                 marginHorizontal: 4,
                 elevation: 4,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.25,
                 shadowRadius: 3.84,
+            },
+            planHead: {
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-evenly',
+                flexWrap: 'wrap',
             },
             planTitle: {
                 fontSize: 15,
@@ -1443,37 +1520,56 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
                 textAlign: 'center',
                 color: '#555',
             },
-            planDescription: {
-                fontSize: 10,
-                fontWeight: 'bold',
-                marginBottom: 8,
-            },
             planBenefits: {
+                flexDirection: 'row',
+                flexWrap: 'wrap',
                 marginTop: 5,
                 padding: 2,
                 borderRadius: 8,
+                backgroundColor: '#ccc',
+            },
+            planBenefit: {
+                fontSize: 10,
+                padding: 2,
+                borderRadius: 4,
                 backgroundColor: '#555',
+                fontWeight: 'bold',
+                margin: 2,
+            },
+            commentSection: {
+                padding: 2,
+                borderRadius: 3,
+                backgroundColor: '#aaa',
+                marginTop: 5,
             },
         });
 
         return (
             <View style={styles.tableContainer}>
-                {subscriptionPlansOptions.map((plan, index) => (
-                    <View key={index} style={styles.tableColumn}>
-                        <Text style={styles.planTitle}>{plan.name}</Text>
-                        <Text style={styles.planPrice}>${plan.price} {plan.currency}</Text>
-                        <View style={styles.planBenefits}>
-                            {plan.benefits && plan.benefits.map((benefit) => {
-                                return (
-                                    <Text key={benefit} style={[styles.planDescription, { color: ['#FF0000', '#FF7F00', '#FFFF00', '#B2FF59', '#00FF00'][benefit[0]] }]}>
-                                        ✓ {benefit[1]}
-                                    </Text>
-                                )
-                            })}
+                {options.map((plan, index) => {
+                    return (
+                        <View key={index} style={styles.tableColumn}>
+                            <View style={styles.planHead}>
+                                <Text style={styles.planTitle}>{plan.name}</Text>
+                                <Text style={styles.planPrice}>${plan.price} {plan.currency}</Text>
+                                <Text style={styles.planPrice}>{plans_periods[plan.period]}</Text>
+                            </View>
+                            {plan.details && plan.details.features.benefits && plan.details.features.benefits.length > 0 && <View style={styles.planBenefits}>
+                                {plan.details.features.benefits.map((benefit) => {
+                                    return (
+                                        <Text key={benefit} style={[styles.planBenefit, { color: colors[benefit[0]] }]}>
+                                            ✓ {benefit[1]}
+                                        </Text>
+                                    )
+                                })}
+                            </View>}
+                            {plan.details.features.comment.length > 0 && <View style={styles.commentSection}>
+                                <Text style={{ fontSize: 10, color: '#FFF' }}>{plan.details.features.comment}</Text>
+                            </View>}
+                            {currentPlanId === plan.id && <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 13, color: '#888' }}>Current</Text>}
                         </View>
-                        {currentPlanId === plan.id && <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 13, color: '#888' }}>Current</Text>}
-                    </View>
-                ))}
+                    )
+                })}
             </View>
         );
     };
@@ -1517,93 +1613,212 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
             color: '#fff',
         },
 
-        creditCardContainer: {
-            backgroundColor: '#fff',
-            borderRadius: 8,
-            padding: 16,
-            elevation: 4,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-        },
-        creditCardInput: {
-            height: 48,
-            borderWidth: 1,
-            borderColor: '#ccc',
-            borderRadius: 4,
-            paddingHorizontal: 12,
-            marginBottom: 12,
-            fontSize: 16,
-        },
-        creditCardName: {
-            fontSize: 16,
-            fontWeight: 'bold',
-            marginBottom: 8,
-        },
-        creditCardNumber: {
-            fontSize: 16,
-            fontWeight: 'bold',
-            marginBottom: 8,
-        },
-        creditCardExpiration: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 8,
-        },
-        creditCardExpirationDate: {
+        editingPlanName: {
             flex: 1,
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-        creditCardCVV: {
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-        creditCardContainer: {
+            padding: 2,
+            fontSize: 12,
             backgroundColor: '#fff',
-            borderRadius: 8,
-            padding: 16,
-            elevation: 4,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-        },
-        creditCardInput: {
-            height: 48,
-            borderWidth: 1,
-            borderColor: '#ccc',
-            borderRadius: 4,
-            paddingHorizontal: 12,
-            marginBottom: 12,
-            fontSize: 16,
-        },
-        creditCardName: {
-            fontSize: 16,
-            fontWeight: 'bold',
-            marginBottom: 8,
-        },
-        creditCardNumber: {
-            fontSize: 16,
-            fontWeight: 'bold',
-            marginBottom: 8,
-        },
-        creditCardExpiration: {
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginBottom: 8,
-        },
-        creditCardExpirationDate: {
-            flex: 1,
-            fontSize: 16,
-            fontWeight: 'bold',
-        },
-        creditCardCVV: {
-            fontSize: 16,
-            fontWeight: 'bold',
+            borderRadius: 5,
+            paddingLeft: 10,
         },
     });
+
+    const EditPlan = ({ plan }) => {
+        const [newPlan, setNewPlan] = useState(plan);
+
+        const [editOptions, setEditOptions] = useState(undefined);
+
+        if (!newPlan) return;
+
+        return (
+            <View style={{ width: '100%', backgroundColor: '#ccc', padding: 5, borderRadius: 5 }}>
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Plan Name:</Text>
+                <TextInput
+                    style={styles.editingPlanName}
+                    placeholder="Plan Name"
+                    defaultValue={newPlan.name}
+                    onChangeText={(text) => setNewPlan({
+                        ...newPlan,
+                        name: text
+                    })}
+                />
+
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Currency:</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'flex-start' }}>
+                    {currencies.map((currency, index) => {
+                        return (
+                            <TouchableOpacity key={index} style={{ backgroundColor: currency === newPlan.currency ? '#000' : '#FFF', height: 30, width: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginHorizontal: 5, marginTop: 3 }}
+                                onPress={() => setNewPlan({
+                                    ...newPlan,
+                                    currency: currencies[index]
+                                })}
+                            >
+                                <Text style={{ color: currency === newPlan.currency ? '#FFF' : '#000', fontSize: 10, fontWeight: 'bold' }}>{currency}</Text>
+                            </TouchableOpacity>
+                        )
+                    })}
+                </View>
+
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Price:</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TextInput
+                        placeholder="Price"
+                        keyboardType="numeric"
+                        style={[styles.editingPlanName, { maxWidth: width * 0.2, marginRight: 10 }]}
+                        defaultValue={String(newPlan.price || '')}
+                        onChangeText={text => {
+                            setNewPlan({
+                                ...newPlan,
+                                price: parseInt(text * 100) / 100 || 0
+                            })
+                        }}
+                    />
+                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000', marginRight: 10 }}>{newPlan.currency} {newPlan.price}</Text>
+                </View>
+
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Plan Period:</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {Object.keys(plans_periods).map((period, index) => {
+                        return (
+                            <TouchableOpacity key={index} style={{ backgroundColor: period === newPlan.period ? '#000' : '#FFF', padding: 5, borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginHorizontal: 5, marginTop: 3 }}
+                                onPress={() => setNewPlan({
+                                    ...newPlan,
+                                    period: period
+                                })}
+                            >
+                                <Text style={{ color: period === newPlan.period ? '#FFF' : '#000', fontSize: 10, fontWeight: 'bold' }}>{plans_periods[period]}</Text>
+                            </TouchableOpacity>
+                        )
+                    })}
+                </View>
+
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Benefits:</Text>
+                <View>
+                    {newPlan.details.features.benefits && newPlan.details.features.benefits.map((benefit, index) => {
+                        return (
+                            <View key={index}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', margin: 1 }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <TouchableOpacity style={{ backgroundColor: colors[benefit[0]], height: 30, width: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 5 }} onPress={() => setEditOptions(index)}>
+                                            <Text style={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>{benefit[0] + 1}</Text>
+                                        </TouchableOpacity>
+                                        {editOptions === index && <View style={{ flexDirection: 'row', position: 'absolute', backgroundColor: '#ddd', zIndex: 2, left: 40, borderRadius: 5, padding: 2 }}>
+                                            {[...Array(5).keys()].map((i) => {
+                                                return (
+                                                    <TouchableOpacity key={i} style={{ backgroundColor: colors[i], height: 25, width: 25, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 5 }}
+                                                        onPress={() => {
+                                                            setNewPlan({
+                                                                ...newPlan,
+                                                                details: {
+                                                                    ...newPlan.details,
+                                                                    features: {
+                                                                        ...newPlan.details.features,
+                                                                        benefits: newPlan.details.features.benefits.map((benefit, j) => j === index ? [i, benefit[1]] : benefit)
+                                                                    }
+                                                                }
+                                                            });
+                                                            setEditOptions(undefined);
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>{i + 1}</Text>
+                                                    </TouchableOpacity>
+                                                )
+                                            })}
+                                        </View>}
+                                    </View>
+                                    <TextInput
+                                        style={styles.editingPlanName}
+                                        placeholder="Benefit"
+                                        defaultValue={newPlan.details.features.benefits[index][1]}
+                                        onChangeText={(text) => setNewPlan({
+                                            ...newPlan,
+                                            details: {
+                                                ...newPlan.details,
+                                                features: {
+                                                    ...newPlan.details.features,
+                                                    benefits: newPlan.details.features.benefits.map((benefit, i) => i === index ? [benefit[0], text] : benefit)
+                                                }
+                                            }
+                                        })}
+                                    />
+                                    <TouchableOpacity style={{ backgroundColor: '#FF0000', height: 20, width: 20, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginLeft: 5 }} onPress={() => {
+                                        setNewPlan({
+                                            ...newPlan,
+                                            details: {
+                                                ...newPlan.details,
+                                                features: {
+                                                    ...newPlan.details.features,
+                                                    benefits: newPlan.details.features.benefits.filter((_, i) => i !== index)
+                                                }
+                                            }
+                                        });
+                                    }}>
+                                        <Icons name="CloseX" size={15} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )
+                    })}
+                    <TouchableOpacity style={{ backgroundColor: '#000', width: '50%', height: 30, marginLeft: '25%', alignItems: 'center', justifyContent: 'center', borderRadius: 5, marginVertical: 3 }} onPress={() => {
+                        setNewPlan({
+                            ...newPlan,
+                            details: {
+                                ...newPlan.details,
+                                features: {
+                                    ...newPlan.details.features,
+                                    benefits: [...newPlan.details.features.benefits, [4, ""]]
+                                }
+                            }
+                        });
+                    }}>
+                        <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Add Benefit</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Comment:</Text>
+                <TextInput
+                    style={styles.editingPlanName}
+                    placeholder="Comment"
+                    defaultValue={newPlan.details.features.comment}
+                    onChangeText={(text) => setNewPlan({
+                        ...newPlan,
+                        details: {
+                            ...newPlan.details,
+                            features: {
+                                ...newPlan.details.features,
+                                comment: text
+                            }
+                        }
+                    })}
+                />
+
+                <View style={{ flexDirection: 'row', width: '100%', flexWrap: 'wrap' }}>
+                    <TouchableOpacity style={{ backgroundColor: '#FFF', width: '49%', height: 30, borderRadius: 5, justifyContent: 'center', alignItems: 'center', marginTop: 5 }} onPress={() => {
+                        setPlans([]);
+                        setEdit(false);
+                        if (newPlan.id === 0) {
+                            setSubscriptionPlansOptions(subscriptionPlansOptions.filter(plan => plan.id > 0))
+                        }
+                    }}>
+                        <Text style={{ color: '#000', fontWeight: 'bold' }}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ backgroundColor: '#000', width: '49%', marginLeft: '2%', height: 30, borderRadius: 5, justifyContent: 'center', alignItems: 'center', marginTop: 5 }} onPress={() => {
+                        updateSubscriptionData(newPlan);
+                    }}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={{ backgroundColor: '#FF0000', width: '100%', height: 30, borderRadius: 5, justifyContent: 'center', alignItems: 'center', marginTop: 5 }} onPress={() => {
+                        Alert.alert('Delete Plan', 'Are you sure you want to delete this plan?', [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Delete', onPress: () => updateSubscriptionData({ ...newPlan, delete: true }) }
+                        ]);
+                    }}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Delete</Text>
+                    </TouchableOpacity>
+                </View>
+            </View >
+        )
+    }
 
     useEffect(() => {
         if (useCreditCard) {
@@ -1628,31 +1843,81 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, subs
                 <View style={styles.container}>
                     <View style={styles.section}>
                         <Text style={styles.title}>Upgrade Plan</Text>
-                        {status === 'plans' ?
-                            <View>
-                                <PricePlanTable />
-                                <SelectBox
-                                    title="Select a Plan:"
-                                    max={1}
-                                    allOptions={allPlans}
-                                    allOptionsNames={allPlansNames}
-                                    selectedOptions={plans}
-                                    setSelectedItem={setPlans}
-                                />
-                                <TouchableOpacity style={styles.confirmButton} onPress={() => {
-                                    if (plans.length > 0) {
-                                        setUseCreditCard(true);
-                                        return;
-                                    }
-                                    Alert.alert('Error!', 'Please select a plan.');
-                                }}>
-                                    <Text style={styles.confirmButtonText}>Next</Text>
-                                </TouchableOpacity>
-                                {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
-                            </View>
-                            : status === 'loading' ?
-                                <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /></View>
-                                : ''
+                        {
+                            loading ?
+                                <ActivityIndicator size="large" color="#000" />
+                                : status === 'plans' ? (
+                                    edit && manager ? (
+                                        subscriptionPlan ? <EditPlan plan={subscriptionPlan} />
+                                            : <>
+                                                {allPlans.length > 0 &&
+                                                    <SelectBox
+                                                        title={"Select a Plan to Edit:"}
+                                                        max={1}
+                                                        allOptions={allPlans}
+                                                        allOptionsNames={allPlansNames}
+                                                        selectedOptions={plans}
+                                                        setSelectedItem={setPlans}
+                                                    />}
+                                                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000', marginTop: 10 }}>Or add new plan:</Text>
+                                                <TouchableOpacity style={styles.confirmButton} onPress={() => {
+                                                    setSubscriptionPlansOptions([
+                                                        {
+                                                            "id": 0,
+                                                            "is_new": true,
+                                                            "name": "Plan Name",
+                                                            "price": "0",
+                                                            "currency": "USD",
+                                                            "details": {
+                                                                "features": {
+                                                                    "benefits": [[2, "Edit Benefits Here"]],
+                                                                    "comment": "This is the comment"
+                                                                },
+                                                            },
+                                                            "event": null,
+                                                            "period": "monthly",
+                                                            "place": null,
+                                                        },
+                                                        ...subscriptionPlansOptions
+                                                    ])
+                                                    setPlans([0]);
+                                                }}>
+                                                    <Text style={styles.confirmButtonText}>Add New Plan</Text>
+                                                </TouchableOpacity>
+                                            </>
+
+                                    ) : (
+                                        <View>
+                                            <PricePlanTable options={subscriptionPlansOptions} />
+                                            {!manager &&
+                                                <SelectBox
+                                                    title={"Select a Plan:"}
+                                                    max={1}
+                                                    allOptions={allPlans}
+                                                    allOptionsNames={allPlansNames}
+                                                    selectedOptions={plans}
+                                                    setSelectedItem={setPlans}
+                                                />
+                                            }
+                                            <TouchableOpacity style={styles.confirmButton} onPress={() => {
+                                                if (manager) {
+                                                    setEdit(true);
+                                                } else {
+                                                    if (plans.length > 0) {
+                                                        setUseCreditCard(true);
+                                                        return;
+                                                    }
+                                                    Alert.alert('Error!', 'Please select a plan.');
+                                                }
+                                            }}>
+                                                <Text style={styles.confirmButtonText}>{manager ? "Edit Plans" : "Next"}</Text>
+                                            </TouchableOpacity>
+                                            {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
+                                        </View>
+                                    )
+                                ) : status === 'loading' ?
+                                    <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /></View>
+                                    : ''
                         }
                     </View>
                 </View>
@@ -1773,7 +2038,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData, fetchSubscriptionPlans, personalSubscriptionPlans }) => {
+const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData }) => {
 
     if (!personal) {
         return (
@@ -1877,12 +2142,11 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         fetchGeneralData();
     }, []);
 
-    useEffect(()=>{
-        if(personalMode === 'plans'){
-            fetchSubscriptionPlans();
+    useEffect(() => {
+        if (personalMode === 'plans') {
+            //fetchSubscriptionPlans();
         }
     }, [personalMode]);
-    console.log(personalSubscriptionPlans);
 
     useEffect(() => {
         if (generalData) {
@@ -2148,7 +2412,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                     </> : mode === 'personal' ?
                         <>
                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                {[{'mode': "rooms", 'name': "Rooms"}, {'mode': "plans", 'name': "Plans"}].map((tab, index)=>{
+                                {[{ 'mode': "rooms", 'name': "Rooms" }, { 'mode': "plans", 'name': "Plans" }].map((tab, index) => {
                                     return <Tabs
                                         key={index}
                                         index={index}
@@ -2253,7 +2517,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                 ) : (personalMode === 'rooms' ?
 
                                     <View style={{ width: '100%' }}>
-                                        
+
                                     </View>
                                     : ''
                                 )
@@ -2274,7 +2538,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     const [plan, setPlan] = useState('workout');
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
     const [planId, setPlanId] = useState(null);
-    const [personal, setPersonal] = useState(true);
+    const [personal, setPersonal] = useState(false);
     const [managerData, setManagerData] = useState(null);
     const muscle_groups = {
         chest: { group_id: 'chest', name: 'Chest' },
@@ -2422,14 +2686,12 @@ const MyPlansScreen = ({ route, navigation }) => {
     const [selectedDay, setSelectedDay] = useState(null);
     const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
-    const [updatePlanModal, setUpdatePlanModal] = useState(false);
+    const [updatePlanModal, setUpdatePlanModal] = useState(true);
     const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
     const [newTrainingModal, setNewTrainingModal] = useState(false);
     const [newFoodModal, setNewFoodModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
-
-    const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
 
     const [setting, setSettings] = useState(false);
 
@@ -2632,20 +2894,9 @@ const MyPlansScreen = ({ route, navigation }) => {
             }));
         }
         setUnavailableExercises(data.unavailable_exercises);
-        fetchSubscriptionPlans();
+        //fetchSubscriptionPlans();
     }
 
-    const fetchSubscriptionPlans = async () => {
-        const response = await fetch(BASE_URL + `/api/payments/plans/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${userToken}`,
-            },
-        });
-        const data = await response.json();
-        setSubscriptionPlansOptions(data);
-    }
     const confirmSubscriptionPlan = async () => {
         try {
             const response = await fetch(BASE_URL + `/api/payments/confirm-subscription-plan/`, {
@@ -3049,7 +3300,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} subscriptionPlansOptions={subscriptionPlansOptions} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
+            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
@@ -3068,9 +3319,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {managerData && managerData.user && <View style={{ top: 5 }}><UsersBall user={managerData.user} size={0.6} /></View>}
                         <Text style={styles.sectionTitle}>Fitness Plan</Text>
-                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData}
-                            fetchSubscriptionPlans={fetchSubscriptionPlans} personalSubscriptionPlans={subscriptionPlansOptions}
-                        />
+                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
