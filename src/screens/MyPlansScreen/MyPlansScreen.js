@@ -7,6 +7,7 @@ import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -1394,10 +1395,10 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const fetchSubscriptionPlans = async (object) => {
+    const fetchSubscriptionPlans = async () => {
         setLoading(true);
         try {
-            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.key + '=' + object.id : ''}`, {
+            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.get_key + '=' + object.get_id : ''}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1405,7 +1406,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
                 },
             });
             const data = await response.json();
-            if (response.ok){
+            if (response.ok) {
                 if (data.length) {
                     setSubscriptionPlansOptions(data);
                 } else {
@@ -1421,7 +1422,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
     const updateSubscriptionData = async (planData) => {
         setLoading(true);
         try {
-            const response = await fetch(BASE_URL + `/api/payments/manage-subscription-plan/`, {
+            const response = await fetch(BASE_URL + `/api/payments/manage-subscription-plan/${object ? '?' + object.obj_key + '=' + object.obj_id : ''}`, {
                 method: planData.is_new ? 'POST' : (planData.delete ? 'DELETE' : 'PUT'),
                 headers: {
                     'Content-Type': 'application/json',
@@ -1555,9 +1556,9 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
                                 <Text style={styles.planPrice}>{plans_periods[plan.period]}</Text>
                             </View>
                             {plan.details && plan.details.features.benefits && plan.details.features.benefits.length > 0 && <View style={styles.planBenefits}>
-                                {plan.details.features.benefits.map((benefit) => {
+                                {plan.details.features.benefits.map((benefit, index) => {
                                     return (
-                                        <Text key={benefit} style={[styles.planBenefit, { color: colors[benefit[0]] }]}>
+                                        <Text key={index} style={[styles.planBenefit, { color: colors[benefit[0]] }]}>
                                             ✓ {benefit[1]}
                                         </Text>
                                     )
@@ -1842,7 +1843,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
             <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 <View style={styles.container}>
                     <View style={styles.section}>
-                        <Text style={styles.title}>Upgrade Plan</Text>
+                        <Text style={styles.title}>Upgrade Plans</Text>
                         {
                             loading ?
                                 <ActivityIndicator size="large" color="#000" />
@@ -2038,7 +2039,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData }) => {
+const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData, UpgradePlanModal }) => {
 
     if (!personal) {
         return (
@@ -2062,13 +2063,15 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     const [generalData, setGeneralData] = useState(null);
     const [mode, setMode] = useState(null);
     const [userMode, setUserMode] = useState('my_data');
-    const [personalMode, setPersonalMode] = useState('plans');
+    const [personalMode, setPersonalMode] = useState('rooms_data');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [selectedMemberId, setSelectedMemberId] = useState(null);
     const [manage, setManage] = useState(false);
     const [selectedPersonal, setSelectedPersonal] = useState(null);
+    const [manageRoomPlans, setManageRoomPlans] = useState(false);
+    const [manageRoomModal, setManageRoomModal] = useState('none');
 
     const updateRoomUserPlan = (room_id, user_id, plan_id, newPlan) => {
         setPersonalRooms(prevRooms => {
@@ -2117,7 +2120,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     };
 
     const fetchPersonalRoomData = async (personal_id, owner) => {
-        const response = await fetch(BASE_URL + `/api/exercises/personal-rooms/${personal_id}/`, {
+        const response = await fetch(BASE_URL + `/api/exercises/personal-rooms/?id=${personal_id}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Token ' + userToken,
@@ -2128,6 +2131,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         const data = await response.json();
         if (owner) {
             setPersonalRooms(data);
+            if (selectedRoom) {
+                setSelectedRoom(data.find(room => room.id === selectedRoom.id));
+            }
         } else {
             setSelectedPersonal(prevData => {
                 const updatedData = { ...prevData };
@@ -2151,7 +2157,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     useEffect(() => {
         if (generalData) {
             if (!personalRooms.length) {
-                fetchPersonalRoomData(generalData.tabs.user.id, true);
+                fetchPersonalRoomData(generalData.tabs.personal.id, true);
             }
 
             if (Object.keys(generalData.tabs).length > 1) {
@@ -2181,6 +2187,12 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
             }
         }
     }, [generalData]);
+
+    useEffect(() => {
+        if (generalData && selectedRoom) {
+            fetchPersonalRoomData(generalData.tabs.personal.id, true);
+        }
+    }, [manageRoomPlans]);
 
     useEffect(() => {
         if (personalRooms.length > 0) {
@@ -2270,7 +2282,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
             flex: 0,
             padding: 5,
             borderRadius: 5,
-            margin: 3
+            margin: 3,
+            alignItems: 'center',
         }
     });
     const onClose = () => {
@@ -2278,6 +2291,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     }
 
     STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
+    const plans_periods = { 'dayly': 'Dayly', 'weekly': 'Weekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly' };
 
     const SelectedPersonalRoom = () => {
         const [selectedPersonalRoomId, setSelectedPersonalRoomId] = useState(selectedPersonal.rooms[0].id);
@@ -2299,6 +2313,113 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                 }
                 )}
             </View>
+        )
+    }
+
+    const ManageRoomModal = () => {
+        const manageRoom = async () => {
+            try {
+                const response = await fetch(BASE_URL + '/api/exercises/personal-rooms/', {
+                    method: manageRoomModal,
+                    headers: {
+                        'Authorization': 'Token ' + userToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: manageRoomModal === 'PUT' || manageRoomModal === 'DELETE' ? selectedRoom.id : null,
+                        name: title,
+                        description: description,
+                    })
+                });
+
+                if (response.ok) {
+                    if (manageRoomModal === 'DELETE') {
+                        setPersonalRooms(
+                            personalRooms.filter(room => room.id !== selectedRoom.id)
+                        );
+                        setSelectedRoom(personalRooms.find(room => room.id !== selectedRoom.id));
+                    } else {
+                        const data = await response.json();
+                        if (manageRoomModal === 'POST') {
+                            if (personalRooms.length > 0) {
+                                setPersonalRooms(prevRooms => {
+                                    const updatedRooms = [...prevRooms];
+                                    updatedRooms.push(data);
+                                    return updatedRooms;
+                                })
+                            } else {
+                                setPersonalRooms([data]);
+                            }
+                        } else if (manageRoomModal === 'PUT') {
+                            setPersonalRooms(
+                                personalRooms.map(room => {
+                                    if (room.id === data.id) {
+                                        return data;
+                                    }
+                                    return room;
+                                })
+                            );
+                        }
+                        setSelectedRoom(data);
+                    }
+                    setManageRoomModal('none');
+                }
+            } catch (error) {
+                console.error('Error with room:', error);
+            }
+        }
+
+        useEffect(() => {
+            if (manageRoomModal === 'DELETE') {
+                manageRoom();
+                setManageRoomModal('none');
+            }
+        }, [manageRoomModal]);
+
+        const onClose = () => {
+            setManageRoomModal('none');
+        }
+        const [title, setTitle] = useState(manageRoomModal === 'PUT' ? selectedRoom.name : '');
+        const [description, setDescription] = useState(manageRoomModal === 'PUT' ? selectedRoom.description : '');
+        return (
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={manageRoomModal !== 'none' && manageRoomModal !== 'DELETE'}
+                onRequestClose={onClose}
+            >
+                <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                    <View style={{ width: '90%', padding: 10, borderRadius: 10, backgroundColor: '#333', alignItems: 'center' }}>
+                        <Text style={styles.title}>Manage Room Plans</Text>
+                        <TextInput
+                            style={{ width: '100%', height: 40, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10, marginBottom: 10, }}
+                            placeholder="Room Name"
+                            onChangeText={text => setTitle(text)}
+                            defaultValue={title}
+                        />
+                        {false && <TextInput
+                            style={{ width: '100%', height: 80, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10, marginBottom: 10 }}
+                            placeholder="Room Description"
+                            onChangeText={text => setDescription(text)}
+                            defaultValue={description}
+                        />}
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+                            <TouchableOpacity style={[styles.userButtons, { flex: 1, backgroundColor: 'blue', right: 0, bottom: 0 }]} onPress={() => {
+                                if (title.length > 0) {
+                                    manageRoom();
+                                } else {
+                                    Alert.alert('Error!', 'Please enter a room name.');
+                                }
+                            }}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.userButtons, { flex: 1, backgroundColor: '#F44336', right: 0, bottom: 0 }]} onPress={onClose}>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         )
     }
 
@@ -2365,7 +2486,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                 loading: true,
                                                                 rooms: [],
                                                             });
-                                                            fetchPersonalRoomData(trainer.user.id, false);
+                                                            fetchPersonalRoomData(trainer.id, false);
                                                         }} size={0.8} nameColor="#EEE" />
                                                     })}
                                                 </View>
@@ -2412,7 +2533,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                     </> : mode === 'personal' ?
                         <>
                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                {[{ 'mode': "rooms", 'name': "Rooms" }, { 'mode': "plans", 'name': "Plans" }].map((tab, index) => {
+                                {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }].map((tab, index) => {
                                     return <Tabs
                                         key={index}
                                         index={index}
@@ -2427,8 +2548,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                     />
                                 })}
                             </View>
+                            {manageRoomModal && <ManageRoomModal />}
                             {selectedRoom && (
-                                personalMode === 'rooms' ? (
+                                personalMode === 'rooms_clients' ? (
                                     <View style={{ width: '100%' }}>
                                         <ScrollView horizontal>
                                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40 }}>
@@ -2444,7 +2566,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                             }}
                                                             isSelected={room.id === selectedRoom.id}
                                                             len={personalRooms.length}
-                                                            TabSize={width * 0.89 / personalRooms.length * 0.9}
+                                                            TabSize={width * 0.89 / personalRooms.length * 1}
                                                             textColor='#222'
                                                             selectedColor='#FFF'
                                                             unselectedColor='#DDD'
@@ -2514,10 +2636,90 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                         }
 
                                     </View>
-                                ) : (personalMode === 'rooms' ?
+                                ) : (personalMode === 'rooms_data' ?
 
                                     <View style={{ width: '100%' }}>
+                                        <ScrollView horizontal>
+                                            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40 }}>
+                                                {personalRooms.map((room, index) => {
+                                                    return (
+                                                        <Tabs
+                                                            key={index}
+                                                            index={index}
+                                                            name={room.name}
+                                                            setSelectedTab={() => {
+                                                                setSelectedRoom(room);
+                                                                setSelectedMemberId(null);
+                                                            }}
+                                                            isSelected={room.id === selectedRoom.id}
+                                                            len={personalRooms.length}
+                                                            TabSize={width * 0.89 / personalRooms.length * 1}
+                                                            textColor='#222'
+                                                            selectedColor='#FFF'
+                                                            unselectedColor='#DDD'
+                                                        />
+                                                    )
+                                                })}
+                                            </View>
+                                        </ScrollView>
 
+                                        <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
+
+                                            {personalRooms.length && <View style={{ flexDirection: 'row', width: '100%', marginTop: 5 }}>
+                                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#2196F3', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                                                    setManageRoomModal('PUT');
+                                                }}>
+                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Edit Room</Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity style={{ flex: 1, marginLeft: '2%', backgroundColor: 'red', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                                                    Alert.alert("Confirm Deletion", "Are you sure you want to delete this room?",
+                                                        [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => { setManageRoomModal('DELETE'); } }]);
+                                                }}>
+                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Delete Room</Text>
+                                                </TouchableOpacity>
+                                            </View>}
+
+                                        </View>
+
+                                        {personalRooms.length && <View>
+                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 15, marginTop: 10 }}>Room Subscription Plans:</Text>
+                                            <View style={{ width: '100%' }}>
+                                                {selectedRoom && selectedRoom.subscription_plans.map(plan => {
+                                                    return (
+                                                        <View key={plan.id} style={{ flexDirection: 'row', padding: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.65)', marginVertical: 5, alignItems: 'center', justifyContent: 'space-evenly' }}>
+                                                            <Text style={{ color: '#000', fontSize: 15, fontWeight: 'bold' }}>{plan.name}</Text>
+                                                            <Text style={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>{plan.price} {plan.currency}</Text>
+                                                            <Text style={{ color: '#000', fontSize: 8, fontWeight: 'bold' }}>{plans_periods[plan.period]}</Text>
+                                                        </View>
+                                                    )
+                                                })}
+                                                <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#000', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 5, borderWidth: 1, borderColor: '#FFF' }} onPress={() => {
+                                                    console.log(manageRoomPlans)
+                                                    setManageRoomPlans(true);
+                                                }}>
+                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Manage Room Subscription Plans</Text>
+                                                </TouchableOpacity>
+                                            </View>
+                                            {manageRoomPlans &&
+                                                <UpgradePlanModal
+                                                    userToken={userToken}
+                                                    updatePlanModal={manageRoomPlans}
+                                                    setUpdatePlanModal={setManageRoomPlans}
+                                                    object={{
+                                                        get_key: 'plans_ids',
+                                                        get_id: selectedRoom.subscription_plans.map(plan => plan.id).join(','),
+                                                        obj_key: 'room_id',
+                                                        obj_id: selectedRoom.id,
+                                                    }}
+                                                    manager={true}
+                                                />
+                                            }
+                                        </View>}
+                                        <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
+                                            setManageRoomModal('POST');
+                                        }}>
+                                            <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
+                                        </TouchableOpacity>
                                     </View>
                                     : ''
                                 )
@@ -2686,7 +2888,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     const [selectedDay, setSelectedDay] = useState(null);
     const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
-    const [updatePlanModal, setUpdatePlanModal] = useState(true);
+    const [updatePlanModal, setUpdatePlanModal] = useState(false);
     const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
     const [newTrainingModal, setNewTrainingModal] = useState(false);
@@ -3300,7 +3502,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />
+            {updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />}
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
@@ -3319,7 +3521,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {managerData && managerData.user && <View style={{ top: 5 }}><UsersBall user={managerData.user} size={0.6} /></View>}
                         <Text style={styles.sectionTitle}>Fitness Plan</Text>
-                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} UpgradePlanModal={UpgradePlanModal} />
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
