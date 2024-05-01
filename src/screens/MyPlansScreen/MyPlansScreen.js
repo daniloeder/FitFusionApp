@@ -2063,7 +2063,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     const [generalData, setGeneralData] = useState(null);
     const [mode, setMode] = useState(null);
     const [userMode, setUserMode] = useState('my_data');
-    const [personalMode, setPersonalMode] = useState('rooms_data');
+    const [personalMode, setPersonalMode] = useState('rooms_clients');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
     const [selectedRoom, setSelectedRoom] = useState(null);
@@ -2397,12 +2397,12 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                             onChangeText={text => setTitle(text)}
                             defaultValue={title}
                         />
-                        {false && <TextInput
+                        <TextInput
                             style={{ width: '100%', height: 80, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10, marginBottom: 10 }}
                             placeholder="Room Description"
                             onChangeText={text => setDescription(text)}
                             defaultValue={description}
-                        />}
+                        />
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
                             <TouchableOpacity style={[styles.userButtons, { flex: 1, backgroundColor: 'blue', right: 0, bottom: 0 }]} onPress={() => {
                                 if (title.length > 0) {
@@ -2664,6 +2664,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                         </ScrollView>
 
                                         <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
+                                            <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
+                                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedRoom.description}</Text>
+                                            </View>
 
                                             {personalRooms.length && <View style={{ flexDirection: 'row', width: '100%', marginTop: 5 }}>
                                                 <TouchableOpacity style={{ flex: 1, backgroundColor: '#2196F3', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
@@ -2694,7 +2697,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                     )
                                                 })}
                                                 <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#000', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 5, borderWidth: 1, borderColor: '#FFF' }} onPress={() => {
-                                                    console.log(manageRoomPlans)
                                                     setManageRoomPlans(true);
                                                 }}>
                                                     <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Manage Room Subscription Plans</Text>
