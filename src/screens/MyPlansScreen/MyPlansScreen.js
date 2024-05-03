@@ -1390,15 +1390,17 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setCompletedPaymentData, currentPlanId, object, manager = false }) => {
+const UpgradePlanModal = ({ userToken, setCompletedPaymentData, currentPlanId, object, subscriptionTexts, patternMode = 'manager', }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [mode, setMode] = useState(patternMode);
+    const [updatePlanModal, setUpdatePlanModal] = useState(false);
 
     const fetchSubscriptionPlans = async () => {
         setLoading(true);
         try {
-            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.get_key + '=' + object.get_id : ''}`, {
+            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.get_key + '=' + object.get_id.join(',') : ''}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1406,6 +1408,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
                 },
             });
             const data = await response.json();
+
             if (response.ok) {
                 if (data.length) {
                     setSubscriptionPlansOptions(data);
@@ -1452,16 +1455,20 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
     }
 
     useEffect(() => {
-        if (!subscriptionPlansOptions.length) {
-            fetchSubscriptionPlans(object || null);
+        if (object.get_id.length !== subscriptionPlansOptions.length || object.get_id.some(id => !subscriptionPlansOptions.find(sub_plan => sub_plan.id === id))) {
+            if (object.get_id.some(id => !object.plans_in.find(sub_plan => sub_plan.id === id))) {
+                fetchSubscriptionPlans(object || null);
+            } else {
+                setSubscriptionPlansOptions(object.plans_in);
+            }
         }
-    }, [subscriptionPlansOptions]);
+    }, [object]);
 
     const [edit, setEdit] = useState(false);
     const [status, setStatus] = useState('plans');
 
     const allPlans = subscriptionPlansOptions.filter(plan => {
-        return manager || (plan.price >= 1 && currentPlanId !== plan.id)
+        return (mode === 'manager') || currentPlanId !== plan.id
     }).map(plan => plan.id);
     const allPlansNames = subscriptionPlansOptions.reduce((obj, plan) => {
         obj[plan.id] = plan.name;
@@ -1482,6 +1489,10 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
         setUseCreditCard(false);
         setUpdatePlanModal(false);
         setPlans([]);
+        setEdit(false);
+        if (patternMode !== 'manager') {
+            setMode('see');
+        }
     };
     const PricePlanTable = ({ options }) => {
 
@@ -1583,11 +1594,10 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
             alignItems: 'center',
         },
         section: {
-            width: '96%',
+            width: mode === 'subscribe' ? '90%' : '100%',
             backgroundColor: '#ddd',
             borderRadius: 10,
             padding: 10,
-            marginVertical: width * 0.2,
         },
         title: {
             fontSize: 20,
@@ -1613,7 +1623,6 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
             fontWeight: 'bold',
             color: '#fff',
         },
-
         editingPlanName: {
             flex: 1,
             padding: 2,
@@ -1833,6 +1842,109 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
         }
     }, [updatePlanModal]);
 
+    const PlansBody = () =>
+        <View style={styles.section}>
+            <Text style={styles.title}>{mode !== 'subscription' ? "Plans" : "Upgrade Plans"}</Text>
+            {
+                loading ?
+                    <ActivityIndicator size="large" color="#000" />
+                    : status === 'plans' ? (
+                        edit && mode === 'manager' ? (
+                            subscriptionPlan ? <EditPlan plan={subscriptionPlan} />
+                                : <>
+                                    {allPlans.length > 0 &&
+                                        <SelectBox
+                                            title={"Select a Plan to Edit:"}
+                                            max={1}
+                                            allOptions={allPlans}
+                                            allOptionsNames={allPlansNames}
+                                            selectedOptions={plans}
+                                            setSelectedItem={setPlans}
+                                        />}
+                                    <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000', marginTop: 10 }}>Or add new plan:</Text>
+                                    <TouchableOpacity style={styles.confirmButton} onPress={() => {
+                                        setSubscriptionPlansOptions([
+                                            {
+                                                "id": 0,
+                                                "is_new": true,
+                                                "name": "Plan Name",
+                                                "price": "0",
+                                                "currency": "USD",
+                                                "details": {
+                                                    "features": {
+                                                        "benefits": [[2, "Edit Benefits Here"]],
+                                                        "comment": "This is the comment"
+                                                    },
+                                                },
+                                                "event": null,
+                                                "period": "monthly",
+                                                "place": null,
+                                            },
+                                            ...subscriptionPlansOptions
+                                        ])
+                                        setPlans([0]);
+                                    }}>
+                                        <Text style={styles.confirmButtonText}>Add New Plan</Text>
+                                    </TouchableOpacity>
+                                </>
+                        ) : (
+                            <View>
+                                <PricePlanTable options={subscriptionPlansOptions} />
+                                {mode === 'subscription' &&
+                                    <SelectBox
+                                        title={"Select a Plan:"}
+                                        max={1}
+                                        allOptions={allPlans}
+                                        allOptionsNames={allPlansNames}
+                                        selectedOptions={plans}
+                                        setSelectedItem={setPlans}
+                                    />
+                                }
+                                {mode !== 'see' && <TouchableOpacity style={styles.confirmButton} onPress={() => {
+                                    if (mode === 'manager') {
+                                        setEdit(true);
+                                        setUpdatePlanModal(true);
+                                    } else {
+                                        if (plans.length > 0) {
+                                            setUseCreditCard(true);
+                                            return;
+                                        }
+                                        Alert.alert('Error!', 'Please select a plan.');
+                                    }
+                                }}>
+                                    <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Next"}</Text>
+                                </TouchableOpacity>}
+
+                                {mode === 'see' &&
+                                    <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#000', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 15, borderWidth: 1, borderColor: '#FFF' }} onPress={() => {
+                                        if (subscriptionTexts.alert_title) {
+                                            Alert.alert(
+                                                subscriptionTexts.alert_title, subscriptionTexts.alert_message,
+                                                [
+                                                    { text: 'Cancel', style: 'cancel' },
+                                                    {
+                                                        text: 'OK', onPress: () => {
+                                                            setMode('subscription');
+                                                            setUpdatePlanModal(true);
+                                                        }
+                                                    }])
+                                        }
+                                    }}>
+                                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>{subscriptionTexts.button_text}</Text>
+                                    </TouchableOpacity>
+                                }
+
+                                {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
+                            </View>
+                        )
+                    ) : status === 'loading' ?
+                        <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /></View>
+                        : ''
+            }
+        </View>
+
+    if (!updatePlanModal) return <PlansBody />;
+
     return (
         <Modal
             animationType="slide"
@@ -1842,85 +1954,7 @@ const UpgradePlanModal = ({ userToken, updatePlanModal, setUpdatePlanModal, setC
         >
             <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
                 <View style={styles.container}>
-                    <View style={styles.section}>
-                        <Text style={styles.title}>Upgrade Plans</Text>
-                        {
-                            loading ?
-                                <ActivityIndicator size="large" color="#000" />
-                                : status === 'plans' ? (
-                                    edit && manager ? (
-                                        subscriptionPlan ? <EditPlan plan={subscriptionPlan} />
-                                            : <>
-                                                {allPlans.length > 0 &&
-                                                    <SelectBox
-                                                        title={"Select a Plan to Edit:"}
-                                                        max={1}
-                                                        allOptions={allPlans}
-                                                        allOptionsNames={allPlansNames}
-                                                        selectedOptions={plans}
-                                                        setSelectedItem={setPlans}
-                                                    />}
-                                                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000', marginTop: 10 }}>Or add new plan:</Text>
-                                                <TouchableOpacity style={styles.confirmButton} onPress={() => {
-                                                    setSubscriptionPlansOptions([
-                                                        {
-                                                            "id": 0,
-                                                            "is_new": true,
-                                                            "name": "Plan Name",
-                                                            "price": "0",
-                                                            "currency": "USD",
-                                                            "details": {
-                                                                "features": {
-                                                                    "benefits": [[2, "Edit Benefits Here"]],
-                                                                    "comment": "This is the comment"
-                                                                },
-                                                            },
-                                                            "event": null,
-                                                            "period": "monthly",
-                                                            "place": null,
-                                                        },
-                                                        ...subscriptionPlansOptions
-                                                    ])
-                                                    setPlans([0]);
-                                                }}>
-                                                    <Text style={styles.confirmButtonText}>Add New Plan</Text>
-                                                </TouchableOpacity>
-                                            </>
-
-                                    ) : (
-                                        <View>
-                                            <PricePlanTable options={subscriptionPlansOptions} />
-                                            {!manager &&
-                                                <SelectBox
-                                                    title={"Select a Plan:"}
-                                                    max={1}
-                                                    allOptions={allPlans}
-                                                    allOptionsNames={allPlansNames}
-                                                    selectedOptions={plans}
-                                                    setSelectedItem={setPlans}
-                                                />
-                                            }
-                                            <TouchableOpacity style={styles.confirmButton} onPress={() => {
-                                                if (manager) {
-                                                    setEdit(true);
-                                                } else {
-                                                    if (plans.length > 0) {
-                                                        setUseCreditCard(true);
-                                                        return;
-                                                    }
-                                                    Alert.alert('Error!', 'Please select a plan.');
-                                                }
-                                            }}>
-                                                <Text style={styles.confirmButtonText}>{manager ? "Edit Plans" : "Next"}</Text>
-                                            </TouchableOpacity>
-                                            {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
-                                        </View>
-                                    )
-                                ) : status === 'loading' ?
-                                    <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#0000ff" /></View>
-                                    : ''
-                        }
-                    </View>
+                    <PlansBody />
                 </View>
             </ScrollView>
         </Modal>
@@ -2066,12 +2100,15 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     const [personalMode, setPersonalMode] = useState('rooms_clients');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
-    const [selectedRoom, setSelectedRoom] = useState(null);
+    const [selectedTrainerPersonalRoom, setSelectedTrainerPersonalRoom] = useState(null);
+    const [selectedTrainerRoom, setSelectedTrainerRoom] = useState(null);
     const [selectedMemberId, setSelectedMemberId] = useState(null);
     const [manage, setManage] = useState(false);
-    const [selectedPersonal, setSelectedPersonal] = useState(null);
-    const [manageRoomPlans, setManageRoomPlans] = useState(false);
+    const [selectedTrainer, setSelectedTrainer] = useState(null);
+    const [manageRoomPlans, setManageRoomPlans] = useState(true);
     const [manageRoomModal, setManageRoomModal] = useState('none');
+
+    const [selectedTrainerRoomId, setSelectedTrainerRoomId] = useState(null);
 
     const updateRoomUserPlan = (room_id, user_id, plan_id, newPlan) => {
         setPersonalRooms(prevRooms => {
@@ -2097,6 +2134,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                         const updatedMembers = { ...prevMembers };
                         data.forEach(user => {
                             updatedMembers[user.user_id].profile_image = user.profile_image;
+                            updatedMembers[user.user_id].checked = true;
                         });
                         return updatedMembers;
                     });
@@ -2120,7 +2158,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     };
 
     const fetchPersonalRoomData = async (personal_id, owner) => {
-        const response = await fetch(BASE_URL + `/api/exercises/personal-rooms/?id=${personal_id}`, {
+        const response = await fetch(BASE_URL + `/api/exercises/personal-rooms/?personal_id=${personal_id}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Token ' + userToken,
@@ -2131,11 +2169,11 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         const data = await response.json();
         if (owner) {
             setPersonalRooms(data);
-            if (selectedRoom) {
-                setSelectedRoom(data.find(room => room.id === selectedRoom.id));
+            if (selectedTrainerPersonalRoom) {
+                setSelectedTrainerPersonalRoom(data.find(room => room.id === selectedTrainerPersonalRoom.id));
             }
         } else {
-            setSelectedPersonal(prevData => {
+            setSelectedTrainer(prevData => {
                 const updatedData = { ...prevData };
                 updatedData['rooms'] = data;
                 updatedData['loading'] = false;
@@ -2189,20 +2227,20 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     }, [generalData]);
 
     useEffect(() => {
-        if (generalData && selectedRoom) {
+        if (generalData && selectedTrainerPersonalRoom) {
             fetchPersonalRoomData(generalData.tabs.personal.id, true);
         }
     }, [manageRoomPlans]);
 
     useEffect(() => {
         if (personalRooms.length > 0) {
-            if (!selectedRoom) {
-                setSelectedRoom(personalRooms[0]);
+            if (!selectedTrainerPersonalRoom) {
+                setSelectedTrainerPersonalRoom(personalRooms[0]);
             }
 
             for (const room of personalRooms) {
                 if (room.members) {
-                    for (const member of room.members) {
+                    for (const member of [...room.members, ...(room.requests_users || [])]) {
                         if (!members[member.id]) {
                             setMembers(prevMembers => {
                                 const updatedMembers = { ...prevMembers };
@@ -2218,7 +2256,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
 
     useEffect(() => {
         const members_without_image = Object.values(members).filter(member => {
-            return member.profile_image === undefined;
+            return member.checked === undefined;
         }).map(member => {
             return member.id;
         });
@@ -2227,7 +2265,14 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         }
     }, [members]);
 
-    const selectedMember = selectedMemberId && selectedRoom.members.find(member => member.id === selectedMemberId);
+    useEffect(() => {
+        if (!selectedTrainerRoomId && selectedTrainer && selectedTrainer.rooms.length) {
+            setSelectedTrainerRoom(selectedTrainer.rooms[0]);
+            setSelectedTrainerRoomId(selectedTrainer.rooms[0].id);
+        }
+    }, [selectedTrainer]);
+
+    const selectedMember = selectedMemberId && (selectedTrainerPersonalRoom.members.find(member => member.id === selectedMemberId) || selectedTrainerPersonalRoom.requests_users.find(member => member.id === selectedMemberId));
 
     useEffect(() => {
         if (manage) {
@@ -2240,7 +2285,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
             }
             setManagerData({
                 plan_id: manage,
-                room: { request_id: selectedMember.request.id, room_id: selectedRoom.id, user_id: selectedMember.id },
+                room: { request_id: selectedMember.request.id, room_id: selectedTrainerPersonalRoom.id, user_id: selectedMember.id },
                 user: members[selectedMemberId],
                 plans: plans,
                 updateRoomUserPlan: updateRoomUserPlan
@@ -2253,13 +2298,14 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     const styles = StyleSheet.create({
         container: {
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0,0,0,0.8)',
             justifyContent: 'center',
             alignItems: 'center',
         },
         section: {
+            flex: 1,
             width: '96%',
-            minHeight: '80%',
+            minHeight: '90%',
             backgroundColor: 'rgba(26, 32, 44, 0.7)',
             borderRadius: 10,
             borderWidth: 2,
@@ -2293,29 +2339,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
     const plans_periods = { 'dayly': 'Dayly', 'weekly': 'Weekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly' };
 
-    const SelectedPersonalRoom = () => {
-        const [selectedPersonalRoomId, setSelectedPersonalRoomId] = useState(selectedPersonal.rooms[0].id);
-        return (
-            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                {selectedPersonal.rooms.map((room, index) => {
-                    return <Tabs
-                        key={index}
-                        index={index}
-                        name={room.name}
-                        setSelectedTab={() => setSelectedPersonalRoomId(room.id)}
-                        isSelected={room.id === selectedPersonalRoomId}
-                        len={selectedPersonal.rooms.length}
-                        TabSize={width * 0.89 / selectedPersonal.rooms.length * 0.9}
-                        textColor='#222'
-                        selectedColor='#FFF'
-                        unselectedColor='#DDD'
-                    />
-                }
-                )}
-            </View>
-        )
-    }
-
     const ManageRoomModal = () => {
         const manageRoom = async () => {
             try {
@@ -2326,7 +2349,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        id: manageRoomModal === 'PUT' || manageRoomModal === 'DELETE' ? selectedRoom.id : null,
+                        id: manageRoomModal === 'PUT' || manageRoomModal === 'DELETE' ? selectedTrainerPersonalRoom.id : null,
                         name: title,
                         description: description,
                     })
@@ -2335,9 +2358,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                 if (response.ok) {
                     if (manageRoomModal === 'DELETE') {
                         setPersonalRooms(
-                            personalRooms.filter(room => room.id !== selectedRoom.id)
+                            personalRooms.filter(room => room.id !== selectedTrainerPersonalRoom.id)
                         );
-                        setSelectedRoom(personalRooms.find(room => room.id !== selectedRoom.id));
+                        setSelectedTrainerPersonalRoom(personalRooms.find(room => room.id !== selectedTrainerPersonalRoom.id));
                     } else {
                         const data = await response.json();
                         if (manageRoomModal === 'POST') {
@@ -2360,7 +2383,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                 })
                             );
                         }
-                        setSelectedRoom(data);
+                        setSelectedTrainerPersonalRoom(data);
                     }
                     setManageRoomModal('none');
                 }
@@ -2379,8 +2402,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         const onClose = () => {
             setManageRoomModal('none');
         }
-        const [title, setTitle] = useState(manageRoomModal === 'PUT' ? selectedRoom.name : '');
-        const [description, setDescription] = useState(manageRoomModal === 'PUT' ? selectedRoom.description : '');
+        const [title, setTitle] = useState(manageRoomModal === 'PUT' ? selectedTrainerPersonalRoom.name : '');
+        const [description, setDescription] = useState(manageRoomModal === 'PUT' ? selectedTrainerPersonalRoom.description : '');
         return (
             <Modal
                 animationType="fade"
@@ -2432,303 +2455,364 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         >
             <View style={styles.container}>
                 <View style={styles.section}>
-                    <Text style={styles.title}>Paste Workout</Text>
-                    <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                        {generalData && Object.keys(generalData.tabs).map((tab, index) => {
-                            const len = Object.keys(generalData.tabs).length;
-                            return <Tabs
-                                key={index}
-                                index={index}
-                                name={generalData.tabs[tab].name}
-                                setSelectedTab={() => setMode(tab)}
-                                isSelected={tab === mode}
-                                len={len}
-                                TabSize={width * 0.89 / len * 0.8}
-                                textColor='#222'
-                                selectedColor='#FFF'
-                                unselectedColor='#DDD'
-                            />
-                        })
-                        }
-                    </View>
-                    {mode === 'user' ? <>
+                    <ScrollView contentContainerStyle={{ width: width * 0.9 }}>
+                        <Text style={styles.title}>Paste Workout</Text>
                         <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                            {[{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "my_plans", 'name': "My Plans" }, { 'mode': "trainers", 'name': "Trainers" }].map((tab, index) => {
+                            {generalData && Object.keys(generalData.tabs).map((tab, index) => {
+                                const len = Object.keys(generalData.tabs).length;
                                 return <Tabs
                                     key={index}
                                     index={index}
-                                    name={tab.name}
-                                    setSelectedTab={() => setUserMode(tab.mode)}
-                                    isSelected={tab.mode === userMode}
-                                    len={3}
-                                    TabSize={width * 0.89 / 3 * 0.9}
+                                    name={generalData.tabs[tab].name}
+                                    setSelectedTab={() => setMode(tab)}
+                                    isSelected={tab === mode}
+                                    len={len}
+                                    TabSize={width * 0.89 / len * 0.8}
                                     textColor='#222'
                                     selectedColor='#FFF'
                                     unselectedColor='#DDD'
                                 />
-                            })}
-                        </View>
-                        <ScrollView>
-                            {userMode === "trainers" ?
-                                <View>
-                                    <View style={{ maxHeight: width * 0.65 }}>
-                                        {generalData.tabs && generalData.tabs.user && generalData.tabs.user.nearby_trainers.length > 0 && <>
-                                            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
-                                                Nearby Trainers:
-                                            </Text>
-                                            <ScrollView horizontal>
-                                                <View style={styles.usersContainer}>
-                                                    {generalData.tabs.user.nearby_trainers.map(trainer => {
-                                                        return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
-                                                            setSelectedPersonal({
-                                                                id: trainer.user.id,
-                                                                name: trainer.name,
-                                                                loading: true,
-                                                                rooms: [],
-                                                            });
-                                                            fetchPersonalRoomData(trainer.id, false);
-                                                        }} size={0.8} nameColor="#EEE" />
-                                                    })}
-                                                </View>
-                                            </ScrollView>
-                                        </>}
-                                        {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.length > 0 && <>
-                                            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
-                                                World Trainers:
-                                            </Text>
-                                            <ScrollView horizontal>
-                                                <View style={styles.usersContainer}>
-                                                    {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.map(trainer => {
-                                                        return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
-                                                    })}
-                                                </View>
-                                            </ScrollView>
-                                        </>}
-                                    </View>
-                                    {selectedPersonal && <View
-                                        style={{
-                                            width: width * 0.92,
-                                            padding: 5,
-                                            borderRadius: 5,
-                                            backgroundColor: 'rgba(255,255,255,0.15)',
-                                        }}
-                                    >
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
-                                            <UsersBall user={members[selectedPersonal.id]} name="none" size={0.5} nameColor="#EEE" />
-                                            <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedPersonal.name}</Text>
-                                        </View>
-                                        {selectedPersonal.loading ? <ActivityIndicator size="large" color="#fff" /> :
-                                            selectedPersonal.rooms.length && <SelectedPersonalRoom />
-                                        }
-                                    </View>}
-                                </View>
-                                : userMode === "my_data" ?
-                                    <></>
-                                    : userMode === "my_plans" ?
-                                        <></>
-                                        : ''
+                            })
                             }
-                        </ScrollView>
-
-                    </> : mode === 'personal' ?
-                        <>
+                        </View>
+                        {mode === 'user' ? <>
                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }].map((tab, index) => {
+                                {[{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "my_plans", 'name': "My Plans" }, { 'mode': "trainers", 'name': "Trainers" }].map((tab, index) => {
                                     return <Tabs
                                         key={index}
                                         index={index}
                                         name={tab.name}
-                                        setSelectedTab={() => setPersonalMode(tab.mode)}
-                                        isSelected={tab.mode === personalMode}
-                                        len={2}
-                                        TabSize={width * 0.89 / 2 * 0.9}
+                                        setSelectedTab={() => setUserMode(tab.mode)}
+                                        isSelected={tab.mode === userMode}
+                                        len={3}
+                                        TabSize={width * 0.89 / 3 * 0.9}
                                         textColor='#222'
                                         selectedColor='#FFF'
                                         unselectedColor='#DDD'
                                     />
                                 })}
                             </View>
-                            {manageRoomModal && <ManageRoomModal />}
-                            {selectedRoom && (
-                                personalMode === 'rooms_clients' ? (
-                                    <View style={{ width: '100%' }}>
-                                        <ScrollView horizontal>
-                                            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40 }}>
-                                                {personalRooms.map((room, index) => {
-                                                    return (
-                                                        <Tabs
-                                                            key={index}
-                                                            index={index}
-                                                            name={room.name}
-                                                            setSelectedTab={() => {
-                                                                setSelectedRoom(room);
-                                                                setSelectedMemberId(null);
-                                                            }}
-                                                            isSelected={room.id === selectedRoom.id}
-                                                            len={personalRooms.length}
-                                                            TabSize={width * 0.89 / personalRooms.length * 1}
-                                                            textColor='#222'
-                                                            selectedColor='#FFF'
-                                                            unselectedColor='#DDD'
-                                                        />
-                                                    )
-                                                })}
-                                            </View>
-                                        </ScrollView>
-                                        <ScrollView horizontal>
-                                            <View style={styles.usersContainer}>
-                                                {selectedRoom.members.map(member =>
-                                                    <UsersBall key={member.id} user={members[member.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
-                                                )}
-                                            </View>
-                                        </ScrollView>
-                                        {selectedMemberId &&
-                                            <View style={{ flexDirection: 'row', padding: 4, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.25)' }}>
-                                                <UsersBall user={members[selectedMemberId]} name="username" size={1.5} nameColor="#EEE" />
-                                                <View style={{ marginLeft: 5, flex: 1 }}>
-                                                    <Text style={{ color: '#FFF' }}>{selectedMember.name}, {selectedMember.age}</Text>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                                        {selectedMember.request.training_plan &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
-                                                                onPress={() => { setManage('workout'); }}
-                                                            >
-                                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Workout</Text>
-                                                            </TouchableOpacity>}
-                                                        {selectedMember.request.diet_plan &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
-                                                                onPress={() => { setManage('diet'); }}
-                                                            >
-                                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
-                                                            </TouchableOpacity>}
-                                                        {selectedMember.request.assistance &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}>
-                                                                <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
-                                                            </TouchableOpacity>}
+                            <ScrollView>
+                                {userMode === "trainers" ?
+                                    <View>
+                                        <View style={{ maxHeight: width * 0.65 }}>
+                                            {generalData.tabs && generalData.tabs.user && generalData.tabs.user.nearby_trainers.length > 0 && <>
+                                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                                    Nearby Trainers:
+                                                </Text>
+                                                <ScrollView horizontal>
+                                                    <View style={styles.usersContainer}>
+                                                        {generalData.tabs.user.nearby_trainers.map(trainer => {
+                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
+                                                                setSelectedTrainer({
+                                                                    id: trainer.user.id,
+                                                                    name: trainer.name,
+                                                                    loading: true,
+                                                                    rooms: [],
+                                                                });
+                                                                fetchPersonalRoomData(trainer.id, false);
+                                                            }} size={0.8} nameColor="#EEE" />
+                                                        })}
                                                     </View>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                                        {!selectedMember.request.training_plan &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
-                                                                onPress={() => { setManage('workout'); }}
-                                                            >
-                                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Workout</Text>
-                                                            </TouchableOpacity>}
-                                                        {!selectedMember.request.diet_plan &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
-                                                                onPress={() => { setManage('diet'); }}
-                                                            >
-                                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
-                                                            </TouchableOpacity>}
-                                                        {!selectedMember.request.assistance &&
-                                                            <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
-                                                                <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Assistance</Text>
-                                                            </TouchableOpacity>}
+                                                </ScrollView>
+                                            </>}
+                                            {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.length > 0 && <>
+                                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                                    World Trainers:
+                                                </Text>
+                                                <ScrollView horizontal>
+                                                    <View style={styles.usersContainer}>
+                                                        {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.map(trainer => {
+                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        })}
                                                     </View>
-                                                    <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
-                                                        <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Subscription Data</Text>
-                                                        {selectedMember.request.subscription ? <>
-                                                            <Text style={{ fontSize: 9, color: 'gray' }}>Price: {selectedMember.request.subscription.amount}</Text>
-                                                            <Text style={{ fontSize: 9, color: 'gray' }}>Date: {selectedMember.request.subscription.date_start + (selectedMember.request.subscription.date_end ? " => " + selectedMember.request.subscription.date_end : "...")}</Text>
-                                                            <Text style={{ fontSize: 9, fontWeight: 'bold', color: selectedMember.request.subscription.status === 'active' ? 'green' : '#000' }}>Status: {STATUS_CHOICES[selectedMember.request.subscription.status]}</Text>
-                                                        </> : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        }
-
-                                    </View>
-                                ) : (personalMode === 'rooms_data' ?
-
-                                    <View style={{ width: '100%' }}>
-                                        <ScrollView horizontal>
-                                            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40 }}>
-                                                {personalRooms.map((room, index) => {
-                                                    return (
-                                                        <Tabs
-                                                            key={index}
-                                                            index={index}
-                                                            name={room.name}
-                                                            setSelectedTab={() => {
-                                                                setSelectedRoom(room);
-                                                                setSelectedMemberId(null);
-                                                            }}
-                                                            isSelected={room.id === selectedRoom.id}
-                                                            len={personalRooms.length}
-                                                            TabSize={width * 0.89 / personalRooms.length * 1}
-                                                            textColor='#222'
-                                                            selectedColor='#FFF'
-                                                            unselectedColor='#DDD'
-                                                        />
-                                                    )
-                                                })}
-                                            </View>
-                                        </ScrollView>
-
-                                        <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
-                                            <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
-                                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedRoom.description}</Text>
-                                            </View>
-
-                                            {personalRooms.length && <View style={{ flexDirection: 'row', width: '100%', marginTop: 5 }}>
-                                                <TouchableOpacity style={{ flex: 1, backgroundColor: '#2196F3', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
-                                                    setManageRoomModal('PUT');
-                                                }}>
-                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Edit Room</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity style={{ flex: 1, marginLeft: '2%', backgroundColor: 'red', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
-                                                    Alert.alert("Confirm Deletion", "Are you sure you want to delete this room?",
-                                                        [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => { setManageRoomModal('DELETE'); } }]);
-                                                }}>
-                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Delete Room</Text>
-                                                </TouchableOpacity>
-                                            </View>}
-
+                                                </ScrollView>
+                                            </>}
                                         </View>
-
-                                        {personalRooms.length && <View>
-                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 15, marginTop: 10 }}>Room Subscription Plans:</Text>
-                                            <View style={{ width: '100%' }}>
-                                                {selectedRoom && selectedRoom.subscription_plans.map(plan => {
-                                                    return (
-                                                        <View key={plan.id} style={{ flexDirection: 'row', padding: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.65)', marginVertical: 5, alignItems: 'center', justifyContent: 'space-evenly' }}>
-                                                            <Text style={{ color: '#000', fontSize: 15, fontWeight: 'bold' }}>{plan.name}</Text>
-                                                            <Text style={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>{plan.price} {plan.currency}</Text>
-                                                            <Text style={{ color: '#000', fontSize: 8, fontWeight: 'bold' }}>{plans_periods[plan.period]}</Text>
-                                                        </View>
-                                                    )
-                                                })}
-                                                <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#000', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 5, borderWidth: 1, borderColor: '#FFF' }} onPress={() => {
-                                                    setManageRoomPlans(true);
-                                                }}>
-                                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Manage Room Subscription Plans</Text>
-                                                </TouchableOpacity>
+                                        {selectedTrainer && <View style={{ width: '100%', padding: 5, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
+                                                <UsersBall user={members[selectedTrainer.id]} name="none" size={0.5} nameColor="#EEE" />
+                                                <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
                                             </View>
-                                            {manageRoomPlans &&
-                                                <UpgradePlanModal
-                                                    userToken={userToken}
-                                                    updatePlanModal={manageRoomPlans}
-                                                    setUpdatePlanModal={setManageRoomPlans}
-                                                    object={{
-                                                        get_key: 'plans_ids',
-                                                        get_id: selectedRoom.subscription_plans.map(plan => plan.id).join(','),
-                                                        obj_key: 'room_id',
-                                                        obj_id: selectedRoom.id,
-                                                    }}
-                                                    manager={true}
-                                                />
+                                            {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
+                                                : selectedTrainer.rooms.length > 0 && (
+                                                    <View style={{ width: '100%' }}>
+                                                        <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                            {selectedTrainer.rooms.map((room, index) => {
+                                                                return <Tabs
+                                                                    key={index}
+                                                                    index={index}
+                                                                    name={room.name}
+                                                                    setSelectedTab={() => {
+                                                                        setSelectedTrainerRoomId(room.id);
+                                                                        setSelectedTrainerRoom(room);
+                                                                    }}
+                                                                    isSelected={room.id === selectedTrainerRoomId}
+                                                                    len={selectedTrainer.rooms.length}
+                                                                    TabSize={width * 0.89 / selectedTrainer.rooms.length * 0.9}
+                                                                    textColor='#222'
+                                                                    selectedColor='#FFF'
+                                                                    unselectedColor='#DDD'
+                                                                />
+                                                            }
+                                                            )}
+                                                        </View>
+                                                        {selectedTrainerRoom && <>
+                                                            <View>
+                                                                <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
+                                                                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerRoom.description}</Text>
+                                                                </View>
+                                                            </View>
+
+                                                            {selectedTrainerRoom.subscription_plans.length > 0 &&
+                                                                <View style={{ width: '100%', marginTop: 10 }}>
+                                                                    <UpgradePlanModal
+                                                                        userToken={userToken}
+                                                                        subscriptionTexts={{ button_text: "Request to Join Room", alert_title: "Joining Room", alert_message: "Are you sure you want to join this room?" }}
+                                                                        object={{
+                                                                            get_key: 'plans_ids',
+                                                                            get_id: selectedTrainerRoom.subscription_plans.map(plan => plan.id),
+                                                                            plans_in: selectedTrainerRoom.subscription_plans,
+                                                                        }}
+                                                                        patternMode='see'
+                                                                    />
+                                                                </View>
+                                                            }
+                                                        </>
+                                                        }
+                                                    </View>
+                                                )
                                             }
                                         </View>}
-                                        <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
-                                            setManageRoomModal('POST');
-                                        }}>
-                                            <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
-                                        </TouchableOpacity>
                                     </View>
-                                    : ''
-                                )
-                            )}
-                        </>
-                        : <></>
-                    }
+                                    : userMode === "my_data" ?
+                                        <></>
+                                        : userMode === "my_plans" ?
+                                            <></>
+                                            : ''
+                                }
+                            </ScrollView>
+
+                        </> : mode === 'personal' ?
+                            <>
+                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                    {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }].map((tab, index) => {
+                                        return <Tabs
+                                            key={index}
+                                            index={index}
+                                            name={tab.name}
+                                            setSelectedTab={() => setPersonalMode(tab.mode)}
+                                            isSelected={tab.mode === personalMode}
+                                            len={2}
+                                            TabSize={width * 0.89 / 2 * 0.9}
+                                            textColor='#222'
+                                            selectedColor='#FFF'
+                                            unselectedColor='#DDD'
+                                        />
+                                    })}
+                                </View>
+                                {manageRoomModal && <ManageRoomModal />}
+                                {selectedTrainerPersonalRoom && (
+                                    personalMode === 'rooms_clients' ? (
+                                        <View style={{ width: '100%' }}>
+                                            <ScrollView horizontal>
+                                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                    {personalRooms.map((room, index) => {
+                                                        return (
+                                                            <Tabs
+                                                                key={index}
+                                                                index={index}
+                                                                name={room.name}
+                                                                setSelectedTab={() => {
+                                                                    setSelectedTrainerPersonalRoom(room);
+                                                                    setSelectedMemberId(null);
+                                                                }}
+                                                                isSelected={room.id === selectedTrainerPersonalRoom.id}
+                                                                len={personalRooms.length}
+                                                                TabSize={width * 0.89 / personalRooms.length * 1}
+                                                                textColor='#222'
+                                                                selectedColor='#FFF'
+                                                                unselectedColor='#DDD'
+                                                            />
+                                                        )
+                                                    })}
+                                                </View>
+                                            </ScrollView>
+
+                                            {selectedTrainerPersonalRoom.members.length > 0 && <>
+                                                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                                    Clients:
+                                                </Text>
+                                                <ScrollView horizontal>
+                                                    <View style={styles.usersContainer}>
+                                                        {selectedTrainerPersonalRoom.members.map(member =>
+                                                            <UsersBall key={member.id} user={members[member.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        )}
+                                                    </View>
+                                                </ScrollView>
+                                            </>}
+                                            {selectedTrainerPersonalRoom.requests_users.length > 0 && <>
+                                                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                                    Requests:
+                                                </Text>
+                                                <ScrollView horizontal>
+                                                    <View style={styles.usersContainer}>
+                                                        {selectedTrainerPersonalRoom.requests_users.map(user => {
+                                                            return <UsersBall key={user.id} user={members[user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        })}
+                                                    </View>
+                                                </ScrollView>
+                                            </>}
+
+                                            {selectedMember &&
+                                                <View style={{ flexDirection: 'row', padding: 4, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.25)' }}>
+                                                    <UsersBall user={members[selectedMemberId]} name="username" size={1.5} nameColor="#EEE" />
+                                                    <View style={{ marginLeft: 5, flex: 1 }}>
+                                                        <Text style={{ color: '#FFF' }}>{selectedMember.name}, {selectedMember.age}</Text>
+                                                        {selectedMember.request.status && selectedMember.request.status === 'pending' && <View>
+                                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                                                                {selectedMember.request.training_plan &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
+                                                                        onPress={() => { setManage('workout'); }}
+                                                                    >
+                                                                        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Workout</Text>
+                                                                    </TouchableOpacity>}
+                                                                {selectedMember.request.diet_plan &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
+                                                                        onPress={() => { setManage('diet'); }}
+                                                                    >
+                                                                        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
+                                                                    </TouchableOpacity>}
+                                                                {selectedMember.request.assistance &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}>
+                                                                        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
+                                                                    </TouchableOpacity>}
+                                                            </View>
+                                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 'auto' }}>
+                                                                {!selectedMember.request.training_plan &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
+                                                                        onPress={() => { setManage('workout'); }}
+                                                                    >
+                                                                        <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Workout</Text>
+                                                                    </TouchableOpacity>}
+                                                                {!selectedMember.request.diet_plan &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
+                                                                        onPress={() => { setManage('diet'); }}
+                                                                    >
+                                                                        <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
+                                                                    </TouchableOpacity>}
+                                                                {!selectedMember.request.assistance &&
+                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
+                                                                        <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Assistance</Text>
+                                                                    </TouchableOpacity>}
+                                                            </View>
+                                                        </View>}
+                                                        <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
+                                                            <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Subscription Data</Text>
+                                                            {selectedMember.request.subscription ? <>
+                                                                <Text style={{ fontSize: 9, color: 'gray' }}>Price: {selectedMember.request.subscription.amount}</Text>
+                                                                <Text style={{ fontSize: 9, color: 'gray' }}>Date: {selectedMember.request.subscription.date_start + (selectedMember.request.subscription.date_end ? " => " + selectedMember.request.subscription.date_end : "...")}</Text>
+                                                                <Text style={{ fontSize: 9, fontWeight: 'bold', color: selectedMember.request.subscription.status === 'active' ? 'green' : '#000' }}>Status: {STATUS_CHOICES[selectedMember.request.subscription.status]}</Text>
+                                                            </> : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            }
+                                        </View>
+                                    ) : (personalMode === 'rooms_data' ?
+
+                                        <View style={{ width: '100%' }}>
+                                            <ScrollView horizontal>
+                                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                    {personalRooms.map((room, index) => {
+                                                        return (
+                                                            <Tabs
+                                                                key={index}
+                                                                index={index}
+                                                                name={room.name}
+                                                                setSelectedTab={() => {
+                                                                    setSelectedTrainerPersonalRoom(room);
+                                                                    setSelectedMemberId(null);
+                                                                }}
+                                                                isSelected={room.id === selectedTrainerPersonalRoom.id}
+                                                                len={personalRooms.length}
+                                                                TabSize={width * 0.89 / personalRooms.length * 1}
+                                                                textColor='#222'
+                                                                selectedColor='#FFF'
+                                                                unselectedColor='#DDD'
+                                                            />
+                                                        )
+                                                    })}
+                                                </View>
+                                            </ScrollView>
+
+                                            <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap' }}>
+                                                <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
+                                                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerPersonalRoom.description}</Text>
+                                                </View>
+
+                                                {personalRooms.length > 0 && <View style={{ flexDirection: 'row', width: '100%', marginTop: 5 }}>
+                                                    <TouchableOpacity style={{ flex: 1, backgroundColor: '#2196F3', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                                                        setManageRoomModal('PUT');
+                                                    }}>
+                                                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Edit Room</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={{ flex: 1, marginLeft: '2%', backgroundColor: 'red', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }} onPress={() => {
+                                                        Alert.alert("Confirm Deletion", "Are you sure you want to delete this room?",
+                                                            [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => { setManageRoomModal('DELETE'); } }]);
+                                                    }}>
+                                                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Delete Room</Text>
+                                                    </TouchableOpacity>
+                                                </View>}
+
+                                            </View>
+
+                                            {personalRooms.length > 0 && <View>
+                                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 15, marginTop: 10 }}>Room Subscription Plans:</Text>
+                                                {false && <View style={{ width: '100%' }}>
+                                                    {selectedTrainerPersonalRoom && selectedTrainerPersonalRoom.subscription_plans.map(plan => {
+                                                        return (
+                                                            <View key={plan.id} style={{ flexDirection: 'row', padding: 10, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.65)', marginVertical: 5, alignItems: 'center', justifyContent: 'space-evenly' }}>
+                                                                <Text style={{ color: '#000', fontSize: 15, fontWeight: 'bold' }}>{plan.name}</Text>
+                                                                <Text style={{ color: '#000', fontSize: 10, fontWeight: 'bold' }}>{plan.price} {plan.currency}</Text>
+                                                                <Text style={{ color: '#000', fontSize: 8, fontWeight: 'bold' }}>{plans_periods[plan.period]}</Text>
+                                                            </View>
+                                                        )
+                                                    })}
+                                                    <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#000', padding: 5, borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 5, borderWidth: 1, borderColor: '#FFF' }} onPress={() => {
+                                                        setManageRoomPlans(true);
+                                                    }}>
+                                                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Manage Room Subscription Plans</Text>
+                                                    </TouchableOpacity>
+                                                </View>}
+                                                {manageRoomPlans &&
+                                                    <UpgradePlanModal
+                                                        userToken={userToken}
+                                                        subscriptionTexts={{ button_text: "Manage Room" }}
+                                                        object={{
+                                                            get_key: 'plans_ids',
+                                                            get_id: selectedTrainerPersonalRoom.subscription_plans.map(plan => plan.id),
+                                                            obj_key: 'room_id',
+                                                            obj_id: selectedTrainerPersonalRoom.id,
+                                                            plans_in: selectedTrainerPersonalRoom.subscription_plans
+                                                        }}
+                                                        patternMode='manager'
+                                                    />
+                                                }
+                                            </View>}
+                                            <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
+                                                setManageRoomModal('POST');
+                                            }}>
+                                                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                        : ''
+                                    )
+                                )}
+                            </>
+                            : <></>
+                        }
+                    </ScrollView>
                 </View>
             </View>
         </Modal>
