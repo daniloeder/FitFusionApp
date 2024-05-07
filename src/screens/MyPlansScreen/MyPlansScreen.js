@@ -1390,12 +1390,14 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const UpgradePlanModal = ({ userToken, setCompletedPaymentData, currentPlanId, object, subscriptionTexts, patternMode = 'manager', }) => {
+const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'manager', setNewUserRequest }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState(patternMode);
     const [updatePlanModal, setUpdatePlanModal] = useState(false);
+
+    const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
     const fetchSubscriptionPlans = async () => {
         setLoading(true);
@@ -1453,6 +1455,28 @@ const UpgradePlanModal = ({ userToken, setCompletedPaymentData, currentPlanId, o
         }
         setLoading(false);
     }
+    const confirmSubscriptionPlan = async () => {
+        try {
+            const response = await fetch(BASE_URL + `/api/payments/confirm-subscription-plan/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`
+                },
+                body: JSON.stringify(completedPaymentData)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setUpdatePlanModal(false);
+                Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
+                if (setNewUserRequest) {
+                    setNewUserRequest(data)
+                }
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
 
     useEffect(() => {
         if (object.get_id.length !== subscriptionPlansOptions.length || object.get_id.some(id => !subscriptionPlansOptions.find(sub_plan => sub_plan.id === id))) {
@@ -1463,6 +1487,15 @@ const UpgradePlanModal = ({ userToken, setCompletedPaymentData, currentPlanId, o
             }
         }
     }, [object]);
+
+    useEffect(() => {
+        if (completedPaymentData) {
+            setUseCreditCard(false);
+            setPlans([]);
+            setCompletedPaymentData(null);
+            confirmSubscriptionPlan();
+        }
+    }, [completedPaymentData]);
 
     const [edit, setEdit] = useState(false);
     const [status, setStatus] = useState('plans');
@@ -1934,7 +1967,7 @@ const UpgradePlanModal = ({ userToken, setCompletedPaymentData, currentPlanId, o
                                     </TouchableOpacity>
                                 }
 
-                                {useCreditCard && subscriptionPlan && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
+                                {useCreditCard && subscriptionPlan && !completedPaymentData && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
                             </View>
                         )
                     ) : status === 'loading' ?
@@ -2102,11 +2135,14 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
     const [personalRooms, setPersonalRooms] = useState([]);
     const [selectedTrainerPersonalRoom, setSelectedTrainerPersonalRoom] = useState(null);
     const [selectedTrainerRoom, setSelectedTrainerRoom] = useState(null);
-    const [selectedMemberId, setSelectedMemberId] = useState(null);
+    const [selectedRequestId, setSelectedMemberId] = useState(null);
     const [manage, setManage] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState(null);
     const [manageRoomPlans, setManageRoomPlans] = useState(true);
     const [manageRoomModal, setManageRoomModal] = useState('none');
+    const [userRequests, setUserRequests] = useState(null);
+    const [selectedUserRequest, setSelectedUserRequest] = useState(null);
+    const [newUserRequest, setNewUserRequest] = useState(null);
 
     const [selectedTrainerRoomId, setSelectedTrainerRoomId] = useState(null);
 
@@ -2194,7 +2230,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
 
     useEffect(() => {
         if (generalData) {
-            if (!personalRooms.length) {
+            if (generalData.tabs.personal && !personalRooms.length) {
                 fetchPersonalRoomData(generalData.tabs.personal.id, true);
             }
 
@@ -2222,6 +2258,10 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                         });
                     }
                 }
+                if (generalData.tabs.user.requests.length) {
+                    setUserRequests(generalData.tabs.user.requests);
+                    setSelectedUserRequest(generalData.tabs.user.requests[0]);
+                }
             }
         }
     }, [generalData]);
@@ -2237,14 +2277,13 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
             if (!selectedTrainerPersonalRoom) {
                 setSelectedTrainerPersonalRoom(personalRooms[0]);
             }
-
             for (const room of personalRooms) {
-                if (room.members) {
-                    for (const member of [...room.members, ...(room.requests_users || [])]) {
-                        if (!members[member.id]) {
+                if (room.requests || room.pending_requests) {
+                    for (const request of [...(room.requests || []), ...(room.pending_requests || [])]) {
+                        if (!members[request.user.id]) {
                             setMembers(prevMembers => {
                                 const updatedMembers = { ...prevMembers };
-                                updatedMembers[member.id] = { id: member.id, username: member.username, name: member.name, gender: member.gender, favorite_sports: member.favorite_sports, profile_image: member.profile_image };
+                                updatedMembers[request.user.id] = { id: request.user.id, username: request.user.username, name: request.user.name, gender: request.user.gender, favorite_sports: request.user.favorite_sports, profile_image: request.user.profile_image };
                                 return updatedMembers;
                             });
                         }
@@ -2272,21 +2311,21 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         }
     }, [selectedTrainer]);
 
-    const selectedMember = selectedMemberId && (selectedTrainerPersonalRoom.members.find(member => member.id === selectedMemberId) || selectedTrainerPersonalRoom.requests_users.find(member => member.id === selectedMemberId));
+    const selectedRequest = selectedRequestId && (selectedTrainerPersonalRoom.requests.find(request => request.user.id === selectedRequestId) || selectedTrainerPersonalRoom.requests_users.find(request => request.user.id === selectedRequestId));
 
     useEffect(() => {
         if (manage) {
             const plans = {}
-            if (manage === 'workout' || (selectedMemberId && selectedMember.request.training_plan)) {
-                plans['workout'] = selectedMember.request.training_plan ? [selectedMember.request.training_plan] : null;
+            if (manage === 'workout' || (selectedRequestId && selectedRequest.training_plan)) {
+                plans['workout'] = selectedRequest.training_plan ? [selectedRequest.training_plan] : null;
             }
-            if (manage === 'diet' || (selectedMemberId && selectedMember.request.diet_plan)) {
-                plans['diet'] = selectedMember.request.diet_plan ? [selectedMember.request.diet_plan] : null;
+            if (manage === 'diet' || (selectedRequestId && selectedRequest.diet_plan)) {
+                plans['diet'] = selectedRequest.diet_plan ? [selectedRequest.diet_plan] : null;
             }
             setManagerData({
                 plan_id: manage,
-                room: { request_id: selectedMember.request.id, room_id: selectedTrainerPersonalRoom.id, user_id: selectedMember.id },
-                user: members[selectedMemberId],
+                room: { request_id: selectedRequest.id, room_id: selectedTrainerPersonalRoom.id, user_id: selectedRequest.id },
+                user: members[selectedRequestId],
                 plans: plans,
                 updateRoomUserPlan: updateRoomUserPlan
             });
@@ -2446,6 +2485,44 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         )
     }
 
+    const SubscriptionItem = ({ subscription }) => {
+        const styles = StyleSheet.create({
+            container: {
+                flex: 1,
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                padding: 3,
+                borderRadius: 5,
+                marginBottom: 3,
+            },
+            text: {
+                flex: 1,
+                color: '#000',
+                fontWeight: 'bold',
+                fontSize: 12,
+            }
+        });
+
+        STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
+        PAYMENT_STATUS_CHOICES = { 'paid': 'Paid', 'pending': 'Pending', 'overdue': 'Overdue' }
+
+        return (
+            <View style={styles.container}>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                    <Text style={styles.text}>{subscription.amount} {subscription.currency}</Text>
+                    <Text style={styles.text}>{STATUS_CHOICES[subscription.status]}</Text>
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-evenly', padding: 3, backgroundColor: '#eee', borderRadius: 3 }}>
+                    <Text style={[styles.text, { fontSize: 10, fontWeight: 'normal', }]}>Start: {subscription.date_start}</Text>
+                    <Text style={[styles.text, { fontSize: 10, fontWeight: 'normal', }]}>End: {subscription.date_end}</Text>
+                </View>
+                <View style={{ flex: 1, flexDirection: 'row', padding: 3, borderRadius: 3 }}>
+                    <Text style={[styles.text, { fontSize: 8 }]}>Due Date: {subscription.due_date}{"\n"}Generated At: {subscription.generated_at}</Text>
+                    <Text style={[styles.text, { fontSize: 8 }]}>Payment Status: {PAYMENT_STATUS_CHOICES[subscription.payment_status]}</Text>
+                </View>
+            </View>
+        )
+    }
+
     return (
         <Modal
             animationType="fade"
@@ -2575,6 +2652,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                             plans_in: selectedTrainerRoom.subscription_plans,
                                                                         }}
                                                                         patternMode='see'
+                                                                        setNewUserRequest={setNewUserRequest}
                                                                     />
                                                                 </View>
                                                             }
@@ -2586,7 +2664,38 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                         </View>}
                                     </View>
                                     : userMode === "my_data" ?
-                                        <></>
+                                        <View>
+                                            <ScrollView horizontal>
+                                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                    {userRequests && userRequests.map((request, index) => {
+                                                        if (!request.room) return;
+                                                        return (
+                                                            <Tabs
+                                                                key={index}
+                                                                index={index}
+                                                                name={request.room.name}
+                                                                setSelectedTab={() => {
+                                                                    setSelectedUserRequest(request);
+                                                                }}
+                                                                isSelected={request.id === selectedUserRequest.id}
+                                                                len={userRequests.length}
+                                                                TabSize={width * 0.89 / userRequests.length * 1}
+                                                                textColor='#222'
+                                                                selectedColor='#FFF'
+                                                                unselectedColor='#DDD'
+                                                            />
+                                                        )
+                                                    })}
+                                                </View>
+                                            </ScrollView>
+                                            {selectedUserRequest && selectedUserRequest.room && <>
+                                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 18 }}>Room: {selectedUserRequest.room.name}</Text>
+                                                {selectedUserRequest.room.description && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12, marginVertical: 2 }}>Description: {selectedUserRequest.room.description}</Text>}
+
+                                                {selectedUserRequest.subscriptions.map(subscription => <SubscriptionItem key={subscription.id} subscription={subscription} />)}
+                                            </>
+                                            }
+                                        </View>
                                         : userMode === "my_plans" ?
                                             <></>
                                             : ''
@@ -2639,69 +2748,69 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                 </View>
                                             </ScrollView>
 
-                                            {selectedTrainerPersonalRoom.members.length > 0 && <>
+                                            {selectedTrainerPersonalRoom.requests && selectedTrainerPersonalRoom.requests.length > 0 && <>
                                                 <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
                                                     Clients:
                                                 </Text>
                                                 <ScrollView horizontal>
                                                     <View style={styles.usersContainer}>
-                                                        {selectedTrainerPersonalRoom.members.map(member =>
-                                                            <UsersBall key={member.id} user={members[member.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
-                                                        )}
+                                                        {selectedTrainerPersonalRoom.requests.map(request => {
+                                                            return <UsersBall key={request.id} user={members[request.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        })}
                                                     </View>
                                                 </ScrollView>
                                             </>}
-                                            {selectedTrainerPersonalRoom.requests_users.length > 0 && <>
+                                            {selectedTrainerPersonalRoom.pending_requests && selectedTrainerPersonalRoom.pending_requests.length > 0 && <>
                                                 <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
-                                                    Requests:
+                                                    Pending Requests:
                                                 </Text>
                                                 <ScrollView horizontal>
                                                     <View style={styles.usersContainer}>
-                                                        {selectedTrainerPersonalRoom.requests_users.map(user => {
-                                                            return <UsersBall key={user.id} user={members[user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        {selectedTrainerPersonalRoom.pending_requests.map(request => {
+                                                            <UsersBall key={request.id} user={members[request.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
                                                         })}
                                                     </View>
                                                 </ScrollView>
                                             </>}
 
-                                            {selectedMember &&
+                                            {selectedRequest &&
                                                 <View style={{ flexDirection: 'row', padding: 4, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.25)' }}>
-                                                    <UsersBall user={members[selectedMemberId]} name="username" size={1.5} nameColor="#EEE" />
+                                                    <UsersBall user={members[selectedRequest.user.id]} name="username" size={1.5} nameColor="#EEE" />
                                                     <View style={{ marginLeft: 5, flex: 1 }}>
-                                                        <Text style={{ color: '#FFF' }}>{selectedMember.name}, {selectedMember.age}</Text>
-                                                        {selectedMember.request.status && selectedMember.request.status === 'pending' && <View>
+                                                        <Text style={{ color: '#FFF' }}>{selectedRequest.user.name}, {selectedRequest.user.age}</Text>
+                                                        {selectedRequest.status && <View>
                                                             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                                                                {selectedMember.request.training_plan &&
+                                                                {selectedRequest.training_plan &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
                                                                         onPress={() => { setManage('workout'); }}
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Workout</Text>
                                                                     </TouchableOpacity>}
-                                                                {selectedMember.request.diet_plan &&
+                                                                {selectedRequest.diet_plan &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}
                                                                         onPress={() => { setManage('diet'); }}
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
                                                                     </TouchableOpacity>}
-                                                                {selectedMember.request.assistance &&
+                                                                {selectedRequest.assistance &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}>
                                                                         <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
                                                                     </TouchableOpacity>}
                                                             </View>
                                                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 'auto' }}>
-                                                                {!selectedMember.request.training_plan &&
+                                                                {!selectedRequest.training_plan &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
                                                                         onPress={() => { setManage('workout'); }}
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Workout</Text>
                                                                     </TouchableOpacity>}
-                                                                {!selectedMember.request.diet_plan &&
+                                                                {!selectedRequest.diet_plan &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
                                                                         onPress={() => { setManage('diet'); }}
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
                                                                     </TouchableOpacity>}
-                                                                {!selectedMember.request.assistance &&
+                                                                {!selectedRequest.assistance &&
                                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
                                                                         <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Assistance</Text>
                                                                     </TouchableOpacity>}
@@ -2709,11 +2818,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                         </View>}
                                                         <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
                                                             <Text style={{ fontSize: 12, fontWeight: 'bold' }}>Subscription Data</Text>
-                                                            {selectedMember.request.subscription ? <>
-                                                                <Text style={{ fontSize: 9, color: 'gray' }}>Price: {selectedMember.request.subscription.amount}</Text>
-                                                                <Text style={{ fontSize: 9, color: 'gray' }}>Date: {selectedMember.request.subscription.date_start + (selectedMember.request.subscription.date_end ? " => " + selectedMember.request.subscription.date_end : "...")}</Text>
-                                                                <Text style={{ fontSize: 9, fontWeight: 'bold', color: selectedMember.request.subscription.status === 'active' ? 'green' : '#000' }}>Status: {STATUS_CHOICES[selectedMember.request.subscription.status]}</Text>
-                                                            </> : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
+                                                            {selectedRequest.subscriptions && selectedRequest.subscriptions.length ?
+                                                                selectedRequest.subscriptions.map(subscription => <SubscriptionItem key={subscription.id} subscription={subscription} />)
+                                                                : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
                                                         </View>
                                                     </View>
                                                 </View>
@@ -3185,27 +3292,6 @@ const MyPlansScreen = ({ route, navigation }) => {
         //fetchSubscriptionPlans();
     }
 
-    const confirmSubscriptionPlan = async () => {
-        try {
-            const response = await fetch(BASE_URL + `/api/payments/confirm-subscription-plan/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Token ${userToken}`
-                },
-                body: JSON.stringify(completedPaymentData)
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setUserSubscriptionPlan({ ...data.plan.current_data, plan_id: data.plan.plan });
-                setUpdatePlanModal(false);
-                Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
-            }
-        } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
-        }
-    }
-
     const updateExerciseDone = (dayName, muscleGroup, exerciseIndex, done) => {
         setDaysItems(prevDays => ({
             ...prevDays,
@@ -3572,13 +3658,6 @@ const MyPlansScreen = ({ route, navigation }) => {
         }
     }, [selectedDay]);
 
-    useEffect(() => {
-        if (completedPaymentData) {
-            setCompletedPaymentData(null);
-            confirmSubscriptionPlan();
-        }
-    }, [completedPaymentData]);
-
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = managerData ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
@@ -3588,7 +3667,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            {updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} setCompletedPaymentData={setCompletedPaymentData} currentPlanId={userSubscriptionPlan.plan_id} />}
+            {updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} currentPlanId={userSubscriptionPlan.plan_id} />}
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
