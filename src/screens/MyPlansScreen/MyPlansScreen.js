@@ -2625,15 +2625,23 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                 <ScrollView horizontal>
                                                     <View style={styles.usersContainer}>
                                                         {generalData.tabs.user.nearby_trainers.map(trainer => {
-                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
-                                                                setSelectedTrainer({
-                                                                    id: trainer.user.id,
-                                                                    name: trainer.name,
-                                                                    loading: true,
-                                                                    rooms: [],
-                                                                });
-                                                                fetchPersonalRoomData(trainer.id, false);
-                                                            }} size={0.8} nameColor="#EEE" />
+                                                            return (
+                                                                <View key={trainer.id}>
+                                                                    {trainer.distance && <View style={{ position: 'absolute', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: '#0000FF', borderRadius: 5, zIndex: 1 }}>
+                                                                        <Text style={{fontSize: 8, fontWeight: 'bold', color: '#FFF'}}>{trainer.distance.toFixed(2)} km</Text>
+                                                                    </View>}
+                                                                    <UsersBall user={members[trainer.user.id]} onPress={() => {
+                                                                        setSelectedTrainer({
+                                                                            ...trainer,
+                                                                            id: trainer.user.id,
+                                                                            name: trainer.name,
+                                                                            loading: true,
+                                                                            rooms: [],
+                                                                        });
+                                                                        fetchPersonalRoomData(trainer.id, false);
+                                                                    }} size={0.8} nameColor="#EEE" />
+                                                                </View>
+                                                            );
                                                         })}
                                                     </View>
                                                 </ScrollView>
@@ -2647,6 +2655,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                         {generalData.tabs.user.global_trainers.map(trainer => {
                                                             return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
                                                                 setSelectedTrainer({
+                                                                    ...trainer,
                                                                     id: trainer.user.id,
                                                                     name: trainer.name,
                                                                     loading: true,
@@ -2664,6 +2673,9 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                 <UsersBall user={members[selectedTrainer.id]} name="none" size={0.5} nameColor="#EEE" />
                                                 <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
                                             </View>
+                                            {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
+                                                {selectedTrainer.address}
+                                            </Text>}
                                             {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
                                                 : selectedTrainer.rooms.length > 0 && (
                                                     <View style={{ width: '100%' }}>
@@ -2893,7 +2905,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                         </View>
                                                     </View>
 
-                                                    <TouchableOpacity style={{position: 'absolute', padding:4 , right: 0, top: -6, backgroundColor: '#FF4444', borderRadius: 5, alignItems: 'center', justifyContent: 'center' }}
+                                                    <TouchableOpacity style={{ position: 'absolute', padding: 4, right: 0, top: -6, backgroundColor: '#FF4444', borderRadius: 5, alignItems: 'center', justifyContent: 'center' }}
                                                         onPress={() => {
                                                             Alert.alert("Confirm Deletion", "Are you sure you want to remove this member?",
                                                                 [{ text: "Cancel", style: "cancel" }, {
