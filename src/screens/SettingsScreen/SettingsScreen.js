@@ -22,11 +22,11 @@ const SettingsScreen = ({ route, navigation }) => {
       const data = await response.json();
       if (response.ok) {
         navigation.navigate('MyPlansScreen', { personalTrainer: true })
-      } else {
-        console.error('Error creating personal trainer account:', data);
+      } else if (response.status === 400) {
+        Alert.alert('Error creating personal trainer account', data.error);
       }
     } catch (error) {
-      console.error('Error creating personal trainer account:', error);
+      Alert.alert('Error creating personal trainer account', error);
     }
   };
 

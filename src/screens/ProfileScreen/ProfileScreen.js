@@ -480,6 +480,28 @@ const ProfileScreen = ({ route }) => {
             </>
             :
             <>
+              <TouchableOpacity style={{
+                width: '90%',
+                marginLeft: '5%',
+                justifyContent: 'center',
+                backgroundColor: '#2196F3',
+                padding: 10,
+                borderRadius: 5,
+                alignItems: 'center',
+                marginTop: 10,
+              }}
+                onPress={() => {
+                  navigation.navigate('MyPlansScreen')
+                }}
+              >
+                <Text style={{
+                  color: '#fff',
+                  fontSize: 16,
+                  fontWeight: 'bold',
+                }}>
+                  Fitness Plans
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
                 <Text style={styles.editButtonText}>Edit Profile</Text>
               </TouchableOpacity>

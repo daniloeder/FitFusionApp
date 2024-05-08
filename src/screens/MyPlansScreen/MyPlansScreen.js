@@ -7,7 +7,6 @@ import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
-import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -997,8 +996,8 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     });
 
     function checkBeforeCreation() {
-        if (userSubscriptionPlan.features[plan].max[0] && plansLength >= userSubscriptionPlan.features[plan].max[1]) {
-            Alert.alert('You need to upgrate to create a new plan.', `Max of ${userSubscriptionPlan.features[plan].max[1]} plans with "${userSubscriptionPlan.name}" plan.`,
+        if (userSubscriptionPlan.current_data.features[plan].max[0] && plansLength >= userSubscriptionPlan.current_data.features[plan].max[1]) {
+            Alert.alert('You need to upgrate to create a new plan.', `Max of ${userSubscriptionPlan.current_data.features[plan].max[1]} plans with "${userSubscriptionPlan.name}" plan.`,
                 [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
             );
             return;
@@ -1055,8 +1054,8 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             }
                         </View>
                         : <><TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
-                            {userSubscriptionPlan && userSubscriptionPlan.features[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
-                                You can have {userSubscriptionPlan.features[plan].max[1]} plans with "{userSubscriptionPlan.name}" subscription.
+                            {userSubscriptionPlan && userSubscriptionPlan.current_data.features[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
+                                You can have {userSubscriptionPlan.current_data.features[plan].max[1]} plans with "{userSubscriptionPlan.name}" subscription.
                             </Text>
                                 <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
                                     setUpdatePlanModal(true);
@@ -1069,8 +1068,8 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                 plan === "workout" ?
                                     <>
                                         <SelectBox
-                                            title={"Week Workout Days" + (userSubscriptionPlan.features[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.features[plan].max_days} with your "${userSubscriptionPlan.name}" plan.)` : '')}
-                                            max={userSubscriptionPlan.features[plan].max_days < 7 ? userSubscriptionPlan.features[plan].max_days : undefined}
+                                            title={"Week Workout Days" + (userSubscriptionPlan.current_data.features[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.current_data.features[plan].max_days} with your "${userSubscriptionPlan.name}" plan.)` : '')}
+                                            max={userSubscriptionPlan.current_data.features[plan].max_days < 7 ? userSubscriptionPlan.current_data.features[plan].max_days : undefined}
                                             allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
                                             allOptionsNames={allWorkoutDaysNames}
                                             selectedOptions={workoutDays}
@@ -1148,7 +1147,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     if (useAI) {
                                         if (plan === "workout") {
                                             if (checkBeforeCreation()) {
-                                                if (userSubscriptionPlan.features[plan].use_ai === 0) {
+                                                if (userSubscriptionPlan.current_data.features[plan].use_ai === 0) {
                                                     Alert.alert('You need to upgrate to continue to use AI.', 'Press Upgrade Plan to continue.',
                                                         [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
                                                     );
@@ -1188,7 +1187,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     }
                                 }}
                             >
-                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (userSubscriptionPlan && userSubscriptionPlan.features[plan].use_ai < 6 ? ` (${userSubscriptionPlan.features[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
+                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (userSubscriptionPlan && userSubscriptionPlan.current_data.features[plan].use_ai < 6 ? ` (${userSubscriptionPlan.current_data.features[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
                             </TouchableOpacity>
 
                             {!useAI && <TouchableOpacity
@@ -1245,7 +1244,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     const allMealsNames = { 'breakfast': "Breakfast", 'lunch': "Lunch", 'dinner': "Dinner", 'snack': "Snack", 'pre_workout': "Pre Workout", 'post_workout': "Post Workout" };;
     const [meals, setMeals] = useState([]);
 
-    const add_custom_food = !userSubscriptionPlan.features.diet.add_custom_food[0] || userSubscriptionPlan.features.diet.add_custom_food[1] < userSubscriptionPlan.features.diet.add_custom_food[2]
+    const add_custom_food = !userSubscriptionPlan.current_data.features.diet.add_custom_food[0] || userSubscriptionPlan.current_data.features.diet.add_custom_food[1] < userSubscriptionPlan.current_data.features.diet.add_custom_food[2]
 
     const onClose = () => {
         setNewFoodModal(false);
@@ -2106,7 +2105,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData, UpgradePlanModal }) => {
+const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData }) => {
 
     if (!personal) {
         return (
@@ -2129,13 +2128,13 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
 
     const [generalData, setGeneralData] = useState(null);
     const [mode, setMode] = useState(null);
-    const [userMode, setUserMode] = useState('my_data');
+    const [userMode, setUserMode] = useState('trainers');
     const [personalMode, setPersonalMode] = useState('rooms_clients');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
     const [selectedTrainerPersonalRoom, setSelectedTrainerPersonalRoom] = useState(null);
     const [selectedTrainerRoom, setSelectedTrainerRoom] = useState(null);
-    const [selectedRequestId, setSelectedMemberId] = useState(null);
+    const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [manage, setManage] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState(null);
     const [manageRoomPlans, setManageRoomPlans] = useState(true);
@@ -2218,15 +2217,40 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         }
     }
 
+    const manageRoomUser = async (user_id, room_id, request_id, action) => {
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/manage-room/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`
+                },
+                body: JSON.stringify({ user_id: user_id, room_id: room_id, request_id: request_id, 'action': action })
+            });
+            if (response.ok) {
+                if (action === 'delete') {
+                    setSelectedRequestId(null);
+                    setPersonalRooms(prevRooms => {
+                        const updatedRooms = [...prevRooms];
+                        const roomIndex = updatedRooms.map(room => room.id).indexOf(room_id);
+                        updatedRooms[roomIndex].requests = updatedRooms[roomIndex].requests.filter(request => request.user.id !== user_id);
+                        return updatedRooms;
+                    });
+                } else if (action === 'leave') {
+                    setUserRequests(prevRequests => {
+                        return prevRequests.filter(request => request.user.id !== user_id);
+                    });
+                    setSelectedUserRequest(userRequests.find(request => request.user.id !== user_id));
+                }
+            }
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
+
     useEffect(() => {
         fetchGeneralData();
     }, []);
-
-    useEffect(() => {
-        if (personalMode === 'plans') {
-            //fetchSubscriptionPlans();
-        }
-    }, [personalMode]);
 
     useEffect(() => {
         if (generalData) {
@@ -2260,7 +2284,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                 }
                 if (generalData.tabs.user.requests.length) {
                     setUserRequests(generalData.tabs.user.requests);
-                    setSelectedUserRequest(generalData.tabs.user.requests[0]);
+                    setSelectedUserRequest(generalData.tabs.user.requests[generalData.tabs.user.requests.length - 1]);
+                    setUserMode('my_data');
                 }
             }
         }
@@ -2278,8 +2303,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                 setSelectedTrainerPersonalRoom(personalRooms[0]);
             }
             for (const room of personalRooms) {
-                if (room.requests || room.pending_requests) {
-                    for (const request of [...(room.requests || []), ...(room.pending_requests || [])]) {
+                if (room.requests) {
+                    for (const request of [...(room.requests || [])]) {
                         if (!members[request.user.id]) {
                             setMembers(prevMembers => {
                                 const updatedMembers = { ...prevMembers };
@@ -2315,20 +2340,30 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
 
     useEffect(() => {
         if (manage) {
-            const plans = {}
-            if (manage === 'workout' || (selectedRequestId && selectedRequest.training_plan)) {
-                plans['workout'] = selectedRequest.training_plan ? [selectedRequest.training_plan] : null;
+            if (mode === 'user') {
+                setManagerData({
+                    mode: 'user',
+                    plan: manage,
+                    plan_id: selectedUserRequest[manage === 'workout' ? 'training_plan' : 'diet_plan'].id,
+
+                });
+            } else {
+                const plans = {}
+                if (manage === 'workout' || (selectedRequestId && selectedRequest.training_plan)) {
+                    plans['workout'] = selectedRequest.training_plan ? [selectedRequest.training_plan] : null;
+                }
+                if (manage === 'diet' || (selectedRequestId && selectedRequest.diet_plan)) {
+                    plans['diet'] = selectedRequest.diet_plan ? [selectedRequest.diet_plan] : null;
+                }
+                setManagerData({
+                    mode: 'trainer',
+                    plan: manage,
+                    room: { request_id: selectedRequest.id, room_id: selectedTrainerPersonalRoom.id, user_id: selectedRequest.id },
+                    user: members[selectedRequestId],
+                    plans: plans,
+                    updateRoomUserPlan: updateRoomUserPlan
+                });
             }
-            if (manage === 'diet' || (selectedRequestId && selectedRequest.diet_plan)) {
-                plans['diet'] = selectedRequest.diet_plan ? [selectedRequest.diet_plan] : null;
-            }
-            setManagerData({
-                plan_id: manage,
-                room: { request_id: selectedRequest.id, room_id: selectedTrainerPersonalRoom.id, user_id: selectedRequest.id },
-                user: members[selectedRequestId],
-                plans: plans,
-                updateRoomUserPlan: updateRoomUserPlan
-            });
             onClose();
             setManage(null);
         }
@@ -2369,6 +2404,16 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
             borderRadius: 5,
             margin: 3,
             alignItems: 'center',
+        },
+        openPlanButton: {
+            width: '95%',
+            flexDirection: 'row',
+            backgroundColor: '#DDD',
+            padding: 3,
+            borderRadius: 4,
+            alignSelf: 'center',
+            justifyContent: 'center',
+            marginTop: 4,
         }
     });
     const onClose = () => {
@@ -2554,15 +2599,15 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                         </View>
                         {mode === 'user' ? <>
                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                {[{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "my_plans", 'name': "My Plans" }, { 'mode': "trainers", 'name': "Trainers" }].map((tab, index) => {
+                                {[{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "trainers", 'name': "Trainers" }].map((tab, index) => {
                                     return <Tabs
                                         key={index}
                                         index={index}
                                         name={tab.name}
                                         setSelectedTab={() => setUserMode(tab.mode)}
                                         isSelected={tab.mode === userMode}
-                                        len={3}
-                                        TabSize={width * 0.89 / 3 * 0.9}
+                                        len={2}
+                                        TabSize={width * 0.89 / 2 * 0.9}
                                         textColor='#222'
                                         selectedColor='#FFF'
                                         unselectedColor='#DDD'
@@ -2599,8 +2644,16 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                 </Text>
                                                 <ScrollView horizontal>
                                                     <View style={styles.usersContainer}>
-                                                        {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.map(trainer => {
-                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                        {generalData.tabs.user.global_trainers.map(trainer => {
+                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
+                                                                setSelectedTrainer({
+                                                                    id: trainer.user.id,
+                                                                    name: trainer.name,
+                                                                    loading: true,
+                                                                    rooms: [],
+                                                                });
+                                                                fetchPersonalRoomData(trainer.id, false);
+                                                            }} size={0.8} nameColor="#EEE" />
                                                         })}
                                                     </View>
                                                 </ScrollView>
@@ -2665,7 +2718,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                     </View>
                                     : userMode === "my_data" ?
                                         <View>
-                                            <ScrollView horizontal>
+                                            {userRequests && <ScrollView horizontal>
                                                 <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
                                                     {userRequests && userRequests.map((request, index) => {
                                                         if (!request.room) return;
@@ -2687,13 +2740,41 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                         )
                                                     })}
                                                 </View>
-                                            </ScrollView>
-                                            {selectedUserRequest && selectedUserRequest.room && <>
+                                            </ScrollView>}
+                                            {selectedUserRequest && selectedUserRequest.room ? <>
                                                 <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 18 }}>Room: {selectedUserRequest.room.name}</Text>
                                                 {selectedUserRequest.room.description && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12, marginVertical: 2 }}>Description: {selectedUserRequest.room.description}</Text>}
 
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly', marginVertical: 8 }}>
+                                                    {selectedUserRequest.training_plan &&
+                                                        <View style={{ flex: 1, padding: 5, borderRadius: 5, marginHorizontal: 5, backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+                                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>Workout Plan</Text>
+                                                            <TouchableOpacity style={styles.openPlanButton} onPress={() => setManage('workout')}>
+                                                                <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 16 }}>{selectedUserRequest.training_plan.name}</Text>
+                                                            </TouchableOpacity>
+                                                        </View>}
+                                                    {selectedUserRequest.diet_plan &&
+                                                        <View style={{ flex: 1, padding: 5, borderRadius: 5, marginHorizontal: 5, backgroundColor: 'rgba(255, 255, 255, 0.2)' }}>
+                                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>Diet Plan</Text>
+                                                            <TouchableOpacity style={styles.openPlanButton} onPress={() => setManage('diet')}>
+                                                                <Text style={{ color: '#222', fontWeight: 'bold', fontSize: 16 }}>{selectedUserRequest.diet_plan.name}</Text>
+                                                            </TouchableOpacity>
+                                                        </View>}
+                                                </View>
+
+                                                <TouchableOpacity
+                                                    onPress={() => {
+                                                        Alert.alert("Leave Room", "Are you sure you want to leave this room?",
+                                                            [{ text: "Cancel", style: "cancel" }, { text: "Leave", onPress: () => { manageRoomUser(selectedUserRequest.user.id, selectedUserRequest.room.id, selectedUserRequest.id, 'leave'); } }]);
+                                                    }}
+                                                    style={[styles.userButtons, { backgroundColor: '#FF4444' }]}
+                                                >
+                                                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Leave Room</Text>
+                                                </TouchableOpacity>
+
                                                 {selectedUserRequest.subscriptions.map(subscription => <SubscriptionItem key={subscription.id} subscription={subscription} />)}
-                                            </>
+                                            </> :
+                                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>No Rooms to Show Yet</Text>
                                             }
                                         </View>
                                         : userMode === "my_plans" ?
@@ -2734,7 +2815,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                 name={room.name}
                                                                 setSelectedTab={() => {
                                                                     setSelectedTrainerPersonalRoom(room);
-                                                                    setSelectedMemberId(null);
+                                                                    setSelectedRequestId(null);
                                                                 }}
                                                                 isSelected={room.id === selectedTrainerPersonalRoom.id}
                                                                 len={personalRooms.length}
@@ -2755,19 +2836,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                 <ScrollView horizontal>
                                                     <View style={styles.usersContainer}>
                                                         {selectedTrainerPersonalRoom.requests.map(request => {
-                                                            return <UsersBall key={request.id} user={members[request.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
-                                                        })}
-                                                    </View>
-                                                </ScrollView>
-                                            </>}
-                                            {selectedTrainerPersonalRoom.pending_requests && selectedTrainerPersonalRoom.pending_requests.length > 0 && <>
-                                                <Text style={{ color: '#FFF', fontSize: 14, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
-                                                    Pending Requests:
-                                                </Text>
-                                                <ScrollView horizontal>
-                                                    <View style={styles.usersContainer}>
-                                                        {selectedTrainerPersonalRoom.pending_requests.map(request => {
-                                                            <UsersBall key={request.id} user={members[request.user.id]} onPress={setSelectedMemberId} size={0.8} nameColor="#EEE" />
+                                                            return <UsersBall key={request.id} user={members[request.user.id]} onPress={setSelectedRequestId} size={0.8} nameColor="#EEE" />
                                                         })}
                                                     </View>
                                                 </ScrollView>
@@ -2823,6 +2892,26 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                 : <Text style={{ fontSize: 9, color: 'gray' }}>No Subscription</Text>}
                                                         </View>
                                                     </View>
+
+                                                    <TouchableOpacity style={{position: 'absolute', padding:4 , right: 0, top: -6, backgroundColor: '#FF4444', borderRadius: 5, alignItems: 'center', justifyContent: 'center' }}
+                                                        onPress={() => {
+                                                            Alert.alert("Confirm Deletion", "Are you sure you want to remove this member?",
+                                                                [{ text: "Cancel", style: "cancel" }, {
+                                                                    text: "Delete", onPress: () => {
+                                                                        manageRoomUser(
+                                                                            selectedRequest.user.id,
+                                                                            selectedTrainerPersonalRoom.id,
+                                                                            selectedRequest.id,
+                                                                            'delete'
+                                                                        );
+                                                                    }
+                                                                }]);
+                                                        }}
+                                                    >
+                                                        <View style={styles.exerciseItemRemove}>
+                                                            <Icons name="CloseX" size={width * 0.05} />
+                                                        </View>
+                                                    </TouchableOpacity>
                                                 </View>
                                             }
                                         </View>
@@ -2839,7 +2928,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                 name={room.name}
                                                                 setSelectedTab={() => {
                                                                     setSelectedTrainerPersonalRoom(room);
-                                                                    setSelectedMemberId(null);
+                                                                    setSelectedRequestId(null);
                                                                 }}
                                                                 isSelected={room.id === selectedTrainerPersonalRoom.id}
                                                                 len={personalRooms.length}
@@ -2907,15 +2996,16 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                     />
                                                 }
                                             </View>}
-                                            <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
-                                                setManageRoomModal('POST');
-                                            }}>
-                                                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
-                                            </TouchableOpacity>
                                         </View>
                                         : ''
                                     )
                                 )}
+
+                                {personalMode === 'rooms_data' && <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
+                                    setManageRoomModal('POST');
+                                }}>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
+                                </TouchableOpacity>}
                             </>
                             : <></>
                         }
@@ -3114,8 +3204,8 @@ const MyPlansScreen = ({ route, navigation }) => {
     }
 
     const updatePlans = async (name = selectedPlan.name, room = (managerData && managerData.room)) => {
-        if (userSubscriptionPlan.features[plan].max_saves[2] < userSubscriptionPlan.features[plan].max_saves[1]) {
-            Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
+        if (userSubscriptionPlan.current_data.features[plan].max_saves[2] < userSubscriptionPlan.current_data.features[plan].max_saves[1]) {
+            Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.current_data.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
                 [{
                     text: 'Cancel',
                     style: 'cancel'
@@ -3128,8 +3218,8 @@ const MyPlansScreen = ({ route, navigation }) => {
             return;
         }
         setAddNewMuscleGroup(false);
-        const maxSaves = userSubscriptionPlan.features[plan].max_saves[2] - userSubscriptionPlan.features[plan].max_saves[1]
-        if (userSubscriptionPlan.features[plan].max_saves[0] && maxSaves < 10) {
+        const maxSaves = userSubscriptionPlan.current_data.features[plan].max_saves[2] - userSubscriptionPlan.current_data.features[plan].max_saves[1]
+        if (userSubscriptionPlan.current_data.features[plan].max_saves[0] && maxSaves < 10) {
             Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
             setUserSubscriptionPlan(prevState => {
                 const updatedFeatures = { ...prevState.features };
@@ -3219,10 +3309,10 @@ const MyPlansScreen = ({ route, navigation }) => {
                     ...prevUserSubscriptionPlan,
                     update: true,
                     features: {
-                        ...prevUserSubscriptionPlan.features,
+                        ...prevUserSubscriptionPlan.current_data.features,
                         workout: {
-                            ...prevUserSubscriptionPlan.features.workout,
-                            use_ai: prevUserSubscriptionPlan.features.workout.use_ai - (requestBody.use_ai ? 1 : 0)
+                            ...prevUserSubscriptionPlan.current_data.features.workout,
+                            use_ai: prevUserSubscriptionPlan.current_data.features.workout.use_ai - (requestBody.use_ai ? 1 : 0)
                         }
                     }
                 }));
@@ -3430,8 +3520,8 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
-        if (Object.keys(daysItems[plan][dayName].items[muscleGroup]).length >= userSubscriptionPlan.features[plan].max_items_per_group) {
-            Alert.alert('You need to upgrate to add more exercises.', `Max ${userSubscriptionPlan.features[plan].max_items_per_group} exercises per Muscle Group with "${userSubscriptionPlan.name}" plan.`,
+        if (Object.keys(daysItems[plan][dayName].items[muscleGroup]).length >= userSubscriptionPlan.current_data.features[plan].max_items_per_group) {
+            Alert.alert('You need to upgrate to add more exercises.', `Max ${userSubscriptionPlan.current_data.features[plan].max_items_per_group} exercises per Muscle Group with "${userSubscriptionPlan.name}" plan.`,
                 [{
                     text: 'Cancel',
                     style: 'cancel'
@@ -3478,9 +3568,9 @@ const MyPlansScreen = ({ route, navigation }) => {
 
         setEdit(true);
 
-        if (replace && userSubscriptionPlan.features[plan].items_alternatives[0]) {
-            if (userSubscriptionPlan.features[plan].items_alternatives[1] >= userSubscriptionPlan.features[plan].items_alternatives[2]) {
-                Alert.alert('You need to upgrate to set new Alternatives.', `Max ${userSubscriptionPlan.features[plan].items_alternatives[2]} Alternatives changes with "${userSubscriptionPlan.name}" plan.`,
+        if (replace && userSubscriptionPlan.current_data.features[plan].items_alternatives[0]) {
+            if (userSubscriptionPlan.current_data.features[plan].items_alternatives[1] >= userSubscriptionPlan.current_data.features[plan].items_alternatives[2]) {
+                Alert.alert('You need to upgrate to set new Alternatives.', `Max ${userSubscriptionPlan.current_data.features[plan].items_alternatives[2]} Alternatives changes with "${userSubscriptionPlan.name}" plan.`,
                     [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]);
                 return
             }
@@ -3499,18 +3589,18 @@ const MyPlansScreen = ({ route, navigation }) => {
                 }
             }
         }));
-        Alert.alert('Alternative Updated!', `You need to upgrate to set new Alternatives.\nMax ${userSubscriptionPlan.features[plan].items_alternatives[2] - userSubscriptionPlan.features[plan].items_alternatives[1] - 1} Alternatives changes left with "${userSubscriptionPlan.name}" plan.`);
+        Alert.alert('Alternative Updated!', `You need to upgrate to set new Alternatives.\nMax ${userSubscriptionPlan.current_data.features[plan].items_alternatives[2] - userSubscriptionPlan.current_data.features[plan].items_alternatives[1] - 1} Alternatives changes left with "${userSubscriptionPlan.name}" plan.`);
         setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
             ...prevUserSubscriptionPlan,
             update: true,
             features: {
-                ...prevUserSubscriptionPlan.features,
+                ...prevUserSubscriptionPlan.current_data.features,
                 workout: {
-                    ...prevUserSubscriptionPlan.features.workout,
+                    ...prevUserSubscriptionPlan.current_data.features.workout,
                     items_alternatives: [
-                        userSubscriptionPlan.features.workout.items_alternatives[0],
-                        userSubscriptionPlan.features.workout.items_alternatives[1] + 1,
-                        userSubscriptionPlan.features.workout.items_alternatives[2],
+                        userSubscriptionPlan.current_data.features.workout.items_alternatives[0],
+                        userSubscriptionPlan.current_data.features.workout.items_alternatives[1] + 1,
+                        userSubscriptionPlan.current_data.features.workout.items_alternatives[2],
                     ]
                 }
             }
@@ -3539,8 +3629,8 @@ const MyPlansScreen = ({ route, navigation }) => {
 
     const addMuscleGroup = (dayName, muscleGroup) => {
 
-        if (Object.keys(daysItems[plan][dayName].items).length >= userSubscriptionPlan.features[plan].max_groups_per_day) {
-            Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${userSubscriptionPlan.features[plan].max_groups_per_day} Muscle Groups per Day with "${userSubscriptionPlan.name}" plan.`,
+        if (Object.keys(daysItems[plan][dayName].items).length >= userSubscriptionPlan.current_data.features[plan].max_groups_per_day) {
+            Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${userSubscriptionPlan.current_data.features[plan].max_groups_per_day} Muscle Groups per Day with "${userSubscriptionPlan.name}" plan.`,
                 [{
                     text: 'Cancel',
                     style: 'cancel'
@@ -3632,14 +3722,23 @@ const MyPlansScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         if (managerData) {
-            setPlans(managerData.plans);
-            setPlanId(managerData.plans[managerData.plan_id] ? managerData.plans[managerData.plan_id][0].id : null);
-            setPlan(managerData.plan_id);
-            if (managerData.plans[managerData.plan_id]) {
+            if (managerData.mode && managerData.mode === 'user') {
                 setDaysItems(prevDays => ({
                     ...prevDays,
-                    [managerData.plan_id]: managerData.plans[managerData.plan_id][0].days
+                    [managerData.plan]: plans[managerData.plan].find(plan => plan.id === managerData.plan_id).days
                 }));
+                setPlan(managerData.plan);
+                setPlanId(managerData.plan_id);
+            } else {
+                setPlans(managerData.plans);
+                setPlanId(managerData.plans[managerData.plan] ? managerData.plans[managerData.plan][0].id : null);
+                setPlan(managerData.plan);
+                if (managerData.plans[managerData.plan]) {
+                    setDaysItems(prevDays => ({
+                        ...prevDays,
+                        [managerData.plan]: managerData.plans[managerData.plan][0].days
+                    }));
+                }
             }
         }
     }, [managerData]);
@@ -3649,6 +3748,11 @@ const MyPlansScreen = ({ route, navigation }) => {
             const selectedPlan = plans[plan].find(plan => plan.id === planId);
             const newDay = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].find(day => !selectedPlan.days[day].rest) || 'Sun';
             setSelectedDay({ name: newDay, items: selectedPlan.days[newDay] });
+        } else {
+            setPlans(prevPlans => ({
+                ...prevPlans,
+                [plan]: []
+            }));
         }
     }, [planId]);
 
@@ -3659,7 +3763,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     }, [selectedDay]);
 
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
-    const fit_plans = managerData ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
+    const fit_plans = managerData && managerData.mode === 'personal' ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
     const selectedPlan = plans[plan] && plans[plan][0] && plans[plan].find(plan => plan.id === planId);
 
@@ -3686,7 +3790,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {managerData && managerData.user && <View style={{ top: 5 }}><UsersBall user={managerData.user} size={0.6} /></View>}
                         <Text style={styles.sectionTitle}>Fitness Plan</Text>
-                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} UpgradePlanModal={UpgradePlanModal} />
+                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
@@ -3753,8 +3857,8 @@ const MyPlansScreen = ({ route, navigation }) => {
                                     index={index}
                                     name={dayName}
                                     setSelectedTab={() => {
-                                        if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.features[plan].max_days) {
-                                            Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
+                                        if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.current_data.features[plan].max_days) {
+                                            Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.current_data.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
                                                 [{
                                                     text: 'Cancel',
                                                     style: 'cancel'
@@ -3873,7 +3977,9 @@ const MyPlansScreen = ({ route, navigation }) => {
                                 </TouchableOpacity>
                             }
                             <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
+                                setPlanId(null);
                                 setManagerData(null);
+                                fetchPlans();
                             }}>
                                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Exit Manager Mode</Text>
                             </TouchableOpacity>
