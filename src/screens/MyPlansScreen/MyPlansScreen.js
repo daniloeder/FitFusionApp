@@ -2092,7 +2092,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
                                     });
                                     return updatedPlans;
                                 });
-                                updatePlans(title);
+                                updatePlans({ title: title });
                                 onClose();
                             }}>
                                 <Text style={styles.confirmButtonText}>Set Changes</Text>
@@ -2336,7 +2336,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
         }
     }, [selectedTrainer]);
 
-    const selectedRequest = selectedRequestId && (selectedTrainerPersonalRoom.requests.find(request => request.user.id === selectedRequestId) || selectedTrainerPersonalRoom.requests_users.find(request => request.user.id === selectedRequestId));
+    const selectedRequest = selectedRequestId && selectedTrainerPersonalRoom.requests.find(request => request.user.id === selectedRequestId);
 
     useEffect(() => {
         if (manage) {
@@ -2628,7 +2628,7 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                             return (
                                                                 <View key={trainer.id}>
                                                                     {trainer.distance && <View style={{ position: 'absolute', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: '#0000FF', borderRadius: 5, zIndex: 1 }}>
-                                                                        <Text style={{fontSize: 8, fontWeight: 'bold', color: '#FFF'}}>{trainer.distance.toFixed(2)} km</Text>
+                                                                        <Text style={{ fontSize: 8, fontWeight: 'bold', color: '#FFF' }}>{trainer.distance.toFixed(2)} km</Text>
                                                                     </View>}
                                                                     <UsersBall user={members[trainer.user.id]} onPress={() => {
                                                                         setSelectedTrainer({
@@ -2972,7 +2972,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                         <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Delete Room</Text>
                                                     </TouchableOpacity>
                                                 </View>}
-
                                             </View>
 
                                             {personalRooms.length > 0 && <View>
@@ -3215,7 +3214,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         setAllItems(prevItems => ({ ...prevItems, "diet": data }));
     }
 
-    const updatePlans = async (name = selectedPlan.name, room = (managerData && managerData.room)) => {
+    const updatePlans = async ({ name = selectedPlan.name, room = (managerData && managerData.room), send_to_user = false }) => {
         if (userSubscriptionPlan.current_data.features[plan].max_saves[2] < userSubscriptionPlan.current_data.features[plan].max_saves[1]) {
             Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.current_data.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
                 [{
@@ -3231,7 +3230,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         }
         setAddNewMuscleGroup(false);
         const maxSaves = userSubscriptionPlan.current_data.features[plan].max_saves[2] - userSubscriptionPlan.current_data.features[plan].max_saves[1]
-        if (userSubscriptionPlan.current_data.features[plan].max_saves[0] && maxSaves < 10) {
+        if (false && userSubscriptionPlan.current_data.features[plan].max_saves[0] && maxSaves < 10) {
             Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
             setUserSubscriptionPlan(prevState => {
                 const updatedFeatures = { ...prevState.features };
@@ -3255,7 +3254,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ "days": daysItems[plan], "name": name, 'plan': plan, "manager_room": room })
+                body: JSON.stringify({ "days": daysItems[plan], "name": name, 'plan': plan, "manager_room": room, 'send_to_user': send_to_user })
             });
             const data = await response.json();
 
@@ -3741,6 +3740,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                 }));
                 setPlan(managerData.plan);
                 setPlanId(managerData.plan_id);
+                setManagerData(null);
             } else {
                 setPlans(managerData.plans);
                 setPlanId(managerData.plans[managerData.plan] ? managerData.plans[managerData.plan][0].id : null);
@@ -3965,9 +3965,13 @@ const MyPlansScreen = ({ route, navigation }) => {
                             </TouchableOpacity>
 
                             <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {
+                                if (managerData) {
+                                    setPlanId(null);
+                                    setManagerData(null);
+                                }
                                 updatePlans();
                             }}>
-                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save Train</Text>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === 'workout' ? "Save Workout" : "Save Diet"}</Text>
                             </TouchableOpacity>
                         </View>}
                     </>}
@@ -3981,9 +3985,11 @@ const MyPlansScreen = ({ route, navigation }) => {
 
                     {managerData ? (
                         <>
-                            {selectedPlan &&
+                            {selectedPlan && !selectedPlan.user_access &&
                                 <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', marginTop: 5 }]} onPress={() => {
+                                    setPlanId(null);
                                     setManagerData(null);
+                                    updatePlans({ send_to_user: true });
                                 }}>
                                     <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{edit ? "Save and Notify User" : "Send to User"}</Text>
                                 </TouchableOpacity>
