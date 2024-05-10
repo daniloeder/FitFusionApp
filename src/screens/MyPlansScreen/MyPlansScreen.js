@@ -10,6 +10,94 @@ import StripePayment from '../../components/Payment/StripePayment';
 
 const width = Dimensions.get('window').width;
 
+const checkAvailableFeature = (feature, data) => {
+    if (feature === 'create_new_plan' && (data.userSubscriptionPlan.current_data.features[data.plan].max[0] && data.plansLength >= data.userSubscriptionPlan.current_data.features[data.plan].max[1])) {
+        Alert.alert('You need to upgrate to create a new plan.', `Max of ${data.userSubscriptionPlan.current_data.features[data.plan].max[1]} plans with "${data.userSubscriptionPlan.current_data.name}" plan.`,
+            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]
+        );
+        return false;
+    } else if (feature === 'access_other_days' && (Object.keys(data.daysItems[data.plan][data.dayName].items).length === 0 && Object.values(data.daysItems[data.plan]).filter(day => !day.rest).length >= data.userSubscriptionPlan.current_data.features[data.plan].max_days)) {
+        Alert.alert('You need to upgrate to access others days.', `Max ${data.userSubscriptionPlan.current_data.features[data.plan].max_days} Days on this plan with "${data.userSubscriptionPlan.current_data.name}".`,
+            [{
+                text: 'Cancel',
+                style: 'cancel'
+            },
+            {
+                text: 'Upgrade Plan',
+                onPress: () => data.setUpdatePlanModal(true)
+            }]
+        );
+        return false;
+    } else if (feature === 'use_ai_plan_creation' && (data.userSubscriptionPlan.current_data.features[data.plan].use_ai === 0)) {
+        Alert.alert('You need to upgrate to continue to use AI.', 'Press Upgrade Plan to continue.',
+            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]
+        );
+        return false;
+    } else if (feature === 'save_plan' && (data.userSubscriptionPlan.current_data.features[data.plan].max_saves[2] < data.userSubscriptionPlan.current_data.features[data.plan].max_saves[1])) {
+        Alert.alert('You need to upgrate to Save more plans.', `Max ${data.userSubscriptionPlan.current_data.features[data.plan].max_saves[2]} Saves with "${data.userSubscriptionPlan.current_data.name}" plan.`,
+            [{
+                text: 'Cancel',
+                style: 'cancel'
+            },
+            {
+                text: 'Upgrade Plan',
+                onPress: () => data.setUpdatePlanModal(true)
+            }]
+        );
+        return false;
+    } else if (feature === 'saved_plan') {
+        const maxSaves = data.userSubscriptionPlan.current_data.features[data.plan].max_saves[2] - data.userSubscriptionPlan.current_data.features[data.plan].max_saves[1]
+        if (data.userSubscriptionPlan.current_data.features[data.plan].max_saves[0] && maxSaves < 10) {
+            Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${data.userSubscriptionPlan.current_data.name} plan.`, [{ text: 'OK' }]);
+            data.setUserSubscriptionPlan(prevState => {
+                const updatedFeatures = { ...prevState.current_data.features };
+                const maxSaves = [...updatedFeatures[data.plan].max_saves];
+                maxSaves[1] += 1;
+                updatedFeatures[data.plan] = {
+                    ...updatedFeatures[data.plan],
+                    max_saves: maxSaves,
+                };
+                return {
+                    ...prevState,
+                    update: true,
+                    features: updatedFeatures,
+                };
+            });
+        }
+    } else if (feature === 'max_items_per_group' && (Object.keys(data.daysItems[data.plan][data.dayName].items[data.muscleGroup]).length >= data.userSubscriptionPlan.current_data.features[data.plan].max_items_per_group)) {
+        Alert.alert('You need to upgrate to add more exercises.', `Max ${data.userSubscriptionPlan.current_data.features[data.plan].max_items_per_group} exercises per Muscle Group with "${data.userSubscriptionPlan.current_data.name}" plan.`,
+            [{
+                text: 'Cancel',
+                style: 'cancel'
+            },
+            {
+                text: 'Upgrade Plan',
+                onPress: () => data.setUpdatePlanModal(true)
+            }]
+        );
+        return false;
+    } else if (feature === 'items_alternatives' && (!data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[0] || (data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[1] >= data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[2]))) {
+        Alert.alert('You need to upgrate to set new Alternatives.', `Max ${data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[2]} Alternatives changes with "${data.userSubscriptionPlan.current_data.name}" plan.`,
+            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]);
+        return false;
+    } else if (feature === 'items_alternatives_updated') {
+        Alert.alert('Alternative Updated!', `You need to upgrate to set new Alternatives.\nMax ${data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[2] - data.userSubscriptionPlan.current_data.features[data.plan].items_alternatives[1] - 1} Alternatives changes left with "${data.userSubscriptionPlan.current_data.name}" plan.`);
+    } else if (feature === 'max_groups_per_day' && (Object.keys(data.daysItems[data.plan][data.dayName].items).length >= data.userSubscriptionPlan.current_data.features[data.plan].max_groups_per_day)) {
+        Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${data.userSubscriptionPlan.current_data.features[data.plan].max_groups_per_day} Muscle Groups per Day with "${data.userSubscriptionPlan.current_data.name}" plan.`,
+            [{
+                text: 'Cancel',
+                style: 'cancel'
+            },
+            {
+                text: 'Upgrade Plan',
+                onPress: () => data.setUpdatePlanModal(true)
+            }]
+        );
+        return false;
+    }
+    return true;
+}
+
 const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100, textColor = "#1C274C", selectedColor = "#FFF", unselectedColor = "#DDD" }) => {
     const styles = StyleSheet.create({
         dayContainer: {
@@ -996,12 +1084,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     });
 
     function checkBeforeCreation() {
-        if (userSubscriptionPlan.current_data.features[plan].max[0] && plansLength >= userSubscriptionPlan.current_data.features[plan].max[1]) {
-            Alert.alert('You need to upgrate to create a new plan.', `Max of ${userSubscriptionPlan.current_data.features[plan].max[1]} plans with "${userSubscriptionPlan.name}" plan.`,
-                [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
-            );
-            return;
-        }
+        if (!checkAvailableFeature("create_new_plan", { userSubscriptionPlan: userSubscriptionPlan, plansLength: plansLength, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
         if (!trainingName) {
             alert('Please enter a workout name')
             return false
@@ -1055,7 +1138,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                         </View>
                         : <><TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
                             {userSubscriptionPlan && userSubscriptionPlan.current_data.features[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
-                                You can have {userSubscriptionPlan.current_data.features[plan].max[1]} plans with "{userSubscriptionPlan.name}" subscription.
+                                You can have {userSubscriptionPlan.current_data.features[plan].max[1]} plans with "{userSubscriptionPlan.current_data.name}" subscription.
                             </Text>
                                 <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
                                     setUpdatePlanModal(true);
@@ -1068,7 +1151,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                 plan === "workout" ?
                                     <>
                                         <SelectBox
-                                            title={"Week Workout Days" + (userSubscriptionPlan.current_data.features[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.current_data.features[plan].max_days} with your "${userSubscriptionPlan.name}" plan.)` : '')}
+                                            title={"Week Workout Days" + (userSubscriptionPlan.current_data.features[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.current_data.features[plan].max_days} with your "${userSubscriptionPlan.current_data.name}" plan.)` : '')}
                                             max={userSubscriptionPlan.current_data.features[plan].max_days < 7 ? userSubscriptionPlan.current_data.features[plan].max_days : undefined}
                                             allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
                                             allOptionsNames={allWorkoutDaysNames}
@@ -1147,12 +1230,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     if (useAI) {
                                         if (plan === "workout") {
                                             if (checkBeforeCreation()) {
-                                                if (userSubscriptionPlan.current_data.features[plan].use_ai === 0) {
-                                                    Alert.alert('You need to upgrate to continue to use AI.', 'Press Upgrade Plan to continue.',
-                                                        [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]
-                                                    );
-                                                    return;
-                                                }
+                                                if (!checkAvailableFeature('use_ai_plan_creation', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
                                                 setGenerating(true);
                                                 GenerateWeekWorkoutPlan({
                                                     "name": trainingName,
@@ -3215,38 +3293,9 @@ const MyPlansScreen = ({ route, navigation }) => {
     }
 
     const updatePlans = async ({ name = selectedPlan.name, room = (managerData && managerData.room), send_to_user = false }) => {
-        if (userSubscriptionPlan.current_data.features[plan].max_saves[2] < userSubscriptionPlan.current_data.features[plan].max_saves[1]) {
-            Alert.alert('You need to upgrate to Save more plans.', `Max ${userSubscriptionPlan.current_data.features[plan].max_saves[2]} Saves with "${userSubscriptionPlan.name}" plan.`,
-                [{
-                    text: 'Cancel',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Upgrade Plan',
-                    onPress: () => setUpdatePlanModal(true)
-                }]
-            );
-            return;
-        }
+        if (!checkAvailableFeature('save_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
         setAddNewMuscleGroup(false);
-        const maxSaves = userSubscriptionPlan.current_data.features[plan].max_saves[2] - userSubscriptionPlan.current_data.features[plan].max_saves[1]
-        if (false && userSubscriptionPlan.current_data.features[plan].max_saves[0] && maxSaves < 10) {
-            Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${userSubscriptionPlan.name} plan.`, [{ text: 'OK' }]);
-            setUserSubscriptionPlan(prevState => {
-                const updatedFeatures = { ...prevState.features };
-                const maxSaves = [...updatedFeatures[plan].max_saves];
-                maxSaves[1] += 1;
-                updatedFeatures[plan] = {
-                    ...updatedFeatures[plan],
-                    max_saves: maxSaves,
-                };
-                return {
-                    ...prevState,
-                    update: true,
-                    features: updatedFeatures,
-                };
-            });
-        }
+        checkAvailableFeature('saved_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUserSubscriptionPlan: setUserSubscriptionPlan, })
         try {
             const response = await fetch(BASE_URL + `/api/exercises/plan/${planId}/`, {
                 method: 'PUT',
@@ -3531,19 +3580,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
-        if (Object.keys(daysItems[plan][dayName].items[muscleGroup]).length >= userSubscriptionPlan.current_data.features[plan].max_items_per_group) {
-            Alert.alert('You need to upgrate to add more exercises.', `Max ${userSubscriptionPlan.current_data.features[plan].max_items_per_group} exercises per Muscle Group with "${userSubscriptionPlan.name}" plan.`,
-                [{
-                    text: 'Cancel',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Upgrade Plan',
-                    onPress: () => setUpdatePlanModal(true)
-                }]
-            );
-            return;
-        }
+        if (!checkAvailableFeature('max_items_per_group', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName, muscleGroup: muscleGroup })) return;
 
         setEdit(true);
 
@@ -3579,12 +3616,24 @@ const MyPlansScreen = ({ route, navigation }) => {
 
         setEdit(true);
 
-        if (replace && userSubscriptionPlan.current_data.features[plan].items_alternatives[0]) {
-            if (userSubscriptionPlan.current_data.features[plan].items_alternatives[1] >= userSubscriptionPlan.current_data.features[plan].items_alternatives[2]) {
-                Alert.alert('You need to upgrate to set new Alternatives.', `Max ${userSubscriptionPlan.current_data.features[plan].items_alternatives[2]} Alternatives changes with "${userSubscriptionPlan.name}" plan.`,
-                    [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => setUpdatePlanModal(true) }]);
-                return
-            }
+        if (replace) {
+            if (!checkAvailableFeature('items_alternatives', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
+            checkAvailableFeature('items_alternatives_updated', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, daysItems: daysItems, dayName: dayName });
+            setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
+                ...prevUserSubscriptionPlan,
+                update: true,
+                features: {
+                    ...prevUserSubscriptionPlan.current_data.features,
+                    workout: {
+                        ...prevUserSubscriptionPlan.current_data.features.workout,
+                        items_alternatives: [
+                            userSubscriptionPlan.current_data.features.workout.items_alternatives[0],
+                            userSubscriptionPlan.current_data.features.workout.items_alternatives[1] + 1,
+                            userSubscriptionPlan.current_data.features.workout.items_alternatives[2],
+                        ]
+                    }
+                }
+            }))
         }
 
         setDaysItems(prevDays => ({
@@ -3600,22 +3649,6 @@ const MyPlansScreen = ({ route, navigation }) => {
                 }
             }
         }));
-        Alert.alert('Alternative Updated!', `You need to upgrate to set new Alternatives.\nMax ${userSubscriptionPlan.current_data.features[plan].items_alternatives[2] - userSubscriptionPlan.current_data.features[plan].items_alternatives[1] - 1} Alternatives changes left with "${userSubscriptionPlan.name}" plan.`);
-        setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
-            ...prevUserSubscriptionPlan,
-            update: true,
-            features: {
-                ...prevUserSubscriptionPlan.current_data.features,
-                workout: {
-                    ...prevUserSubscriptionPlan.current_data.features.workout,
-                    items_alternatives: [
-                        userSubscriptionPlan.current_data.features.workout.items_alternatives[0],
-                        userSubscriptionPlan.current_data.features.workout.items_alternatives[1] + 1,
-                        userSubscriptionPlan.current_data.features.workout.items_alternatives[2],
-                    ]
-                }
-            }
-        }))
     };
 
     const removeMuscleGroup = (dayName, muscleGroup) => {
@@ -3639,20 +3672,8 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
 
     const addMuscleGroup = (dayName, muscleGroup) => {
+        if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName })) return;
 
-        if (Object.keys(daysItems[plan][dayName].items).length >= userSubscriptionPlan.current_data.features[plan].max_groups_per_day) {
-            Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${userSubscriptionPlan.current_data.features[plan].max_groups_per_day} Muscle Groups per Day with "${userSubscriptionPlan.name}" plan.`,
-                [{
-                    text: 'Cancel',
-                    style: 'cancel'
-                },
-                {
-                    text: 'Upgrade Plan',
-                    onPress: () => setUpdatePlanModal(true)
-                }]
-            );
-            return;
-        }
         if (Object.keys(daysItems[plan][dayName].items).length === 0)
 
             if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
@@ -3716,6 +3737,8 @@ const MyPlansScreen = ({ route, navigation }) => {
             setStatus("error");
         }
     };
+
+
 
     useEffect(() => {
         if (!personal) {
@@ -3783,7 +3806,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            {updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} currentPlanId={userSubscriptionPlan.plan_id} />}
+            {false && updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} currentPlanId={userSubscriptionPlan.plan_id} />}
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
@@ -3869,19 +3892,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                                     index={index}
                                     name={dayName}
                                     setSelectedTab={() => {
-                                        if (Object.keys(daysItems[plan][dayName].items).length === 0 && Object.values(daysItems[plan]).filter(day => !day.rest).length >= userSubscriptionPlan.current_data.features[plan].max_days) {
-                                            Alert.alert('You need to upgrate to access others days.', `Max ${userSubscriptionPlan.current_data.features[plan].max_days} Days on this plan with "${userSubscriptionPlan.name}".`,
-                                                [{
-                                                    text: 'Cancel',
-                                                    style: 'cancel'
-                                                },
-                                                {
-                                                    text: 'Upgrade Plan',
-                                                    onPress: () => setUpdatePlanModal(true)
-                                                }]
-                                            );
-                                            return;
-                                        }
+                                        if (!checkAvailableFeature('access_other_days', { userSubscriptionPlan: userSubscriptionPlan, daysItems: daysItems, plan: plan, dayName: dayName, setUpdatePlanModal: setUpdatePlanModal })) return;
                                         if (plan === 'workout') {
                                             setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
                                         } else {
@@ -3969,7 +3980,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                                     setPlanId(null);
                                     setManagerData(null);
                                 }
-                                updatePlans();
+                                updatePlans({});
                             }}>
                                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{plan === 'workout' ? "Save Workout" : "Save Diet"}</Text>
                             </TouchableOpacity>
