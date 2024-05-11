@@ -1467,12 +1467,12 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'manager', setNewUserRequest }) => {
+const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', setNewUserRequest }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [mode, setMode] = useState(patternMode);
-    const [updatePlanModal, setUpdatePlanModal] = useState(false);
+    const [updatePlanModal, setUpdatePlanModal] = useState(patternMode === 'subscription' ? true : false);
 
     const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
@@ -1557,7 +1557,7 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
 
     useEffect(() => {
         if (object.get_id.length !== subscriptionPlansOptions.length || object.get_id.some(id => !subscriptionPlansOptions.find(sub_plan => sub_plan.id === id))) {
-            if (object.get_id.some(id => !object.plans_in.find(sub_plan => sub_plan.id === id))) {
+            if (!object.plans_in || object.get_id.some(id => !object.plans_in.find(sub_plan => sub_plan.id === id))) {
                 fetchSubscriptionPlans(object || null);
             } else {
                 setSubscriptionPlansOptions(object.plans_in);
@@ -2038,6 +2038,9 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                                                             setUpdatePlanModal(true);
                                                         }
                                                     }])
+                                        } else {
+                                            setMode('subscription');
+                                            setUpdatePlanModal(true);
                                         }
                                     }}>
                                         <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>{subscriptionTexts.button_text}</Text>
@@ -2052,6 +2055,14 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                         : ''
             }
         </View>
+
+    if (!updatePlanModal && patternMode === 'none') {
+        return <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderRadius: 5, borderColor: '#999', alignItems: 'center' }]} onPress={() => {
+            setUpdatePlanModal(true);
+        }}>
+            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
+        </TouchableOpacity>
+    }
 
     if (!updatePlanModal) return <PlansBody />;
 
@@ -2183,7 +2194,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerData }) => {
+const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal, setManagerData }) => {
 
     if (!personal) {
         return (
@@ -2640,7 +2651,8 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                 </View>
                 <View style={{ flex: 1, flexDirection: 'row', padding: 3, borderRadius: 3 }}>
                     <Text style={[styles.text, { fontSize: 8 }]}>Due Date: {subscription.due_date}{"\n"}Generated At: {subscription.generated_at}</Text>
-                    <Text style={[styles.text, { fontSize: 8 }]}>Payment Status: {PAYMENT_STATUS_CHOICES[subscription.payment_status]}</Text>
+                    {//<Text style={[styles.text, { fontSize: 8 }]}>Payment Status: {PAYMENT_STATUS_CHOICES[subscription.payment_status]}</Text>
+                    }
                 </View>
             </View>
         )
@@ -2854,6 +2866,20 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
 
                                                 <TouchableOpacity
                                                     onPress={() => {
+                                                        if (selectedUserRequest.status !== 'active') {
+                                                            Alert.alert("Chat Trainer", "Your Subscription is not active. Are you sure you want to chat trainer?",
+                                                                [{ text: "Cancel", style: "cancel" }, { text: "Chat", onPress: () => { navigation.navigate('Chat', { room: selectedUserRequest.user_owner }); } }]);
+                                                        } else {
+                                                            navigation.navigate('Chat', { room: selectedUserRequest.user_owner });
+                                                        }
+                                                    }}
+                                                    style={[styles.userButtons, { backgroundColor: '#2196F3' }]}
+                                                >
+                                                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Chat Trainer</Text>
+                                                </TouchableOpacity>
+
+                                                <TouchableOpacity
+                                                    onPress={() => {
                                                         Alert.alert("Leave Room", "Are you sure you want to leave this room?",
                                                             [{ text: "Cancel", style: "cancel" }, { text: "Leave", onPress: () => { manageRoomUser(selectedUserRequest.user.id, selectedUserRequest.room.id, selectedUserRequest.id, 'leave'); } }]);
                                                     }}
@@ -2951,10 +2977,6 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Diet</Text>
                                                                     </TouchableOpacity>}
-                                                                {selectedRequest.assistance &&
-                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', padding: 8 }]}>
-                                                                        <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>Manage Assistance</Text>
-                                                                    </TouchableOpacity>}
                                                             </View>
                                                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 'auto' }}>
                                                                 {!selectedRequest.training_plan &&
@@ -2969,10 +2991,11 @@ const PersonalManagementPaste = ({ userToken, personal, setPersonal, setManagerD
                                                                     >
                                                                         <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
                                                                     </TouchableOpacity>}
-                                                                {!selectedRequest.assistance &&
-                                                                    <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#FF4444' }]}>
-                                                                        <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Assistance</Text>
-                                                                    </TouchableOpacity>}
+                                                                <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', paddingHorizontal: 24 }]}
+                                                                    onPress={() => { navigation.navigate('Chat', { user: selectedRequest.user.id }); }}
+                                                                >
+                                                                    <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Chat User</Text>
+                                                                </TouchableOpacity>
                                                             </View>
                                                         </View>}
                                                         <View style={{ backgroundColor: 'rgba(255,255,255,0.8)', padding: 5, borderRadius: 5, flex: 0 }}>
@@ -3674,12 +3697,12 @@ const MyPlansScreen = ({ route, navigation }) => {
     const addMuscleGroup = (dayName, muscleGroup) => {
         if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName })) return;
 
-        if (Object.keys(daysItems[plan][dayName].items).length === 0)
-
+        if (Object.keys(daysItems[plan][dayName].items).length === 0) {
             if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
                 console.error(`Day: ${dayName} not found.`);
                 return;
             }
+        }
         setEdit(true);
         setDaysItems(prevDays => ({
             ...prevDays,
@@ -3737,8 +3760,6 @@ const MyPlansScreen = ({ route, navigation }) => {
             setStatus("error");
         }
     };
-
-
 
     useEffect(() => {
         if (!personal) {
@@ -3804,9 +3825,8 @@ const MyPlansScreen = ({ route, navigation }) => {
 
     return (
         <View style={styles.container}>
-            <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+            <GradientBackground firstColor="#1A202C" secondColor={managerData ? "#333300" : "#991B1B"} thirdColor="#1A202C" />
 
-            {false && updatePlanModal && <UpgradePlanModal userToken={userToken} updatePlanModal={updatePlanModal} setUpdatePlanModal={setUpdatePlanModal} currentPlanId={userSubscriptionPlan.plan_id} />}
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
@@ -3825,7 +3845,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {managerData && managerData.user && <View style={{ top: 5 }}><UsersBall user={managerData.user} size={0.6} /></View>}
                         <Text style={styles.sectionTitle}>Fitness Plan</Text>
-                        <PersonalManagementPaste userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                        <PersonalManagementPaste navigation={navigation} userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
                     </View>
 
                     <View style={{ flexDirection: 'row', marginBottom: 10 }}>
@@ -4013,13 +4033,12 @@ const MyPlansScreen = ({ route, navigation }) => {
                                 <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Exit Manager Mode</Text>
                             </TouchableOpacity>
                         </>
-                    ) : <>
-                        <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#222', paddingVertical: 9, marginTop: 5, borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
-                            setUpdatePlanModal(true);
-                        }}>
-                            <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
-                        </TouchableOpacity>
-                    </>
+                    ) :
+                        <UpgradePlanModal userToken={userToken}
+                            subscriptionTexts={{ button_text: "Update Plan" }}
+                            object={{ get_key: 'plans_ids', get_id: [15, 16, 17] }}
+                            patternMode='none'
+                        />
                     }
 
                 </View>
