@@ -11,10 +11,11 @@ const DatePicker = ({ date, setDate, setTime, mode = "datetime", dateType = "DD/
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
     const handleConfirm = (selectedDate) => {
-        if (mode === "datetime" || mode === "date") {
+        if (mode === "datetime") {
+            setTime(moment(selectedDate).format("YYYY-MM-DD HH:mm:ss"));
+        } else if (mode === "date") {
             setDate(moment(selectedDate).format("YYYY-MM-DD"));
-        }
-        if (mode === "datetime" || mode === "time") {
+        } else if (mode === "time") {
             setTime(moment(selectedDate).format("HH:mm"));
         }
         setSelectedDate(selectedDate);
@@ -47,7 +48,7 @@ const DatePicker = ({ date, setDate, setTime, mode = "datetime", dateType = "DD/
 
     return (
         <Pressable onPress={() => setDatePickerVisibility(true)} style={[selectedDate ? { borderColor: '#21347B' } : {}, customStyle]}>
-            <Icons name={mode==='time'?"Watch":"Calendar"} size={width * 0.07} style={{ padding: width * 0.028, marginTop: width * 0.01 }} fill={"#1C274C"} />
+            <Icons name={mode === 'time' ? "Watch" : "Calendar"} size={width * 0.07} style={{ padding: width * 0.028, marginTop: width * 0.01 }} fill={"#1C274C"} />
             {showText &&
                 <Text style={{ color: '#656565', fontSize: width * 0.04, marginLeft: width * 0.02 }}>
                     {getFormattedDisplayText()} - {dateType}

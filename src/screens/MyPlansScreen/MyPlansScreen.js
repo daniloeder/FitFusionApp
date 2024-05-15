@@ -7,6 +7,7 @@ import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import StripePayment from '../../components/Payment/StripePayment';
+import DatePicker from '../../components/Forms/DatePicker';
 
 const width = Dimensions.get('window').width;
 
@@ -1467,7 +1468,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', setNewUserRequest }) => {
+const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', table = false, setConfirmedSubscription }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -1497,7 +1498,7 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                 }
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with the fetch subscription plans request.', error);
         }
         setLoading(false);
     }
@@ -1528,7 +1529,7 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                 }
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with update operation:', error);
         }
         setLoading(false);
     }
@@ -1546,12 +1547,12 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
             if (response.ok) {
                 setUpdatePlanModal(false);
                 Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
-                if (setNewUserRequest) {
-                    setNewUserRequest(data)
+                if (setConfirmedSubscription) {
+                    setConfirmedSubscription(data)
                 }
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with subscription plan confirmation:', error);
         }
     }
 
@@ -1685,7 +1686,7 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                                     )
                                 })}
                             </View>}
-                            {plan.details.features.comment.length > 0 && <View style={styles.commentSection}>
+                            {plan.details && plan.details.features.comment.length > 0 && <View style={styles.commentSection}>
                                 <Text style={{ fontSize: 10, color: '#FFF' }}>{plan.details.features.comment}</Text>
                             </View>}
                             {currentPlanId === plan.id && <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 13, color: '#888' }}>Current</Text>}
@@ -1952,6 +1953,8 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
         }
     }, [updatePlanModal]);
 
+    if (table && subscriptionPlansOptions) return <PricePlanTable options={subscriptionPlansOptions} />;
+
     const PlansBody = () =>
         <View style={styles.section}>
             <Text style={styles.title}>{mode !== 'subscription' ? "Plans" : "Upgrade Plans"}</Text>
@@ -2047,7 +2050,7 @@ const UpgradePlanModal = ({ userToken, currentPlanId, object, subscriptionTexts,
                                     </TouchableOpacity>
                                 }
 
-                                {useCreditCard && subscriptionPlan && !completedPaymentData && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id }} setCompletedPaymentData={setCompletedPaymentData} />}
+                                {useCreditCard && subscriptionPlan && !completedPaymentData && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} />}
                             </View>
                         )
                     ) : status === 'loading' ?
@@ -2232,6 +2235,10 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     const [selectedUserRequest, setSelectedUserRequest] = useState(null);
     const [newUserRequest, setNewUserRequest] = useState(null);
 
+    const [evaluationMode, setEvaluationMode] = useState(null);
+    const [evaluations, setEvaluations] = useState(null);
+    const [evaluationModal, setEvaluationModal] = useState(false);
+
     const [selectedTrainerRoomId, setSelectedTrainerRoomId] = useState(null);
 
     const updateRoomUserPlan = (room_id, user_id, plan_id, newPlan) => {
@@ -2282,7 +2289,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     };
 
     const fetchPersonalRoomData = async (personal_id, owner) => {
-        const response = await fetch(BASE_URL + `/api/exercises/personal-rooms/?personal_id=${personal_id}`, {
+        const response = await fetch(BASE_URL + `/api/exercises/personal-data/?personal_id=${personal_id}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Token ' + userToken,
@@ -2292,14 +2299,16 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
         const data = await response.json();
         if (owner) {
-            setPersonalRooms(data);
+            setPersonalRooms(data.personal_rooms);
+            setEvaluations(data.evaluations);
             if (selectedTrainerPersonalRoom) {
-                setSelectedTrainerPersonalRoom(data.find(room => room.id === selectedTrainerPersonalRoom.id));
+                setSelectedTrainerPersonalRoom(data.personal_rooms.find(room => room.id === selectedTrainerPersonalRoom.id));
             }
         } else {
             setSelectedTrainer(prevData => {
                 const updatedData = { ...prevData };
-                updatedData['rooms'] = data;
+                updatedData['rooms'] = data.personal_rooms;
+                updatedData['evaluations'] = data.evaluations;
                 updatedData['loading'] = false;
                 return updatedData;
             });
@@ -2333,7 +2342,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                 }
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with the manage room user request:', error);
         }
     }
 
@@ -2348,7 +2357,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
             }
 
             if (Object.keys(generalData.tabs).length > 1) {
-                setMode('personal');
+                setMode('user');
             } else {
                 setMode('user');
             }
@@ -2387,7 +2396,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     }, [manageRoomPlans]);
 
     useEffect(() => {
-        if (personalRooms.length > 0) {
+        if (personalRooms && personalRooms.length > 0) {
             if (!selectedTrainerPersonalRoom) {
                 setSelectedTrainerPersonalRoom(personalRooms[0]);
             }
@@ -2515,7 +2524,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     const ManageRoomModal = () => {
         const manageRoom = async () => {
             try {
-                const response = await fetch(BASE_URL + '/api/exercises/personal-rooms/', {
+                const response = await fetch(BASE_URL + '/api/exercises/personal-data/', {
                     method: manageRoomModal,
                     headers: {
                         'Authorization': 'Token ' + userToken,
@@ -2619,6 +2628,458 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
         )
     }
 
+    const ManageEvaluations = ({ }) => {
+        const [addEvaluationPlan, setAddEvaluationPlan] = useState(false);
+
+        const [evaluationId, setEvaluationId] = useState(null);
+        const [title, setTitle] = useState('');
+        const [description, setDescription] = useState('');
+        const [minutes, setMinutes] = useState(30);
+
+        const [startTime, setStartTime] = useState('');
+        const [endTime, setEndTime] = useState('');
+
+        const selectedEvaluation = evaluations && evaluations[evaluationMode] && evaluations[evaluationMode].length > 0 && evaluations[evaluationMode].find(evaluation => evaluation.id === evaluationId);
+
+        const [workoutDays, setWorkoutDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+        const allWorkoutDaysNames = { 'Mon': 'Monday', 'Tue': 'Tuesday', 'Wed': 'Wednesday', 'Thu': 'Thursday', 'Fri': 'Friday', 'Sat': 'Saturday', 'Sun': 'Sunday' };
+
+        const onEvaluationModalClose = () => {
+            setAddEvaluationPlan(false);
+            setEvaluationId(null);
+            setTitle('');
+            setDescription('');
+            setMinutes(30);
+            setWorkoutDays(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+            fetchPersonalRoomData(generalData.tabs.personal.id, true);
+        }
+
+        const manageEvaluations = async (id, method) => {
+
+            try {
+                const response = await fetch(BASE_URL + '/api/exercises/evaluations/', {
+                    method: !id ? 'POST' : method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${userToken}`
+                    },
+                    body: method !== 'DELETE' ? JSON.stringify({
+                        evaluation_id: id,
+                        evaluation: {
+                            name: title,
+                            description: description,
+                            time_from: startTime,
+                            time_to: endTime,
+                            minutes: minutes,
+                            workout_days: workoutDays
+                        }
+                    }) : JSON.stringify({
+                        'evaluation_id': id
+                    })
+                });
+                if (response.ok) {
+                    if (method === 'DELETE') {
+                        setEvaluations(prevEvaluations => {
+                            return prevEvaluations.plans.filter(evaluation => evaluation.id !== id);
+                        });
+                    } else {
+                        const data = await response.json();
+                        if (method === 'POST') {
+                            setEvaluations(prevEvaluations => {
+                                return [...prevEvaluations, data];
+                            });
+                        }
+                    }
+                    onEvaluationModalClose();
+                }
+            } catch (error) {
+                console.error('Error with evaluations:', error);
+            }
+        }
+
+        const styles = StyleSheet.create({
+            container: {
+                flex: 1,
+                backgroundColor: 'rgba(255,255,255,0.8)',
+                padding: 3,
+                borderRadius: 5,
+                marginTop: 10,
+            },
+            text: {
+                flex: 1,
+                color: '#555',
+                fontWeight: 'bold',
+                fontSize: 12,
+            },
+            userButtons: {
+                flex: 0,
+                padding: 5,
+                borderRadius: 5,
+                margin: 3,
+                alignItems: 'center',
+            },
+        });
+
+        return (
+            <View>
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={addEvaluationPlan}
+                    onRequestClose={() => onEvaluationModalClose}
+                >
+                    <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                        <View style={{ width: width * 0.9, maxHeight: '88%', padding: 10, borderRadius: 10, backgroundColor: '#333' }}>
+                            <ScrollView>
+                                <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Add Evaluation Plan</Text>
+
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Evaluation Name</Text>
+                                <TextInput style={{ width: '100%', height: 40, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10 }}
+                                    placeholder="Evaluation Name"
+                                    onChangeText={text => { setTitle(text) }}
+                                    defaultValue={title}
+                                />
+
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Avarage Evaluation Description</Text>
+                                <TextInput style={{ width: '100%', height: 80, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10 }}
+                                    placeholder="Evaluation Description"
+                                    onChangeText={text => { setDescription(text) }}
+                                    defaultValue={description}
+                                />
+
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Availave Days</Text>
+                                <SelectBox
+                                    title="Available Days"
+                                    allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
+                                    allOptionsNames={allWorkoutDaysNames}
+                                    selectedOptions={workoutDays}
+                                    setSelectedItem={setWorkoutDays}
+                                    obligatory
+                                />
+
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Evaluation Time (In minutes)</Text>
+                                <TextInput
+                                    style={{ width: '100%', height: 40, backgroundColor: '#fff', borderRadius: 5, paddingLeft: 10 }}
+                                    placeholder="Evaluation Time (Minutes)"
+                                    onChangeText={text => { setMinutes(text) }}
+                                    keyboardType="numeric"
+                                    defaultValue={minutes.toString()}
+                                />
+
+                                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Available Time (Click on icon to select time you are available for evaluations)</Text>
+                                <View style={{ backgroundColor: '#eee', borderRadius: 5, paddingLeft: 10, flexDirection: 'row', alignItems: 'space-between' }}>
+                                    <View style={{ alignItems: 'center', width: '50%' }}>
+                                        <Text style={{ color: '#555', fontSize: 12, fontWeight: 'bold' }}>Start Time </Text>
+                                        <DatePicker
+                                            showText={false}
+                                            time={startTime}
+                                            mode="time"
+                                            setTime={setStartTime}
+                                        />
+                                        {startTime && <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>{startTime}</Text>}
+                                    </View>
+                                    <View style={{ alignItems: 'center', width: '50%' }}>
+                                        <Text style={{ color: '#555', fontSize: 12, fontWeight: 'bold' }}>End Time</Text>
+                                        <DatePicker
+                                            showText={false}
+                                            time={endTime}
+                                            mode="time"
+                                            setTime={setEndTime}
+                                        />
+                                        {endTime && <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold' }}>{endTime}</Text>}
+                                    </View>
+                                </View>
+
+                                {evaluationId && <>
+                                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 10 }}>Evaluation Subscription Plans</Text>
+                                    <UpgradePlanModal
+                                        userToken={userToken}
+                                        object={{
+                                            get_key: 'plans_ids',
+                                            get_id: selectedEvaluation ? selectedEvaluation.subscription_plans.map(plan => plan.id) : [],
+                                            obj_key: 'evaluation_id',
+                                            obj_id: selectedEvaluation && selectedEvaluation.id,
+                                            plans_in: selectedEvaluation && selectedEvaluation.subscription_plans,
+                                        }}
+                                        patternMode='manager'
+                                        setConfirmedSubscription={setNewUserRequest}
+                                    />
+                                </>}
+
+                            </ScrollView>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 10 }}>
+
+                                <TouchableOpacity style={{ flex: 1, height: 30, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginHorizontal: 2 }} onPress={() => {
+                                    if (title.length > 0) {
+                                        if (workoutDays.length > 0) {
+                                            if (minutes > 0) {
+                                                if (startTime.length > 0 && endTime.length > 0) {
+                                                    manageEvaluations(evaluationId, 'PATCH');
+                                                } else { Alert.alert('Error!', 'Please select start and end time.'); }
+                                            } else { Alert.alert('Error!', 'Please enter evaluation time.'); }
+                                        } else { Alert.alert('Error!', 'Please select at least one day.'); }
+                                    } else { Alert.alert('Error!', 'Please enter a evaluation name.'); }
+                                }}>
+                                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Save</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={{ flex: 1, height: 30, backgroundColor: '#777', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginHorizontal: 2 }} onPress={onEvaluationModalClose}>
+                                    <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Close</Text>
+                                </TouchableOpacity>
+
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+
+                {evaluations && evaluations.plans && evaluations.plans.map((evaluation) => {
+                    return (
+                        <View key={evaluation.id} style={styles.container}>
+                            <Text style={{ color: '#222', fontSize: 15, fontWeight: 'bold', alignSelf: 'center' }}>{evaluation.name}</Text>
+                            {evaluation.description && <Text style={styles.text}>Description: {evaluation.description}</Text>}
+                            <Text style={styles.text}>Days: {evaluation.days.map(day => day).join(', ')}</Text>
+                            <Text style={styles.text}>Availave Time: {evaluation.time_from} - {evaluation.time_to}</Text>
+
+                            {evaluation.subscription_plans && evaluation.subscription_plans.length > 0 ?
+                                <View style={{ marginTop: 10 }}>
+                                    <Text style={{ color: '#222', fontSize: 15, fontWeight: 'bold' }}>Subscription Plans:</Text>
+                                    {evaluation.subscription_plans.map((subscription_plan) => <Text key={subscription_plan.id} style={styles.text}>{subscription_plan.currency} {subscription_plan.price} - {subscription_plan.name}</Text>)}
+                                </View> :
+                                <Text style={[styles.text, { color: '#FF0000' }]}>You need to edit to add Subscription Plan</Text>
+                            }
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'center', width: '100%', marginTop: 10 }}>
+
+                                <TouchableOpacity style={{ flex: 1, height: 30, backgroundColor: '#F44336', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10, marginHorizontal: 2 }} onPress={() => {
+                                    manageEvaluations(evaluation.id, 'DELETE');
+                                }}>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Delete</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={{ flex: 1, height: 30, backgroundColor: '#6495ED', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10, marginHorizontal: 2 }} onPress={() => {
+                                    setAddEvaluationPlan(true);
+                                    setEvaluationId(evaluation.id);
+                                    setTitle(evaluation.name);
+                                    setDescription(evaluation.description);
+                                    setStartTime(evaluation.time_from);
+                                    setEndTime(evaluation.time_to);
+                                    setMinutes(evaluation.duration);
+                                    setWorkoutDays(evaluation.days);
+                                }}>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Edit</Text>
+                                </TouchableOpacity>
+
+                            </View>
+                        </View>
+                    )
+                })}
+
+                <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
+                    setEvaluationId(null);
+                    setAddEvaluationPlan(true);
+                }}>
+                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Evaluation Plan</Text>
+                </TouchableOpacity>
+            </View >
+        )
+    }
+
+    const EvaluationList = ({ evaluations }) => {
+        const manageEvaluationsSchedules = async (method, id, action) => {
+            try {
+                const response = await fetch(BASE_URL + '/api/exercises/evaluation-schedules/', {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Token ${userToken}`
+                    },
+                    body: JSON.stringify({
+                        schedule_id: id,
+                        action: action
+                    })
+                });
+                if (response.ok) {
+                    if (mode === 'personal') {
+                        setEvaluations(prevEvaluations => ({
+                            ...prevEvaluations,
+                            schedules: prevEvaluations.schedules.filter(schedule => schedule.id !== id)
+                        }));
+                    } else {
+                        setGeneralData(prevData => ({
+                            ...prevData, tabs: {
+                                ...prevData.tabs,
+                                user: {
+                                    ...prevData.tabs.user,
+                                    evaluations: prevData.tabs.user.evaluations.filter(evaluation => {
+                                        return evaluation.id !== id;
+                                    })
+                                }
+                            }
+                        }));
+                    }
+                    setEvaluationModal(false);
+                } else {
+                    try {
+                        const data = await response.json();
+                        Alert.alert('Error!', data.error);
+                    } catch (error) {
+                        console.error('Error parsing JSON response:', error);
+                        Alert.alert('Error!', 'An unexpected error occurred.');
+                    }
+                }
+            } catch (error) {
+                console.error('Error with evaluations:', error);
+            }
+        }
+
+        const [requestEvaluation, setRequestEvaluation] = useState(false);
+        const RequestEvaluationModal = ({ evaluation }) => {
+            const [selectedDatetime, setSelectedDatetime] = useState(null);
+            const [confirmedSubscription, setConfirmedSubscription] = useState(null);
+            useEffect(() => {
+                if (confirmedSubscription) {
+                    setEvaluationModal(false);
+                    fetchGeneralData();
+                    setConfirmedSubscription(null);
+                }
+            }, [confirmedSubscription]);
+            return (
+                <Modal
+                    animationType="fade"
+                    transparent={true}
+                    visible={requestEvaluation}
+                    onRequestClose={() => setRequestEvaluation(false)}
+                >
+                    <View style={{ width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                        <View style={{ width: width * 0.85, maxHeight: '75%', padding: 10, borderRadius: 10, backgroundColor: '#eee' }}>
+                            <Text style={{ color: '#000', fontSize: 18, fontWeight: 'bold', marginBottom: 10 }}>Request Evaluation</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, borderRadius: 10, backgroundColor: '#ddd', marginBottom: 10 }}>
+                                <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold', marginLeft: 10 }}>Select Date and Time: </Text>
+                                <DatePicker
+                                    showText={false}
+                                    time={selectedDatetime}
+                                    mode="datetime"
+                                    setTime={setSelectedDatetime}
+                                />
+                            </View>
+
+                            {selectedDatetime && <>
+                                <Text style={{ color: '#000', fontSize: 12, fontWeight: 'bold', marginBottom: 10 }}>Selected Date and Time: {selectedDatetime}</Text>
+                                <UpgradePlanModal
+                                    userToken={userToken}
+                                    subscriptionTexts={{ button_text: "Request a Evaluation", alert_title: "Evaluation", alert_message: "Do you want to request a evaluation?" }}
+                                    object={{
+                                        get_key: 'plans_ids',
+                                        get_id: evaluation.subscription_plans.map(plan => plan.id),
+                                        plans_in: evaluation.subscription_plans,
+                                        extra: {
+                                            type: 'create_evaluation_schedule',
+                                            datetime: selectedDatetime
+                                        }
+                                    }}
+                                    patternMode='see'
+                                    setConfirmedSubscription={setConfirmedSubscription}
+                                />
+                            </>
+                            }
+                        </View>
+                    </View>
+                </Modal>
+            )
+        }
+
+        const ListBody = () => <View style={{ flex: 1, padding: 3, backgroundColor: '#fff', borderRadius: 3, marginBottom: 20 }}>
+            <Text style={{ color: '#222', fontSize: 15, fontWeight: 'bold' }}>Evaluations:</Text>
+            {evaluations.map((evaluation) => {
+                return (
+                    <View key={evaluation.id} style={{ backgroundColor: evaluationModal ? '#ccc' : '#eee', padding: 5, marginVertical: 5, borderRadius: 5 }}>
+                        {mode === 'personal' || userMode === 'evaluations' ? <>
+                            <View>
+                                <Text style={styles.text}>Plan Name: {evaluation.name}</Text>
+                                <Text style={styles.text}>Date: {evaluation.date}</Text>
+                                <Text style={[styles.text, { fontWeight: 'bold' }]}>Time: {evaluation.time}</Text>
+                                <Text style={styles.text}>Duration: {evaluation.duration} minutes</Text>
+                                <Text style={[styles.text, {color: evaluation.status === 'cancelled' ? '#F44336' : evaluation.status === 'pending' ? '#FFA500' : '#4CAF50' }]}>
+                                    Status: {STATUS_CHOICES[evaluation.status]}
+                                </Text>
+                                {evaluation.note && <Text style={styles.text}>Note: {evaluation.note}</Text>}
+                                <TouchableOpacity style={{ backgroundColor: '#F44336', alignItems: 'center', justifyContent: 'center', padding: 5, borderRadius: 5, marginTop: 5 }} onPress={() => {
+                                    Alert.alert('Cancel Evaluation', 'Do you want to cancel this evaluation?', [
+                                        { text: 'Cancel', onPress: () => { } },
+                                        { text: 'Yes', onPress: () => { manageEvaluationsSchedules('PATCH', evaluation.id, 'cancel'); } }
+                                    ]);
+                                }}>
+                                    <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Cancel Evaluation</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </> : <>
+                            <View style={{ padding: 3, backgroundColor: '#fff', borderRadius: 5, marginBottom: 5 }}>
+                                <Text style={[styles.text, { fontWeight: 'bold', alignSelf: 'center' }]}>{evaluation.name}</Text>
+                                <Text style={styles.text}>Available Days: {evaluation.days.map(day => day).join(', ')}</Text>
+                                <Text style={styles.text}>Available Time: {evaluation.time_from} - {evaluation.time_to}</Text>
+                                <Text style={styles.text}>Evaluation Duration: {evaluation.duration} minutes</Text>
+                                {evaluation.note && <Text style={styles.text}>Note: {evaluation.note}</Text>}
+                            </View>
+                            {requestEvaluation ?
+                                <RequestEvaluationModal evaluation={evaluation} />
+                                :
+                                <>
+                                    <UpgradePlanModal
+                                        userToken={userToken}
+                                        subscriptionTexts={{ button_text: "Request a Evaluation", alert_title: "Evaluation", alert_message: "Do you want to request a evaluation?" }}
+                                        object={{
+                                            get_key: 'plans_ids',
+                                            get_id: evaluation.subscription_plans.map(plan => plan.id),
+                                            plans_in: evaluation.subscription_plans,
+                                        }}
+                                        patternMode='see'
+                                        table
+                                    />
+                                    <TouchableOpacity style={{ backgroundColor: '#4CAF50', alignItems: 'center', justifyContent: 'center', padding: 5, borderRadius: 5, marginTop: 5 }} onPress={() => {
+                                        setRequestEvaluation(true);
+                                    }}>
+                                        <Text style={{ color: '#FFF', fontSize: 12, fontWeight: 'bold' }}>Request Evaluation</Text>
+                                    </TouchableOpacity>
+                                </>
+
+                            }
+                        </>
+                        }
+                    </View>
+                )
+            })}
+        </View>
+
+        if (mode === 'user') {
+            if (!evaluationModal && userMode !== 'evaluations') {
+                return <TouchableOpacity
+                    style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4CAF50', padding: 7 }}
+                    onPress={() => setEvaluationModal(true)}
+                >
+                    <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
+                        Schedule Evaluation
+                    </Text>
+                </TouchableOpacity>
+            } else if (userMode === 'evaluations') {
+                return <ListBody />
+            }
+        } else {
+            return <ListBody />
+        }
+
+        return (
+            <Modal animationType="slide" transparent={true} visible={evaluationModal} onRequestClose={() => { setEvaluationModal(false) }}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', padding: 10, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{ width: '95%', marginVertical: 'auto', padding: 3, backgroundColor: '#fff', borderRadius: 3 }}>
+                        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+                            <ListBody />
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+        )
+    }
+
     const SubscriptionItem = ({ subscription }) => {
         const styles = StyleSheet.create({
             container: {
@@ -2658,6 +3119,10 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
         )
     }
 
+    const user_tabs = [{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "trainers", 'name': "Trainers" },
+    ...(generalData && generalData.tabs && generalData.tabs.user.evaluations ? [{ 'mode': "evaluations", 'name': "Evaluations" }] : [])
+    ]
+
     return (
         <Modal
             animationType="fade"
@@ -2689,15 +3154,15 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                         </View>
                         {mode === 'user' ? <>
                             <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                {[{ 'mode': "my_data", 'name': "My Data" }, { 'mode': "trainers", 'name': "Trainers" }].map((tab, index) => {
+                                {user_tabs.map((tab, index) => {
                                     return <Tabs
                                         key={index}
                                         index={index}
                                         name={tab.name}
                                         setSelectedTab={() => setUserMode(tab.mode)}
                                         isSelected={tab.mode === userMode}
-                                        len={2}
-                                        TabSize={width * 0.89 / 2 * 0.9}
+                                        len={user_tabs.length}
+                                        TabSize={width * 0.89 / user_tabs.length * 0.9}
                                         textColor='#222'
                                         selectedColor='#FFF'
                                         unselectedColor='#DDD'
@@ -2766,6 +3231,9 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                             {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
                                                 {selectedTrainer.address}
                                             </Text>}
+
+                                            {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
+
                                             {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
                                                 : selectedTrainer.rooms.length > 0 && (
                                                     <View style={{ width: '100%' }}>
@@ -2893,8 +3361,8 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                 <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>No Rooms to Show Yet</Text>
                                             }
                                         </View>
-                                        : userMode === "my_plans" ?
-                                            <></>
+                                        : userMode === "evaluations" ?
+                                            <EvaluationList evaluations={generalData.tabs.user.evaluations} />
                                             : ''
                                 }
                             </ScrollView>
@@ -2902,15 +3370,15 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                         </> : mode === 'personal' ?
                             <>
                                 <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                    {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }].map((tab, index) => {
+                                    {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }, { 'mode': "evaluations", 'name': "Evaluations" }].map((tab, index) => {
                                         return <Tabs
                                             key={index}
                                             index={index}
                                             name={tab.name}
                                             setSelectedTab={() => setPersonalMode(tab.mode)}
                                             isSelected={tab.mode === personalMode}
-                                            len={2}
-                                            TabSize={width * 0.89 / 2 * 0.9}
+                                            len={3}
+                                            TabSize={width * 0.89 / 3 * 0.9}
                                             textColor='#222'
                                             selectedColor='#FFF'
                                             unselectedColor='#DDD'
@@ -3112,12 +3580,36 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                         : ''
                                     )
                                 )}
-
                                 {personalMode === 'rooms_data' && <TouchableOpacity style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }} onPress={() => {
                                     setManageRoomModal('POST');
                                 }}>
                                     <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Add Room</Text>
                                 </TouchableOpacity>}
+
+                                {personalMode === 'evaluations' && <View>
+                                    <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                        {[{ 'mode': "plans", 'name': "Plans" }, { 'mode': "schedules", 'name': "Schedules" }].map((evaluation, index) => {
+                                            return <Tabs
+                                                key={index}
+                                                index={index}
+                                                name={evaluation.name}
+                                                setSelectedTab={() => setEvaluationMode(evaluation.mode)}
+                                                isSelected={evaluation.mode === evaluationMode}
+                                                len={2}
+                                                TabSize={width * 0.89 / 2 * 0.9}
+                                                textColor='#222'
+                                                selectedColor='#FFF'
+                                                unselectedColor='#DDD'
+                                            />
+                                        })}
+                                    </View>
+                                    {evaluationMode === 'plans' ?
+                                        <ManageEvaluations />
+                                        : evaluationMode === 'schedules' ?
+                                            <EvaluationList evaluations={evaluations.schedules} />
+                                            : ''
+                                    }
+                                </View>}
                             </>
                             : <></>
                         }
@@ -3284,7 +3776,6 @@ const MyPlansScreen = ({ route, navigation }) => {
     const [allItems, setAllItems] = useState({ "workout": null, "diet": null });
 
     const [updatePlanModal, setUpdatePlanModal] = useState(false);
-    const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
     const [newTrainingModal, setNewTrainingModal] = useState(false);
     const [newFoodModal, setNewFoodModal] = useState(false);
@@ -3335,7 +3826,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                 setEdit(false);
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with updating the plan: \n', error);
         }
     }
     const deleteTrainingPlan = async (training_id) => {
@@ -3353,7 +3844,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                 setPlanId(plans[plan].length > 1 ? plans[plan].find(plan => plan.id !== training_id).id : null);
             }
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with updating the plan: \n', error);
         }
     }
 
@@ -3405,7 +3896,7 @@ const MyPlansScreen = ({ route, navigation }) => {
             }
         } catch (error) {
             setError(true);
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with generating the week workout plan: \n', error);
             throw error;
         }
     };
@@ -3439,7 +3930,7 @@ const MyPlansScreen = ({ route, navigation }) => {
             }
         } catch (error) {
             setError(true);
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem with the generation of week diet plan: \n', error);
             throw error;
         }
     };
@@ -3585,7 +4076,7 @@ const MyPlansScreen = ({ route, navigation }) => {
             }
 
         } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            console.error('There was a problem while updating the unavailable exercises: \n', error);
         }
     };
     const getAlternativeExercise = (dayName, muscleGroup, exercise, salt = 0) => {
@@ -4036,7 +4527,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                     ) :
                         <UpgradePlanModal userToken={userToken}
                             subscriptionTexts={{ button_text: "Update Plan" }}
-                            object={{ get_key: 'plans_ids', get_id: [15, 16, 17] }}
+                            object={{ get_key: 'plans_ids', get_id: [1, 2] }}
                             patternMode='none'
                         />
                     }

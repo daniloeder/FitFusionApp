@@ -28,8 +28,7 @@ const StripePayment = ({ userToken, amount, currency, item, setCompletedPaymentD
                 const data = await response.json();
 
                 if (data?.error) {
-                    console.error('Error creating payment intent:', data.error);
-                    Alert.alert('Error', 'There was an error creating the payment. Please try again.');
+                    Alert.alert('Error creating payment intent:', data.error);
                     return;
                 }
 
