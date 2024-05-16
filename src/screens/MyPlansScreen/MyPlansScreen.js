@@ -2301,6 +2301,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
         if (owner) {
             setPersonalRooms(data.personal_rooms);
             setEvaluations(data.evaluations);
+            setEvaluationMode(data.evaluations.schedules && data.evaluations.schedules.length > 0 ? 'schedules' : 'plans');
             if (selectedTrainerPersonalRoom) {
                 setSelectedTrainerPersonalRoom(data.personal_rooms.find(room => room.id === selectedTrainerPersonalRoom.id));
             }
@@ -2357,7 +2358,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
             }
 
             if (Object.keys(generalData.tabs).length > 1) {
-                setMode('user');
+                setMode('personal');
             } else {
                 setMode('user');
             }
@@ -2999,7 +3000,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                 <Text style={styles.text}>Date: {evaluation.date}</Text>
                                 <Text style={[styles.text, { fontWeight: 'bold' }]}>Time: {evaluation.time}</Text>
                                 <Text style={styles.text}>Duration: {evaluation.duration} minutes</Text>
-                                <Text style={[styles.text, {color: evaluation.status === 'cancelled' ? '#F44336' : evaluation.status === 'pending' ? '#FFA500' : '#4CAF50' }]}>
+                                <Text style={[styles.text, { color: evaluation.status === 'cancelled' ? '#F44336' : evaluation.status === 'pending' ? '#FFA500' : '#4CAF50' }]}>
                                     Status: {STATUS_CHOICES[evaluation.status]}
                                 </Text>
                                 {evaluation.note && <Text style={styles.text}>Note: {evaluation.note}</Text>}
@@ -3201,27 +3202,30 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                     </View>
                                                 </ScrollView>
                                             </>}
-                                            {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.length > 0 && <>
-                                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
-                                                    World Trainers:
-                                                </Text>
-                                                <ScrollView horizontal>
-                                                    <View style={styles.usersContainer}>
-                                                        {generalData.tabs.user.global_trainers.map(trainer => {
-                                                            return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
-                                                                setSelectedTrainer({
-                                                                    ...trainer,
-                                                                    id: trainer.user.id,
-                                                                    name: trainer.name,
-                                                                    loading: true,
-                                                                    rooms: [],
-                                                                });
-                                                                fetchPersonalRoomData(trainer.id, false);
-                                                            }} size={0.8} nameColor="#EEE" />
-                                                        })}
-                                                    </View>
-                                                </ScrollView>
-                                            </>}
+                                            {generalData.tabs && generalData.tabs.user && generalData.tabs.user.global_trainers.length > 0 ?
+                                                <>
+                                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                                        World Trainers:
+                                                    </Text>
+                                                    <ScrollView horizontal>
+                                                        <View style={styles.usersContainer}>
+                                                            {generalData.tabs.user.global_trainers.map(trainer => {
+                                                                return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
+                                                                    setSelectedTrainer({
+                                                                        ...trainer,
+                                                                        id: trainer.user.id,
+                                                                        name: trainer.name,
+                                                                        loading: true,
+                                                                        rooms: [],
+                                                                    });
+                                                                    fetchPersonalRoomData(trainer.id, false);
+                                                                }} size={0.8} nameColor="#EEE" />
+                                                            })}
+                                                        </View>
+                                                    </ScrollView>
+                                                </>
+                                                : <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>No Trainers Found</Text>
+                                            }
                                         </View>
                                         {selectedTrainer && <View style={{ width: '100%', padding: 5, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.15)' }}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
