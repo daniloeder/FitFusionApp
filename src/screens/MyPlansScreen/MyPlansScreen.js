@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator, Button } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useGlobalContext } from './../../services/GlobalContext';
+import { storeData, fetchData } from './../../store/store';
 import UsersBall from '../../components/UsersBall/UsersBall';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
@@ -95,6 +96,11 @@ const checkAvailableFeature = (feature, data) => {
             }]
         );
         return false;
+    } else if (feature === 'store_exercises_images' && (!data.userSubscriptionPlan.current_data.features[data.plan].store_exercises_images)) {
+        if (!data.online) {
+            Alert.alert('You are offline and can\'t see or save images.', 'Please upgrade to Save images and see them offline.',
+                [{ text: 'Cancel', style: 'cancel' }]);
+        }
     }
     return true;
 }
@@ -131,11 +137,35 @@ const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100, tex
     );
 };
 
-const TrainDetails = ({ dayName, muscleGroup, allExercises, exercise, showExerciseDetails, setShowExerciseDetails, setAlternativeExercise, getAlternativeExercise, removeExercise }) => {
+const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, showExerciseDetails, setShowExerciseDetails, setAlternativeExercise, getAlternativeExercise, removeExercise, plan, userSubscriptionPlan }) => {
     const onClose = () => {
         setShowExerciseDetails(false);
         setAlternativeExercise(false);
     };
+    const [image, setImage] = useState(null);
+
+    useEffect(() => {
+        if (!image || exercise.alternative) {
+            fetchData("exercise_image_" + exercise.execution_images[0].image_url.split('/').pop())
+                .then(data => {
+                    if (data) {
+                        if (online || userSubscriptionPlan.current_data.features[plan].store_exercises_images) {
+                            setImage(`data:image/${exercise.execution_images[0].image_url.split('/').pop().split('.').shift().toLowerCase()};base64,${data}`)
+                        } else {
+                            Alert.alert('You need to upgrate to Save images and see them offline.', 'Please upgrade to Save images and see them offline.',
+                                [{ text: 'Cancel', style: 'cancel' }]);
+                        }
+                    } else {
+                        setImage(BASE_URL + exercise.execution_images[0].image_url)
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                })
+        }
+    }, [exercise]);
+
+    const muscle_groups_data = { 'neck': 'Neck', 'trapezius': 'Trapezius', 'shoulders': 'Shoulders', 'chest': 'Chest', 'back': 'Back', 'erector_spinae': 'Erector Spinae', 'biceps': 'Biceps', 'triceps': 'Triceps', 'forearm': 'Forearm', 'abs': 'Abs', 'leg': 'Leg', 'calf': 'Calf', 'hip': 'Hip', 'cardio': 'Cardio', 'full_body': 'Full Body' }
 
     return (
         <Modal
@@ -147,10 +177,11 @@ const TrainDetails = ({ dayName, muscleGroup, allExercises, exercise, showExerci
             <View style={styles.details_container}>
                 <ScrollView style={styles.details_itemscroll}>
                     <Text style={styles.details_title}>{exercise.title}</Text>
-                    <Image
-                        source={{ uri: exercise.execution_images[0].image_url }}
-                        style={styles.details_image}
-                    />
+                    {image && checkAvailableFeature('store_exercises_images', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, online: online }) &&
+                        <Image
+                            source={{ uri: image }}
+                            style={styles.details_image}
+                        />}
                     <Text>{exercise.description}</Text>
                     {exercise.how_to_do && exercise.how_to_do.length ? <View style={styles.details_exerciseInfo}>
                         <Text style={styles.details_sectionTitle}>How to do:</Text>
@@ -167,7 +198,7 @@ const TrainDetails = ({ dayName, muscleGroup, allExercises, exercise, showExerci
                     {exercise.item_groups && exercise.item_groups.length ? <View style={[styles.details_exerciseInfo, { marginBottom: width * 0.05 }]}>
                         <Text style={styles.details_sectionTitle}>Muscle Groups:</Text>
                         {exercise.item_groups.map((group, index) => (
-                            <Text key={index}>- {group.name}</Text>
+                            <Text key={index}>- {muscle_groups_data[group]}</Text>
                         ))}
                     </View> : ''}
                     <View style={{ marginBottom: width * 0.1 }}></View>
@@ -531,7 +562,7 @@ const ExerciseSetsIndicators = ({ plan, edit, dayName, muscleGroup, exercise, up
     )
 }
 
-const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon, setAlternativeExercise, addExercise, removeExercise, exerciseId, done, updateExerciseDone, updateUnavailableExercises, getAlternativeExercise, setShowExerciseDetails, adding }) => {
+const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon, setAlternativeExercise, addExercise, removeExercise, exerciseId, done, updateExerciseDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, setShowExerciseDetails, adding }) => {
     return (
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
 
@@ -599,6 +630,8 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
                             setAlternativeExercise(
                                 { ...allExercises.find(exercise => exercise.item_id === alternative), alternative: { from: exerciseId, to: alternative, dayName: dayName, muscleGroup: muscleGroup } }
                             );
+                        } else {
+                            Alert.alert('Fetching more alternatives, try it again in 5 seconds.');
                         }
                     }}>
                         <Text style={{ color: '#FFF' }}>
@@ -612,7 +645,7 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
     )
 }
 
-const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit, addExercise, removeExercise, updateExerciseDone, updateExerciseSetsDone, updateUnavailableExercises, getAlternativeExercise, adding }) => {
+const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercises, edit, addExercise, removeExercise, updateExerciseDone, updateExerciseSetsDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, adding, userSubscriptionPlan }) => {
     const [showBallon, setShowBallon] = useState(false);
     const [showSetsEditModal, setShowSetsEditModal] = useState(false);
     const [showExerciseDetails, setShowExerciseDetails] = useState(false);
@@ -623,6 +656,7 @@ const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit
             {showExerciseDetails ?
                 plan === "workout" ?
                     <TrainDetails
+                        online={online}
                         dayName={dayName}
                         muscleGroup={muscleGroup}
                         allExercises={allExercises}
@@ -632,6 +666,8 @@ const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit
                         setAlternativeExercise={setAlternativeExercise}
                         getAlternativeExercise={getAlternativeExercise}
                         removeExercise={removeExercise}
+                        plan={plan}
+                        userSubscriptionPlan={userSubscriptionPlan}
                     />
                     :
                     <FoodDetails
@@ -704,6 +740,7 @@ const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit
                     updateExerciseDone={updateExerciseDone}
                     updateUnavailableExercises={updateUnavailableExercises}
                     getAlternativeExercise={getAlternativeExercise}
+                    fetchManyExercises={fetchManyExercises}
                     setShowExerciseDetails={setShowExerciseDetails}
                     adding={adding}
                 />
@@ -712,7 +749,7 @@ const ExerciseItem = ({ plan, dayName, muscleGroup, exercise, allExercises, edit
     )
 }
 
-const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise }) => {
+const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, userSubscriptionPlan }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -727,6 +764,7 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
             {exercises.length > 0 ? doneExercises.concat(undoneExercises).map((exercise, index) =>
                 <ExerciseItem
                     key={index}
+                    online={online}
                     plan={plan}
                     dayName={dayName}
                     muscleGroup={muscleGroup}
@@ -739,6 +777,8 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
                     updateExerciseSetsDone={updateExerciseSetsDone}
                     updateUnavailableExercises={updateUnavailableExercises}
                     getAlternativeExercise={getAlternativeExercise}
+                    fetchManyExercises={fetchManyExercises}
+                    userSubscriptionPlan={userSubscriptionPlan}
                 />
 
             ) : ''}
@@ -767,12 +807,14 @@ const TrainingMember = ({ plan, dayName, muscleGroup, muscleGroupName, exercises
 
             {add && <AddExerciseList
                 plan={plan}
+                online={online}
                 dayName={dayName}
                 muscleGroup={muscleGroup}
                 exercises={allExercises.filter(exercise => (!exercises.map(exercise => exercise.item_id).includes(exercise.item_id) && !unavailableExercises.includes(exercise.item_id)))}
                 allExercises={allExercises}
                 addExercise={addExercise}
                 updateUnavailableExercises={updateUnavailableExercises}
+                fetchManyExercises={fetchManyExercises}
             />}
 
         </View>
@@ -797,8 +839,13 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
     )
 }
 
-const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises }) => {
+const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises, fetchManyExercises }) => {
     const [search, setSearch] = useState('');
+    useEffect(() => {
+        if (exercises.length < 20) {
+            fetchManyExercises({ muscle_group: muscleGroup })
+        }
+    }, [])
 
     return (
         <View style={{ width: '100%' }}>
@@ -820,6 +867,7 @@ const AddExerciseList = ({ plan, dayName, muscleGroup, exercises, allExercises, 
                         return (
                             <ExerciseItem
                                 key={index}
+                                online={online}
                                 plan={plan}
                                 dayName={dayName}
                                 muscleGroup={muscleGroup}
@@ -3787,27 +3835,69 @@ const MyPlansScreen = ({ route, navigation }) => {
 
     const [setting, setSettings] = useState(false);
 
-    const fetchAllExercises = async () => {
-        const response = await fetch(BASE_URL + `/api/exercises/all-exercises/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${userToken}`,
-            },
-        });
-        const data = await response.json();
-        setAllItems(prevItems => ({ ...prevItems, "workout": data }));
+    const fetchManyExercisesImages = async (missing_exercises_images) => {
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/all-exercises/?missing_exercises_images=${missing_exercises_images.join(',')}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const data = await response.json();
+            for (const exercise of data) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                storeData(exercise.image, "exercise_image_" + exercise.image_name);
+            }
+        } catch (error) {
+            console.error(error);
+        }
     }
-    const fetchAllFoods = async () => {
-        const response = await fetch(BASE_URL + `/api/exercises/all-foods/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${userToken}`,
-            },
-        });
-        const data = await response.json();
-        setAllItems(prevItems => ({ ...prevItems, "diet": data }));
+
+    const fetchManyExercises = async ({ exercises_list, muscle_group }) => {
+
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/all-exercises/?${exercises_list && exercises_list.length ? '&exercises_list=' + exercises_list.join(',') : ''}${muscle_group && muscle_group.length ? '&muscle_group=' + muscle_group : ''}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const data = await response.json();
+
+            setAllItems(prevItems => ({ ...prevItems, "workout": { ...prevItems.workout, ...data } }));
+
+            let missing_exercises_images = [];
+            for (const exercise of Object.keys(data)) {
+                if (!data[exercise].execution_images[0].image_name) {
+                    missing_exercises_images.push(exercise)
+                }
+                storeData(data[exercise], "exercise_" + exercise);
+            }
+            if (missing_exercises_images.length > 0) {
+                fetchManyExercisesImages(exercises_list);
+            }
+
+        } catch (error) {
+            console.error('There was a problem with fetching the exercises: \n', error);
+        }
+    }
+
+    const fetchManyFoods = async () => {
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/all-foods/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const data = await response.json();
+            setAllItems(prevItems => ({ ...prevItems, "diet": data }));
+        } catch (error) {
+            console.error('There was a problem with fetching the foods: \n', error);
+        }
     }
 
     const updatePlans = async ({ name = selectedPlan.name, room = (managerData && managerData.room), send_to_user = false }) => {
@@ -3940,24 +4030,36 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
 
     const fetchPlans = async () => {
-        const response = await fetch(BASE_URL + `/api/exercises/user-plans/`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Token ${userToken}`,
-            },
-        });
-        const data = await response.json();
-        setPlans(data);
-        if (!planId && data[plan].length > 0) {
-            setPlanId(data[plan][0].id);
-            setDaysItems(prevDays => ({
-                ...prevDays,
-                [plan]: data[plan][0].days
-            }));
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/user-plans/`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const data = await response.json();
+            if (response.ok) {
+                setPlans(data.plans);
+                if (!planId && data.plans[plan].length > 0) {
+                    setPlanId(data.plans[plan][0].id);
+                    setDaysItems(prevDays => ({
+                        ...prevDays,
+                        [plan]: data.plans[plan][0].days
+                    }));
+                }
+                setUnavailableExercises(data.plans.unavailable_exercises);
+
+                if (data.items.missing_exercises.length > 0) {
+                    fetchManyExercises({ exercises_list: data.items.missing_exercises });
+                }
+                if (data.items.missing_foods.length > 0) {
+                    fetchManyFoods();
+                }
+            }
+        } catch (error) {
+            console.error('There was a problem with fetching the plans: \n', error);
         }
-        setUnavailableExercises(data.unavailable_exercises);
-        //fetchSubscriptionPlans();
     }
 
     const updateExerciseDone = (dayName, muscleGroup, exerciseIndex, done) => {
@@ -4085,14 +4187,21 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
     const getAlternativeExercise = (dayName, muscleGroup, exercise, salt = 0) => {
         const all_exercises = Object.values(allItems[plan])
-        const exercises_from_muscle = all_exercises.filter(exercise => exercise.item_groups.some(muscle => muscle.group_id === muscleGroup))
+        const exercises_from_muscle = all_exercises.filter(exercise => exercise.item_groups.some(muscle => muscle === muscleGroup))
             .map(exercise => exercise.item_id)
 
-        const not_selected_exercises = exercises_from_muscle.filter(e =>
-            !Object.keys(daysItems[plan][dayName].items[muscleGroup]).includes(e) || e === exercise
+        let not_selected_exercises = exercises_from_muscle.filter(e =>
+            !Object.keys(daysItems[plan][dayName].items[muscleGroup]).includes(e)
         )
 
-        const exercise_index = not_selected_exercises.indexOf(exercise) + 1 + salt;
+        if(not_selected_exercises.length < 20) {
+            fetchManyExercises({ muscle_group: muscleGroup });
+            not_selected_exercises = exercises_from_muscle.filter(e =>
+                !Object.keys(daysItems[plan][dayName].items[muscleGroup]).includes(e)
+            )
+        }
+
+        const exercise_index = (not_selected_exercises.indexOf(exercise) + 1 + salt) % not_selected_exercises.length;
 
         return not_selected_exercises.length > exercise_index ? not_selected_exercises[exercise_index] : false;
     };
@@ -4241,7 +4350,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         "title": title,
                         "amount": amount,
                         "calories": calories,
-                        "item_groups": Object.values(meal_groups).filter(group => meals.includes(group.group_id))
+                        "item_groups": Object.values(meal_groups).filter(group => meals.includes(group))
                     }
                 })
             });
@@ -4257,18 +4366,14 @@ const MyPlansScreen = ({ route, navigation }) => {
     };
 
     useEffect(() => {
+        if (!managerData) {
+            fetchPlans();
+        }
+
         if (!personal) {
             setPersonal(route.params && route.params.personalTrainer);
         }
     }, [route]);
-
-    useEffect(() => {
-        if (!managerData) {
-            fetchPlans();
-            fetchAllExercises();
-            fetchAllFoods();
-        }
-    }, [plan]);
 
     useEffect(() => {
         if (managerData) {
@@ -4306,6 +4411,47 @@ const MyPlansScreen = ({ route, navigation }) => {
             }));
         }
     }, [planId]);
+
+    useEffect(() => {
+        if (daysItems[plan] && plans[plan]) {
+            let missing_exercises = [];
+            let missing_exercises_images = [];
+            for (const day of Object.keys(daysItems[plan])) {
+                for (const muscleGroup of Object.keys(daysItems[plan][day].items)) {
+                    for (const exercise of Object.keys(daysItems[plan][day].items[muscleGroup])) {
+                        if (!allItems[plan] || !allItems[plan][exercise]) {
+                            fetchData("exercise_" + exercise)
+                                .then((exercise_data) => {
+                                    if (exercise_data) {
+                                        setAllItems(prevItems => ({ ...prevItems, [plan]: { ...prevItems[plan], [exercise]: exercise_data } }));
+                                        if (exercise_data.execution_images && exercise_data.execution_images.length > 0) {
+                                            fetchData("exercise_image_" + exercise_data.execution_images[0].image_name)
+                                                .then((image_data) => {
+                                                    if (!image_data) {
+                                                        missing_exercises_images.push(exercise);
+                                                    }
+                                                })
+                                        }
+                                    } else {
+                                        missing_exercises.push(exercise);
+                                    }
+                                })
+                                .catch((error) => console.error('There was a problem with fetching the exercise: \n', error));
+                        }
+                    }
+                }
+            }
+
+            setTimeout(() => {
+                if (missing_exercises.length > 0) {
+                    fetchManyExercises({ exercises_list: missing_exercises });
+                } else if (missing_exercises_images.length > 0) {
+                    fetchManyExercisesImages(missing_exercises_images);
+                }
+            }, 2000);
+        }
+
+    }, [daysItems]);
 
     useEffect(() => {
         if (addNewMuscleGroup) {
@@ -4427,19 +4573,20 @@ const MyPlansScreen = ({ route, navigation }) => {
                                     return (
                                         <View key={dayName}>
                                             {Object.keys(dayInfo.items).length > 0 ? Object.entries(dayInfo.items).map(([muscleGroup, exercises_list]) => {
-                                                return <TrainingMember key={muscleGroup} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
+                                                return <TrainingMember key={muscleGroup} online={online} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
                                                     exercises={
                                                         Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
+                                                            if (!allItems[plan][exerciseId]) return;
                                                             return { ...exerciseDetails, item_id: exerciseId, title: allItems[plan][exerciseId].title }
                                                         }).filter(Boolean)
                                                     }
-                                                    allExercises={allItems[plan] ?
+                                                    allExercises={
                                                         Object.values(allItems[plan])
                                                             .filter(exercise => {
-                                                                return exercise.item_groups.some(group => group.group_id === muscleGroup)
+                                                                return exercise.item_groups.some(group => group === muscleGroup)
                                                             })
-                                                        : []
                                                     }
+
                                                     addExercise={addExercise}
                                                     removeExercise={removeExercise}
                                                     removeMuscleGroup={removeMuscleGroup}
@@ -4449,6 +4596,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                                                     updateUnavailableExercises={updateUnavailableExercises}
                                                     getAlternativeExercise={getAlternativeExercise}
                                                     userSubscriptionPlan={userSubscriptionPlan}
+                                                    fetchManyExercises={fetchManyExercises}
                                                 />
                                             }
                                             ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
@@ -4475,7 +4623,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         </View>}
 
                         {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                            Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
+                            Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group)).map(group => ({ id: group, name: group.name }))
                         } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
                         {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>

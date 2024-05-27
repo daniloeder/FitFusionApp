@@ -12,7 +12,7 @@ export async function storeAuthToken(token, serviceName = 'userToken') {
   }
 }
 
-// Fetch data securely from Expo SecureStore
+// Fetch data securely from Expo SecureStore 
 export async function fetchAuthToken(serviceName = 'userToken') {
   try {
     const token = await SecureStore.getItemAsync(serviceName);
@@ -58,5 +58,16 @@ export async function fetchData(key) {
   } catch (error) {
     console.error('Error fetching data:', error);
     return null;
+  }
+}
+
+// Delete data using @react-native-async-storage/async-storage
+export async function deleteData(key) {
+  try {
+    await AsyncStorage.removeItem(key);
+    return true;
+  } catch (error) {
+    console.error('Error deleting data:', error);
+    return false;
   }
 }

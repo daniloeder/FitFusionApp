@@ -40,6 +40,9 @@
       "eas": {
         "projectId": "78aa1ceb-aaa8-4ace-8f79-d5cc2acd2af0"
       }
-    }
+    },
+    "plugins": [
+      "./withAsyncStorageConfig"
+    ]
   }
 }
