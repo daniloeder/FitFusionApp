@@ -749,7 +749,7 @@ const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercis
     )
 }
 
-const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, userSubscriptionPlan }) => {
+const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, fetchManyFoods, userSubscriptionPlan }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -815,6 +815,8 @@ const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, e
                 addExercise={addExercise}
                 updateUnavailableExercises={updateUnavailableExercises}
                 fetchManyExercises={fetchManyExercises}
+                fetchManyFoods={fetchManyFoods}
+                userSubscriptionPlan={userSubscriptionPlan}
             />}
 
         </View>
@@ -839,11 +841,15 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
     )
 }
 
-const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises, fetchManyExercises }) => {
+const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises, fetchManyExercises, fetchManyFoods, userSubscriptionPlan }) => {
     const [search, setSearch] = useState('');
     useEffect(() => {
         if (exercises.length < 20) {
-            fetchManyExercises({ muscle_group: muscleGroup })
+            if(plan === 'workout'){
+                fetchManyExercises({ muscle_group: muscleGroup })
+            } else {
+                fetchManyFoods({ item_groups: muscleGroup })
+            }
         }
     }, [])
 
@@ -876,6 +882,7 @@ const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExe
                                 addExercise={addExercise}
                                 updateUnavailableExercises={updateUnavailableExercises}
                                 adding
+                                userSubscriptionPlan={userSubscriptionPlan}
                             />
                         )
                     }) : ''}
@@ -3894,7 +3901,9 @@ const MyPlansScreen = ({ route, navigation }) => {
                 },
             });
             const data = await response.json();
+
             setAllItems(prevItems => ({ ...prevItems, "diet": data }));
+            
         } catch (error) {
             console.error('There was a problem with fetching the foods: \n', error);
         }
@@ -4378,9 +4387,15 @@ const MyPlansScreen = ({ route, navigation }) => {
     useEffect(() => {
         if (managerData) {
             if (managerData.mode && managerData.mode === 'user') {
+                const found_plan = plans[managerData.plan].find(plan => plan.id === managerData.plan_id)
+                if(!found_plan) {
+                    Alert.alert('Error', 'We got an error, please try again.');
+                    fetchPlans();
+                    return;
+                }
                 setDaysItems(prevDays => ({
                     ...prevDays,
-                    [managerData.plan]: plans[managerData.plan].find(plan => plan.id === managerData.plan_id).days
+                    [managerData.plan]: found_plan.days
                 }));
                 setPlan(managerData.plan);
                 setPlanId(managerData.plan_id);
@@ -4463,7 +4478,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     const fit_plans = managerData && managerData.mode === 'personal' ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
     const selectedPlan = plans[plan] && plans[plan][0] && plans[plan].find(plan => plan.id === planId);
-
+    
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor={managerData ? "#333300" : "#991B1B"} thirdColor="#1A202C" />
@@ -4568,7 +4583,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         </View>
 
                         <View>
-                            {selectedDay && allItems[plan] && selectedPlan && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
+                            {selectedDay && selectedPlan && Object.entries(daysItems[plan]).map(([dayName, dayInfo]) => {
                                 if (selectedDay.name === dayName.slice(0, 3)) {
                                     return (
                                         <View key={dayName}>
@@ -4576,15 +4591,16 @@ const MyPlansScreen = ({ route, navigation }) => {
                                                 return <TrainingMember key={muscleGroup} online={online} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
                                                     exercises={
                                                         Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
-                                                            if (!allItems[plan][exerciseId]) return;
+                                                            if (!allItems[plan] || !allItems[plan][exerciseId]) return;
                                                             return { ...exerciseDetails, item_id: exerciseId, title: allItems[plan][exerciseId].title }
                                                         }).filter(Boolean)
                                                     }
                                                     allExercises={
+                                                        allItems[plan] ?
                                                         Object.values(allItems[plan])
                                                             .filter(exercise => {
                                                                 return exercise.item_groups.some(group => group === muscleGroup)
-                                                            })
+                                                            }) : []
                                                     }
 
                                                     addExercise={addExercise}
@@ -4597,6 +4613,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                                                     getAlternativeExercise={getAlternativeExercise}
                                                     userSubscriptionPlan={userSubscriptionPlan}
                                                     fetchManyExercises={fetchManyExercises}
+                                                    fetchManyFoods={fetchManyFoods}
                                                 />
                                             }
                                             ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
@@ -4610,7 +4627,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                             {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "workout" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
                                 updateAllExercisesDone(selectedDay.name, !verifyAllExercisesDone(plan, selectedDay.name));
                             }}>
-                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Train Incomplete" : "Train Complete"}</Text>
+                                <Text style={{ color: '#FFF', fontWeight: 'bold' }}>{trainCompleted ? "Workout Incomplete" : "Workout Complete"}</Text>
                             </TouchableOpacity>}
                             {Object.keys(daysItems[plan][selectedDay ? selectedDay.name : 'Mon'].items).length > 0 && plan === "diet" && <TouchableOpacity style={[styles.planDetailsContainer, { backgroundColor: trainCompleted ? '#aaa' : '#4CAF50' }]} onPress={() => {
                                 setNewFoodModal(true);
@@ -4623,7 +4640,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         </View>}
 
                         {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
-                            Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group)).map(group => ({ id: group, name: group.name }))
+                            Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
                         } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
                         {edit && <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 5 }}>
@@ -4650,7 +4667,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         </View>}
                     </>}
 
-                    {(!managerData || (managerData && !plans[plan])) &&
+                    {(!managerData || (managerData && ( !plans[plan] || (plans[plan] && plans[plan].length === 0)))) &&
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
                             setNewTrainingModal(true);
                         }}>
