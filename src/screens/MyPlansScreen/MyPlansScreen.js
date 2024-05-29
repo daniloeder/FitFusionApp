@@ -845,7 +845,7 @@ const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExe
     const [search, setSearch] = useState('');
     useEffect(() => {
         if (exercises.length < 20) {
-            if(plan === 'workout'){
+            if (plan === 'workout') {
                 fetchManyExercises({ muscle_group: muscleGroup })
             } else {
                 fetchManyFoods({ item_groups: muscleGroup })
@@ -3059,6 +3059,24 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                     Status: {STATUS_CHOICES[evaluation.status]}
                                 </Text>
                                 {evaluation.note && <Text style={styles.text}>Note: {evaluation.note}</Text>}
+                                <View style={{ padding: 5, backgroundColor: '#FFF', borderRadius: 5, marginLeft: 8 }}>
+                                    {userMode === 'evaluations' ? <>
+                                        <Text style={[styles.text, { fontWeight: 'bold', fontSize: 15, marginBottom: 8 }]}>Personal Trainer Details:</Text>
+                                        <Text style={styles.text}>Name: {evaluation.personal_trainer.name}</Text>
+                                        {evaluation.personal_trainer.phone_number && <Text style={styles.text}>Phone: {evaluation.personal_trainer.phone_number}</Text>}
+                                        {evaluation.personal_trainer.email && <Text style={styles.text}>Email: {evaluation.personal_trainer.email}</Text>}
+                                        {evaluation.personal_trainer.address && <Text style={styles.text}>Address: {evaluation.personal_trainer.address}</Text>}
+                                    </> :
+                                    <>
+                                        <Text style={[styles.text, { fontWeight: 'bold', fontSize: 15, marginBottom: 8 }]}>Client Details:</Text>
+                                        <Text style={styles.text}>Name: {evaluation.user.name}</Text>
+                                        {evaluation.user.username && <Text style={styles.text}>Username: {evaluation.user.username}</Text>}
+                                        {evaluation.user.name && <Text style={styles.text}>Name: {evaluation.user.name}</Text>}
+                                        {//evaluation.user.gender && <Text style={styles.text}>Gender: {evaluation.user.gender}</Text>
+                                        }
+                                        {evaluation.user.age && <Text style={styles.text}>Age: {evaluation.user.age}</Text>}
+                                    </>}
+                                </View>
                                 <TouchableOpacity style={{ backgroundColor: '#F44336', alignItems: 'center', justifyContent: 'center', padding: 5, borderRadius: 5, marginTop: 5 }} onPress={() => {
                                     Alert.alert('Cancel Evaluation', 'Do you want to cancel this evaluation?', [
                                         { text: 'Cancel', onPress: () => { } },
@@ -3903,7 +3921,7 @@ const MyPlansScreen = ({ route, navigation }) => {
             const data = await response.json();
 
             setAllItems(prevItems => ({ ...prevItems, "diet": data }));
-            
+
         } catch (error) {
             console.error('There was a problem with fetching the foods: \n', error);
         }
@@ -4203,7 +4221,7 @@ const MyPlansScreen = ({ route, navigation }) => {
             !Object.keys(daysItems[plan][dayName].items[muscleGroup]).includes(e)
         )
 
-        if(not_selected_exercises.length < 20) {
+        if (not_selected_exercises.length < 20) {
             fetchManyExercises({ muscle_group: muscleGroup });
             not_selected_exercises = exercises_from_muscle.filter(e =>
                 !Object.keys(daysItems[plan][dayName].items[muscleGroup]).includes(e)
@@ -4388,7 +4406,7 @@ const MyPlansScreen = ({ route, navigation }) => {
         if (managerData) {
             if (managerData.mode && managerData.mode === 'user') {
                 const found_plan = plans[managerData.plan].find(plan => plan.id === managerData.plan_id)
-                if(!found_plan) {
+                if (!found_plan) {
                     Alert.alert('Error', 'We got an error, please try again.');
                     fetchPlans();
                     return;
@@ -4478,7 +4496,7 @@ const MyPlansScreen = ({ route, navigation }) => {
     const fit_plans = managerData && managerData.mode === 'personal' ? [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }].filter(item => Object.keys(managerData.plans).includes(item.plan_id)) : [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }];
 
     const selectedPlan = plans[plan] && plans[plan][0] && plans[plan].find(plan => plan.id === planId);
-    
+
     return (
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor={managerData ? "#333300" : "#991B1B"} thirdColor="#1A202C" />
@@ -4597,10 +4615,10 @@ const MyPlansScreen = ({ route, navigation }) => {
                                                     }
                                                     allExercises={
                                                         allItems[plan] ?
-                                                        Object.values(allItems[plan])
-                                                            .filter(exercise => {
-                                                                return exercise.item_groups.some(group => group === muscleGroup)
-                                                            }) : []
+                                                            Object.values(allItems[plan])
+                                                                .filter(exercise => {
+                                                                    return exercise.item_groups.some(group => group === muscleGroup)
+                                                                }) : []
                                                     }
 
                                                     addExercise={addExercise}
@@ -4667,7 +4685,7 @@ const MyPlansScreen = ({ route, navigation }) => {
                         </View>}
                     </>}
 
-                    {(!managerData || (managerData && ( !plans[plan] || (plans[plan] && plans[plan].length === 0)))) &&
+                    {(!managerData || (managerData && (!plans[plan] || (plans[plan] && plans[plan].length === 0)))) &&
                         <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#6495ED', marginTop: 5 }]} onPress={() => {
                             setNewTrainingModal(true);
                         }}>
