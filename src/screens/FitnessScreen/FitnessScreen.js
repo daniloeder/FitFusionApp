@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator, Button } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
-import { useGlobalContext } from './../../services/GlobalContext';
-import { storeData, fetchData } from './../../store/store';
+import { useGlobalContext } from '../../services/GlobalContext';
+import { storeData, fetchData } from '../../store/store';
 import UsersBall from '../../components/UsersBall/UsersBall';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
@@ -3697,7 +3697,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     )
 }
 
-const MyPlansScreen = ({ route, navigation }) => {
+const FitnessScreen = ({ route, navigation }) => {
 
     const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
 
@@ -4947,4 +4947,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default MyPlansScreen;
+export default FitnessScreen;

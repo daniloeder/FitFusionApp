@@ -25,6 +25,7 @@ import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import NotificationsScreen from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
+import FitnessScreen from '../screens/FitnessScreen/FitnessScreen';
 
 import { GlobalProvider } from '../services/GlobalContext';
 import { useChat } from '../utils/chats';
@@ -152,6 +153,7 @@ const TabNavigator = () => {
         change_indicators: false,
       },
       add_max_feed_images: 2,
+      store_exercises_images: false
     }
   });
 
@@ -165,7 +167,7 @@ const TabNavigator = () => {
         },
       });
       const data = await response.json();
-      if (data.plan){
+      if (data.plan) {
         setUserSubscriptionPlan({ ...data.current_data, plan_id: data.plan });
       }
     } catch (error) {
@@ -318,7 +320,10 @@ const TabNavigator = () => {
           component={HomeScreen}
           initialParams={{ userId, userToken }}
           options={({ navigation, route }) => ({
-            tabBarIcon: ({ focused }) => <Icons name="Home" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarIcon: ({ focused }) => (
+              <Icons name="Home" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />
+            ),
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Home</Text>,
             headerLeft: () => {
               return route.state?.index > 0 ? (
                 <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
@@ -326,6 +331,7 @@ const TabNavigator = () => {
             },
           })}
         />
+
         <Tab.Screen
           name="Place"
           component={PlaceScreen}
@@ -392,6 +398,7 @@ const TabNavigator = () => {
                   <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{unreadMessagesNumber}</Text>
                 </View>}
               </>,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Chat</Text>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           }}
         />
@@ -413,6 +420,7 @@ const TabNavigator = () => {
           options={{
             tabBarIcon: () => <Icons name="Map" size={width * 0.085} fill="#CCC" />,
             headerShown: false,
+            tabBarLabel: () => <Text style={{ fontSize: width * 0.025, color: '#CCC' }}>Map</Text>,
             tabBarStyle: { display: 'none' },
           }}
         />
@@ -422,6 +430,7 @@ const TabNavigator = () => {
           initialParams={{ userId, userToken }}
           options={{
             tabBarIcon: ({ focused }) => <Icons name="Search" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Search</Text>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           }}
         />
@@ -437,6 +446,7 @@ const TabNavigator = () => {
                   <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{unreadNotificationsNumber}</Text>
                 </View>}
               </>,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.023, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Notifications</Text>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           }}
         />
@@ -450,11 +460,23 @@ const TabNavigator = () => {
           }}
         />
         <Tab.Screen
+          name="Fitness"
+          initialParams={{ userId, userToken }}
+          component={FitnessScreen}
+          options={({ navigation }) => ({
+            tabBarIcon: ({ focused }) => <Icons name="Fitness" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Fitness</Text>,
+            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
+          })
+          }
+        />
+        <Tab.Screen
           name="Profile"
           initialParams={{ userToken, id: false }}
           component={ProfileScreen}
           options={({ navigation }) => ({
             tabBarIcon: ({ focused }) => <Icons name="Profile" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '450', fontSize: width * 0.023, color: '#CCC' }}>Profile</Text>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           })
           }

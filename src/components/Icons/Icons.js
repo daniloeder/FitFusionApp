@@ -78,6 +78,7 @@ import QRCode from './../../../assets/icons/qrcode.svg';
 import OkV from './../../../assets/icons/ok-v.svg';
 import Add from './../../../assets/icons/add.svg';
 import Paste from './../../../assets/icons/paste.svg';
+import Fitness from './../../../assets/icons/fitness.svg';
 
 import GradientCircle from './../../../assets/icons/gradientCircle.svg';
 
@@ -170,6 +171,7 @@ const Icons = ({
     OkV: OkV,
     Add: Add,
     Paste: Paste,
+    Fitness: Fitness,
 
     GradientCircle: GradientCircle,
 

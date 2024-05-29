@@ -491,7 +491,7 @@ const ProfileScreen = ({ route }) => {
                 marginTop: 10,
               }}
                 onPress={() => {
-                  navigation.navigate('MyPlansScreen')
+                  navigation.navigate('FitnessScreen')
                 }}
               >
                 <Text style={{
