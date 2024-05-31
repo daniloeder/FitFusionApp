@@ -168,12 +168,13 @@ const TabNavigator = () => {
       });
       const data = await response.json();
       if (data.plan) {
-        setUserSubscriptionPlan({ ...data.current_data, plan_id: data.plan });
+        setUserSubscriptionPlan(data);
       }
     } catch (error) {
       console.error('There was an error:', error);
     }
   };
+
   const updateUserSubscriptionPlan = async () => {
     try {
       const response = await fetch(BASE_URL + '/api/payments/update-subscription-data/', {
@@ -182,7 +183,7 @@ const TabNavigator = () => {
           'Content-Type': 'application/json',
           Authorization: `Token ${userToken}`,
         },
-        body: JSON.stringify({ subscription_data: { ...userSubscriptionPlan, update: false } }),
+        body: JSON.stringify({ subscription_data: { ...userSubscriptionPlan.current_data, update: false } }),
       });
     } catch (error) {
       console.error('There was an error:', error);
