@@ -2337,7 +2337,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
         const ListBody = () => <View style={{ flex: 1, padding: 3, backgroundColor: '#fff', borderRadius: 3, marginBottom: 20 }}>
             <Text style={{ color: '#222', fontSize: 15, fontWeight: 'bold' }}>Evaluations:</Text>
-            {evaluations.map((evaluation) => {
+            {evaluations && evaluations.length > 0 ? evaluations.map((evaluation) => {
                 return (
                     <View key={evaluation.id} style={{ backgroundColor: evaluationModal ? '#ccc' : '#eee', padding: 5, marginVertical: 5, borderRadius: 5 }}>
                         {mode === 'personal' || userMode === 'evaluations' ? <>
@@ -2358,15 +2358,15 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                         {evaluation.personal_trainer.email && <Text style={styles.text}>Email: {evaluation.personal_trainer.email}</Text>}
                                         {evaluation.personal_trainer.address && <Text style={styles.text}>Address: {evaluation.personal_trainer.address}</Text>}
                                     </> :
-                                    <>
-                                        <Text style={[styles.text, { fontWeight: 'bold', fontSize: 15, marginBottom: 8 }]}>Client Details:</Text>
-                                        <Text style={styles.text}>Name: {evaluation.user.name}</Text>
-                                        {evaluation.user.username && <Text style={styles.text}>Username: {evaluation.user.username}</Text>}
-                                        {evaluation.user.name && <Text style={styles.text}>Name: {evaluation.user.name}</Text>}
-                                        {//evaluation.user.gender && <Text style={styles.text}>Gender: {evaluation.user.gender}</Text>
-                                        }
-                                        {evaluation.user.age && <Text style={styles.text}>Age: {evaluation.user.age}</Text>}
-                                    </>}
+                                        <>
+                                            <Text style={[styles.text, { fontWeight: 'bold', fontSize: 15, marginBottom: 8 }]}>Client Details:</Text>
+                                            <Text style={styles.text}>Name: {evaluation.user.name}</Text>
+                                            {evaluation.user.username && <Text style={styles.text}>Username: {evaluation.user.username}</Text>}
+                                            {evaluation.user.name && <Text style={styles.text}>Name: {evaluation.user.name}</Text>}
+                                            {//evaluation.user.gender && <Text style={styles.text}>Gender: {evaluation.user.gender}</Text>
+                                            }
+                                            {evaluation.user.age && <Text style={styles.text}>Age: {evaluation.user.age}</Text>}
+                                        </>}
                                 </View>
                                 <TouchableOpacity style={{ backgroundColor: '#F44336', alignItems: 'center', justifyContent: 'center', padding: 5, borderRadius: 5, marginTop: 5 }} onPress={() => {
                                     Alert.alert('Cancel Evaluation', 'Do you want to cancel this evaluation?', [
@@ -2412,7 +2412,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                         }
                     </View>
                 )
-            })}
+            }) : <Text style={styles.text}>No Evaluations Available</Text>}
         </View>
 
         if (mode === 'user') {
@@ -2480,6 +2480,146 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                     {//<Text style={[styles.text, { fontSize: 8 }]}>Payment Status: {PAYMENT_STATUS_CHOICES[subscription.payment_status]}</Text>
                     }
                 </View>
+            </View>
+        )
+    }
+
+    const ManagePayments = ({ payments }) => {
+        const requestWithdrawal = async () => {
+            try {
+                response = await fetch(BASE_URL + '/api/payments/withdrawal-request/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Token ' + userToken
+                    },
+                    body: JSON.stringify({
+                        'type': 'personal_trainer',
+                        'payment_method': paymentMethod,
+                        'address': paymentData,
+                    })
+                });
+                data = await response.json();
+                if (response.ok) {
+                    fetchGeneralData();
+                    setPersonalMode('payments');
+                } else {
+                    Alert.alert('Error', data.error)
+                }
+            } catch (error) {
+                Alert.alert('Error', error.message)
+            }
+        }
+        const payments_options = [
+            { label: 'PayPal', value: 'paypal' },
+            { label: 'USDT', value: 'usdt_theter' },
+            { label: 'Bitcoin Lightning', value: 'bitcoin_lightning' },
+            { label: 'Bitcoin', value: 'bitcoin' },
+            //{ label: 'Bank Transfer', value: 'bank_transfer' },
+        ];
+        const [paymentMethod, setPaymentMethod] = useState('paypal');
+        const [paymentData, setPaymentData] = useState({
+            address: ''
+        });
+        const withdrawalStyles = StyleSheet.create({
+            addressInput: { width: '100%', height: 40, backgroundColor: '#fff', borderRadius: 5, padding: 5, marginTop: 10 },
+        });
+
+        return (
+            <View style={{ marginVertical: 8, alignItems: 'flex-start', width: '100%' }}>
+                <View style={{ width: '100%', marginVertical: 8 }}>
+                    {payments.unreceived && Object.keys(payments.unreceived).map(currency => {
+                        return (
+                            <View style={{ width: '100%', borderRadius: 5, justifyContent: 'center', marginTop: 10 }}>
+                                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>${currency}: {payments.unreceived[currency]}</Text>
+                            </View>
+                        )
+                    }
+                    )}
+                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', textAlign: 'center', width: '100%' }}>Total Available in USD: {payments.total_unreceived_usd}</Text>
+                </View>
+                <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', marginTop: 20 }}>Payment Method:</Text>
+                <ScrollView horizontal={true}>
+                    <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                        {payments_options.map((tab, index) => {
+                            return <Tabs
+                                key={index}
+                                index={index}
+                                name={tab.label}
+                                setSelectedTab={() => setPaymentMethod(tab.value)}
+                                isSelected={tab.value === paymentMethod}
+                                len={payments_options.length}
+                                TabSize={width * 0.89 / payments_options.length * 1.5}
+                                textColor='#222'
+                                selectedColor='#FFF'
+                                unselectedColor='#DDD'
+                            />
+                        })}
+                    </View>
+                </ScrollView>
+                <View style={{ width: '100%', marginVertical: 8 }}>
+                    {paymentMethod === 'paypal' ? (<>
+                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>PayPal Email:</Text>
+                        <TextInput style={withdrawalStyles.addressInput}
+                            value={paymentData.address}
+                            onChangeText={text => setPaymentData({ ...paymentData, address: text })}
+                            placeholder="Enter PayPal Email"
+                        />
+
+                    </>) : paymentMethod === 'bitcoin' ? (<>
+                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Bitcoin Address:</Text>
+                        <TextInput style={withdrawalStyles.addressInput}
+                            value={paymentData.address}
+                            onChangeText={text => setPaymentData({ ...paymentData, address: text })}
+                            placeholder="Enter Bitcoin Address"
+                        />
+                    </>) : paymentMethod === 'usdt_theter' ? (<>
+                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>USDT Address:</Text>
+                        <TextInput style={withdrawalStyles.addressInput}
+                            value={paymentData.address}
+                            onChangeText={text => setPaymentData({ ...paymentData, address: text })}
+                            placeholder="Enter USDT Address"
+                        />
+                    </>) : paymentMethod === 'bitcoin_lightning' ? (<>
+                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Bitcoin Lightning Address:</Text>
+                        <TextInput style={withdrawalStyles.addressInput}
+                            value={paymentData.address}
+                            onChangeText={text => setPaymentData({ ...paymentData, address: text })}
+                            placeholder="Enter Bitcoin Lightning Address"
+                        />
+                    </>) : paymentMethod === 'bank_transfer' ? (<></>) : (
+                        <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>No Payment Method Selected</Text>
+                    )}
+                </View>
+                <TouchableOpacity
+                    style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }}
+                    onPress={()=>{
+                        if(payments.total_unreceived_usd >= 100){
+                            requestWithdrawal();
+                        } else {
+                            Alert.alert('Error!', 'You need to have at least $100 to request a withdrawal.');
+                        }
+                    }}
+                >
+                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', textAlign: 'center', width: '100%' }}>Request WithDraw (Min $100)</Text>
+                </TouchableOpacity>
+                {payments.withdraw_requests && payments.withdraw_requests.length > 0 && <View style={{ width: '100%', marginVertical: 8 }}>
+                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Withdraw Requests:</Text>
+                    <ScrollView horizontal>
+                        <View style={{ flexDirection: 'row' }}>
+                            {payments.withdraw_requests.map((withdrawal, index) => {
+                                return <View key={index} style={{ marginRight: 8, maxWidth: '80%', backgroundColor: '#ccc', borderRadius: 5, justifyContent: 'center', padding: 10 }}>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Amount: {withdrawal.amount} {withdrawal.currency}</Text>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Datetime: {withdrawal.datetime.split('T')[0]} {withdrawal.datetime.split('T')[1].split('.')[0]}</Text>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Status: {withdrawal.status}</Text>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>Method: {withdrawal.payment_method}</Text>
+                                    <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>Id: {withdrawal.id}</Text>
+                                </View>
+
+                            })}
+                        </View>
+                    </ScrollView>
+                </View>}
             </View>
         )
     }
@@ -2737,22 +2877,24 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
                         </> : mode === 'personal' ?
                             <>
-                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                    {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }, { 'mode': "evaluations", 'name': "Evaluations" }].map((tab, index) => {
-                                        return <Tabs
-                                            key={index}
-                                            index={index}
-                                            name={tab.name}
-                                            setSelectedTab={() => setPersonalMode(tab.mode)}
-                                            isSelected={tab.mode === personalMode}
-                                            len={3}
-                                            TabSize={width * 0.89 / 3 * 0.9}
-                                            textColor='#222'
-                                            selectedColor='#FFF'
-                                            unselectedColor='#DDD'
-                                        />
-                                    })}
-                                </View>
+                                <ScrollView horizontal>
+                                    <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                        {[{ 'mode': "rooms_clients", 'name': "Rooms Clients" }, { 'mode': "rooms_data", 'name': "Rooms Data" }, { 'mode': "evaluations", 'name': "Evaluations" }, { 'mode': "payments", 'name': "Payments" }].map((tab, index) => {
+                                            return <Tabs
+                                                key={index}
+                                                index={index}
+                                                name={tab.name}
+                                                setSelectedTab={() => setPersonalMode(tab.mode)}
+                                                isSelected={tab.mode === personalMode}
+                                                len={4}
+                                                TabSize={width * 0.89 / 4 * 1}
+                                                textColor='#222'
+                                                selectedColor='#FFF'
+                                                unselectedColor='#DDD'
+                                            />
+                                        })}
+                                    </View>
+                                </ScrollView>
                                 {manageRoomModal && <ManageRoomModal />}
                                 {selectedTrainerPersonalRoom && (
                                     personalMode === 'rooms_clients' ? (
@@ -2974,10 +3116,16 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                     {evaluationMode === 'plans' ?
                                         <ManageEvaluations />
                                         : evaluationMode === 'schedules' ?
-                                            <EvaluationList evaluations={evaluations.schedules} />
+                                            evaluations && evaluations.schedules && evaluations.schedules.length > 0 ? <EvaluationList evaluations={evaluations.schedules} /> : <Text style={{ color: '#222', fontSize: 15, fontWeight: 'bold', textAlign: 'center', marginTop: 10 }}>No schedules found</Text>
                                             : ''
                                     }
                                 </View>}
+
+                                {personalMode === 'payments' && <>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold', textAlign: 'center', width: '100%' }}>Payments</Text>
+                                    <ManagePayments payments={generalData.tabs.personal.payments} />
+                                </>
+                                }
                             </>
                             : <></>
                         }

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator, Dimensions, TextInput } from 'react-native';
 import StripePayment from './StripePayment';
 import SelectBox from '../Tools/SelectBox';
+import Icons from '../Icons/Icons';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
@@ -79,7 +80,9 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                     'Content-Type': 'application/json',
                     'Authorization': `Token ${userToken}`
                 },
-                body: JSON.stringify(completedPaymentData)
+                body: JSON.stringify(
+                    useCreditCard? completedPaymentData : {plan_id: subscriptionPlan.id}
+                )
             });
             const data = await response.json();
             if (response.ok) {
@@ -557,10 +560,17 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                         setUpdatePlanModal(true);
                                     } else {
                                         if (plans.length > 0) {
-                                            setUseCreditCard(true);
-                                            return;
+                                            if (subscriptionPlan.price > 0) {
+                                                setUseCreditCard(true);
+                                            } else {
+                                                Alert.alert('Confirm Subscription Plan', 'Are you sure you want to subscribe to this plan?', [
+                                                    { text: 'Cancel', style: 'cancel' },
+                                                    { text: 'Confirm', onPress: () => confirmSubscriptionPlan() }
+                                                ])
+                                            }
+                                        } else {
+                                            Alert.alert('Error!', 'Please select a plan.');
                                         }
-                                        Alert.alert('Error!', 'Please select a plan.');
                                     }
                                 }}>
                                     <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Next"}</Text>

@@ -133,31 +133,35 @@ const TabNavigator = () => {
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
     type: 'free',
     name: 'Free Plan',
-    features: {
-      workout: {
-        max: [true, 2],
-        max_items_per_group: 4,
-        max_groups_per_day: 2,
-        max_days: 5,
-        max_saves: [true, 0, 5],
-        change_indicators: false,
-        use_ai: 1,
-        items_alternatives: [true, 0, 5],
-      },
-      diet: {
-        max: [true, 1],
-        max_items_per_group: 4,
-        max_groups_per_day: 4,
-        max_days: 1,
-        max_saves: [true, 0, 5],
-        change_indicators: false,
-      },
-      add_max_feed_images: 2,
-      store_exercises_images: false
+    current_data: {
+      settings: {
+        workout: {
+          max: [true, 2],
+          max_items_per_group: 4,
+          max_groups_per_day: 2,
+          max_days: 5,
+          max_saves: [true, 0, 5],
+          change_indicators: false,
+          use_ai: 1,
+          items_alternatives: [true, 0, 5],
+        },
+        diet: {
+          max: [true, 1],
+          max_items_per_group: 4,
+          max_groups_per_day: 4,
+          max_days: 1,
+          max_saves: [true, 0, 5],
+          change_indicators: false,
+          add_custom_food: [true, 0, 5],
+        },
+        add_max_feed_images: 2,
+        store_exercises_images: false
+      }
     }
   });
 
   const fetchSubscriptionPlans = async (token) => {
+    return
     try {
       const response = await fetch(BASE_URL + '/api/users/get-subscrisption-data/', {
         method: 'GET',
