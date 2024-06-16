@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator, Dimensions, TextInput } from 'react-native';
 import StripePayment from './StripePayment';
+import PayPalPayment from './PaypalPayment';
 import SelectBox from '../Tools/SelectBox';
 import Icons from '../Icons/Icons';
 import { BASE_URL } from '@env';
@@ -14,12 +15,15 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
     const [mode, setMode] = useState(patternMode);
     const [updatePlanModal, setUpdatePlanModal] = useState(patternMode === 'subscription' ? true : false);
 
+    const [useCreditCard, setUseCreditCard] = useState(false);
+    const [usePayPal, setUsePayPal] = useState(false);
+
     const [completedPaymentData, setCompletedPaymentData] = useState(null);
 
-    const fetchSubscriptionPlans = async () => {
+    const fetchSubscriptionPlans = async (endpoint) => {
         setLoading(true);
         try {
-            const response = await fetch(BASE_URL + `/api/payments/plans/${object ? '?' + object.get_key + '=' + object.get_id.join(',') : ''}`, {
+            const response = await fetch(BASE_URL + endpoint, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -81,7 +85,7 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                     'Authorization': `Token ${userToken}`
                 },
                 body: JSON.stringify(
-                    useCreditCard? completedPaymentData : {plan_id: subscriptionPlan.id}
+                    useCreditCard || usePayPal ? completedPaymentData : { plan_id: subscriptionPlan.id }
                 )
             });
             const data = await response.json();
@@ -98,21 +102,23 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
     }
 
     useEffect(() => {
-        if (object.get_id.length !== subscriptionPlansOptions.length || object.get_id.some(id => !subscriptionPlansOptions.find(sub_plan => sub_plan.id === id))) {
+        if (object.get_id && (object.get_id.length !== subscriptionPlansOptions.length || object.get_id.some(id => !subscriptionPlansOptions.find(sub_plan => sub_plan.id === id)))) {
             if (!object.plans_in || object.get_id.some(id => !object.plans_in.find(sub_plan => sub_plan.id === id))) {
-                fetchSubscriptionPlans(object || null);
+                fetchSubscriptionPlans(`/api/payments/plans/${object ? '?' + object.get_key + '=' + object.get_id.join(',') : ''}`);
             } else {
                 setSubscriptionPlansOptions(object.plans_in);
             }
+        } else if (object.mode && object.mode === 'app' && !loading && subscriptionPlansOptions.length === 0) {
+            fetchSubscriptionPlans(`/api/payments/plans/?mode=app`);
         }
     }, [object]);
 
     useEffect(() => {
         if (completedPaymentData) {
+            confirmSubscriptionPlan();
             setUseCreditCard(false);
             setPlans([]);
             setCompletedPaymentData(null);
-            confirmSubscriptionPlan();
         }
     }, [completedPaymentData]);
 
@@ -129,8 +135,6 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
 
     const [plans, setPlans] = useState([]);
     const subscriptionPlan = plans.length ? subscriptionPlansOptions.find(plan => plan.id === plans[0]) : undefined;
-
-    const [useCreditCard, setUseCreditCard] = useState(false);
 
     const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#B2FF59', '#00FF00'];
     const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NZD', 'NOK', 'BRL'];
@@ -227,7 +231,7 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                     )
                                 })}
                             </View>}
-                            {plan.details && plan.details.features.comment.length > 0 && <View style={styles.commentSection}>
+                            {false && plan.details && plan.details.features.comment.length > 0 && <View style={styles.commentSection}>
                                 <Text style={{ fontSize: 10, color: '#FFF' }}>{plan.details.features.comment}</Text>
                             </View>}
                             {currentPlanId === plan.id && <Text style={{ alignSelf: 'center', fontWeight: 'bold', fontSize: 13, color: '#888' }}>Current</Text>}
@@ -561,7 +565,7 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                     } else {
                                         if (plans.length > 0) {
                                             if (subscriptionPlan.price > 0) {
-                                                setUseCreditCard(true);
+                                                setUsePayPal(true);
                                             } else {
                                                 Alert.alert('Confirm Subscription Plan', 'Are you sure you want to subscribe to this plan?', [
                                                     { text: 'Cancel', style: 'cancel' },
@@ -573,7 +577,7 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                         }
                                     }
                                 }}>
-                                    <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Next"}</Text>
+                                    <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Pay Now"}</Text>
                                 </TouchableOpacity>}
 
                                 {mode === 'see' &&
@@ -598,7 +602,10 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                     </TouchableOpacity>
                                 }
 
-                                {useCreditCard && subscriptionPlan && !completedPaymentData && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} />}
+                                {subscriptionPlan && !completedPaymentData && <>
+                                    {useCreditCard && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} />}
+                                    {usePayPal && <PayPalPayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} setUpdatePlanModal={setUpdatePlanModal} setUsePayPal={setUsePayPal} />}
+                                </>}
                             </View>
                         )
                     ) : status === 'loading' ?

@@ -22,7 +22,7 @@ const StripePayment = ({ userToken, amount, currency, item, setCompletedPaymentD
                         'Accept': 'application/json',
                         Authorization: `Token ${userToken}`,
                     },
-                    body: JSON.stringify({ amount, currency, item }),
+                    body: JSON.stringify({ provider: 'stripe', amount, currency, item }),
                 });
 
                 const data = await response.json();

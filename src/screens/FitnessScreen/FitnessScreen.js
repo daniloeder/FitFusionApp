@@ -1775,7 +1775,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     }, [members]);
 
     useEffect(() => {
-        if (!selectedTrainerRoomId && selectedTrainer && selectedTrainer.rooms.length) {
+        if (!selectedTrainerRoomId && selectedTrainer && selectedTrainer.rooms && selectedTrainer.rooms.length) {
             setSelectedTrainerRoom(selectedTrainer.rooms[0]);
             setSelectedTrainerRoomId(selectedTrainer.rooms[0].id);
         }
@@ -2360,12 +2360,10 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                     </> :
                                         <>
                                             <Text style={[styles.text, { fontWeight: 'bold', fontSize: 15, marginBottom: 8 }]}>Client Details:</Text>
-                                            <Text style={styles.text}>Name: {evaluation.user.name}</Text>
-                                            {evaluation.user.username && <Text style={styles.text}>Username: {evaluation.user.username}</Text>}
                                             {evaluation.user.name && <Text style={styles.text}>Name: {evaluation.user.name}</Text>}
-                                            {//evaluation.user.gender && <Text style={styles.text}>Gender: {evaluation.user.gender}</Text>
-                                            }
-                                            {evaluation.user.age && <Text style={styles.text}>Age: {evaluation.user.age}</Text>}
+                                            {evaluation.user.username && <Text style={styles.text}>Username: {evaluation.user.username}</Text>}
+                                            {evaluation.user.gender && <Text style={styles.text}>Gender: {evaluation.user.gender}</Text>}
+                                            <Text style={styles.text}>Age: {evaluation.user.age}</Text>
                                         </>}
                                 </View>
                                 <TouchableOpacity style={{ backgroundColor: '#F44336', alignItems: 'center', justifyContent: 'center', padding: 5, borderRadius: 5, marginTop: 5 }} onPress={() => {
@@ -2530,7 +2528,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                 <View style={{ width: '100%', marginVertical: 8 }}>
                     {payments.unreceived && Object.keys(payments.unreceived).map(currency => {
                         return (
-                            <View style={{ width: '100%', borderRadius: 5, justifyContent: 'center', marginTop: 10 }}>
+                            <View key={currency} style={{ width: '100%', borderRadius: 5, justifyContent: 'center', marginTop: 10 }}>
                                 <Text style={{ color: '#fff', fontSize: 15, fontWeight: 'bold' }}>${currency}: {payments.unreceived[currency]}</Text>
                             </View>
                         )
@@ -2743,7 +2741,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                             {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
 
                                             {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
-                                                : selectedTrainer.rooms.length > 0 && (
+                                                : selectedTrainer.rooms && selectedTrainer.rooms.length > 0 && (
                                                     <View style={{ width: '100%' }}>
                                                         <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
                                                             {selectedTrainer.rooms.map((room, index) => {
@@ -3297,6 +3295,8 @@ const FitnessScreen = ({ route, navigation }) => {
     const [newFoodModal, setNewFoodModal] = useState(false);
     const [addNewMuscleGroup, setAddNewMuscleGroup] = useState(false);
 
+    const [confirmedSubscription, setConfirmedSubscription] = useState(null);
+
     const [setting, setSettings] = useState(false);
 
     const fetchManyExercisesImages = async (missing_exercises_images) => {
@@ -3848,6 +3848,12 @@ const FitnessScreen = ({ route, navigation }) => {
     }, [route]);
 
     useEffect(() => {
+        if(confirmedSubscription && confirmedSubscription.current_data && confirmedSubscription.current_data.settings){
+            setUserSubscriptionPlan(confirmedSubscription);
+        }
+    }, [confirmedSubscription]);
+
+    useEffect(() => {
         if (managerData) {
             if (managerData.mode && managerData.mode === 'user') {
                 const found_plan = plans[managerData.plan].find(plan => plan.id === managerData.plan_id)
@@ -4159,8 +4165,9 @@ const FitnessScreen = ({ route, navigation }) => {
                     ) :
                         <SubscriptionPlansModal userToken={userToken}
                             subscriptionTexts={{ button_text: "Update Plan" }}
-                            object={{ get_key: 'plans_ids', get_id: [1, 2] }}
+                            object={{ mode: 'app' }}
                             patternMode='none'
+                            setConfirmedSubscription={setConfirmedSubscription}
                         />
                     }
 
