@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker.js';
 import ShowMedia from '../../components/ShowMedia/ShowMedia.js';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import Icons from '../../components/Icons/Icons.js';
 import QRScanner from '../../components/QRScanner/QRScanner.js';
@@ -15,9 +16,9 @@ const width = Dimensions.get('window').width;
 const EventScreen = ({ route, navigation }) => {
   const { userId, userToken } = route.params;
   const [event, setEvent] = useState(null);
-  const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
   const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
@@ -70,7 +71,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(BASE_URL + `/api/events/${eventId}`, {
+      const response = await fetch(BASE_URL + `/api/events/${eventId}/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -79,7 +80,6 @@ const EventScreen = ({ route, navigation }) => {
       if (response.ok) {
         const data = await response.json();
         setEvent(data);
-        setJoined(data.joined);
         setParticipants(data.participants || []);
         fetchUserProfileImages(data.participants);
         setSelectedImages(data.images)
@@ -88,33 +88,6 @@ const EventScreen = ({ route, navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching event:', error);
-    }
-  };
-
-  const onJoinLeaveEvent = async () => {
-    if (preview) {
-      setJoined(!joined)
-      return
-    }
-    try {
-      const response = await fetch(BASE_URL + `/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${userToken}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      const data = await response.json();
-
-      if (response.status === 200) {
-        setJoined(!joined);
-      } else if (response.status === 400) {
-        setJoined(!joined);
-      } else {
-        console.error('Failed to join the event.');
-      }
-    } catch (error) {
-      console.error('An error occurred:', error);
     }
   };
 
@@ -228,7 +201,40 @@ const EventScreen = ({ route, navigation }) => {
     fetchEvent(); // Update to fetch the event data
   };
 
-
+  const ManagerSubscriptionPlansModal = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={subscriptionPlansModalVisible}
+        onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchEvent(); }}
+      >
+        <View style={styles.clientManagerModalContainer}>
+          <View style={[styles.clientManagerModalContent, { padding: 3 }]}>
+            <Text style={styles.clientManagerModalTitle}>Subscription Plans</Text>
+            <View style={{ width: '100%', minHeight: width, backgroundColor: '#FFF' }}>
+              <SubscriptionPlansModal
+                userToken={userToken}
+                subscriptionTexts={{ button_text: "Testing..." }}
+                object={{
+                  get_key: 'plans_ids',
+                  get_id: event.subscription_plans.map(plan => plan.id),
+                  obj_key: 'event_id',
+                  obj_id: event.id,
+                  plans_in: event.subscription_plans,
+                  extra: {
+                    type: 'join_event',
+                    event_id: event.id,
+                  }
+                }}
+                patternMode='manager'
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
@@ -306,6 +312,15 @@ const EventScreen = ({ route, navigation }) => {
           : ''
         }
 
+        <ManagerSubscriptionPlansModal />
+        <Pressable
+          onPress={() => setSubscriptionPlansModalVisible(true)}
+          style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
+        >
+          <Icons name="Subscription" size={width * 0.08} />
+          <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Subscription Plans</Text>
+        </Pressable>
+
         <ScannedUserModal />
         {event.creator == userId ?
           <Pressable
@@ -358,30 +373,6 @@ const EventScreen = ({ route, navigation }) => {
           <Icons name="Description" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.07 }]} />
           <Text style={styles.description}>{event.description}</Text>
         </View>
-
-        {joined ?
-          <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
-              <Text style={styles.buttonText}>Leave Event</Text>
-            </TouchableOpacity>
-            <View>
-              <Text style={[styles.joinText, { color: '#22AA00' }]}>
-                You joined this event.
-              </Text>
-            </View>
-          </>
-          :
-          <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeaveEvent}>
-              <Text style={styles.buttonText}>Join Event</Text>
-            </TouchableOpacity>
-            <View>
-              <Text style={[styles.joinText, { color: '#AAA' }]}>
-                You are not at this event.
-              </Text>
-            </View>
-          </>
-        }
 
         <Text style={styles.participantTitle}>Participants</Text>
         <Pressable style={styles.participantsImages}
@@ -656,6 +647,28 @@ const styles = StyleSheet.create({
     color: '#FFF',
     marginLeft: 0,
   },
+
+  // Styles for Client Requests Modal
+  clientManagerModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  clientManagerModalContent: {
+    width: '96%',
+    maxHeight: '90%',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  clientManagerModalTitle: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+
 
   // PARTICIPANTS MODAL
 

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Dimensions
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
@@ -17,6 +18,7 @@ const EventScreen = ({ route, navigation }) => {
   const [joined, setJoined] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
   const [userImages, setUserImages] = useState([]);
@@ -116,6 +118,41 @@ const EventScreen = ({ route, navigation }) => {
     setVideoModalVisible(!isVideoModalVisible);
   };
 
+  const ManagerSubscriptionPlansModal = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={subscriptionPlansModalVisible}
+        onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchEvent(); }}
+      >
+        <View style={styles.clientManagerModalContainer}>
+          <View style={[styles.clientManagerModalContent, { padding: 3 }]}>
+            <Text style={styles.clientManagerModalTitle}>Subscription Plans</Text>
+            <View style={{ width: '100%', minHeight: width, backgroundColor: '#FFF' }}>
+              <SubscriptionPlansModal
+                userToken={userToken}
+                subscriptionTexts={{ button_text: "Join this Event" }}
+                object={{
+                  get_key: 'plans_ids',
+                  get_id: event.subscription_plans.map(plan => plan.id),
+                  obj_key: 'event_id',
+                  obj_id: event.id,
+                  plans_in: event.subscription_plans,
+                  extra: {
+                    type: 'join_event',
+                    event_id: event.id,
+                  }
+                }}
+                patternMode='see'
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
@@ -149,6 +186,8 @@ const EventScreen = ({ route, navigation }) => {
         </Modal>
         : ''
       }
+      <ManagerSubscriptionPlansModal />
+
       <ScrollView style={styles.container}
         showsVerticalScrollIndicator={false}
         showsHorizontalScrollIndicator={false}
@@ -214,7 +253,13 @@ const EventScreen = ({ route, navigation }) => {
           </>
           :
           <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeaveEvent}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
+              if (event.subscription_plans.length > 0) {
+                setSubscriptionPlansModalVisible(true);
+              } else {
+                onJoinLeaveEvent();
+              }
+            }}>
               <Text style={styles.buttonText}>Join Event</Text>
             </TouchableOpacity>
             <View>
@@ -470,6 +515,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Styles for Client Requests Modal
+  clientManagerModalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  clientManagerModalContent: {
+    width: '96%',
+    maxHeight: '90%',
+    backgroundColor: '#FFF',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  clientManagerModalTitle: {
+    fontSize: width * 0.05,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
 
   // PARTICIPANTS MODAL
