@@ -8,7 +8,7 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', table = false, setConfirmedSubscription }) => {
+const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', table = false, confirmedSubscription }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -92,8 +92,8 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
             if (response.ok) {
                 setUpdatePlanModal(false);
                 Alert.alert('Success', 'Your subscription plan has been updated!', [{ text: "Ok", onPress: () => { } }], { cancelable: true });
-                if (setConfirmedSubscription) {
-                    setConfirmedSubscription(data)
+                if (confirmedSubscription) {
+                    confirmedSubscription(data)
                 }
             }
         } catch (error) {

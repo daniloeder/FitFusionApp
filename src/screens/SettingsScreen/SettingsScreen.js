@@ -21,7 +21,7 @@ const SettingsScreen = ({ route, navigation }) => {
       });
       const data = await response.json();
       if (response.ok) {
-        navigation.navigate('MyPlansScreen', { personalTrainer: true })
+        navigation.navigate('FitnessScreen', { personalTrainer: true })
       } else if (response.status === 400) {
         Alert.alert('Error creating personal trainer account', data.error);
       }

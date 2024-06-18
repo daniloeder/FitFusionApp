@@ -5,6 +5,7 @@ import GradientBackground from './../../components/GradientBackground/GradientBa
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
 import Icons from '../../components/Icons/Icons';
@@ -17,6 +18,7 @@ const PlaceScreen = ({ route, navigation }) => {
     const [place, setPlace] = useState(null);
     const [joined, setJoined] = useState('none');
     const [clients, setClients] = useState([]);
+    const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
     const [clientsModalVisible, setClientsModalVisible] = useState(false);
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
@@ -60,7 +62,7 @@ const PlaceScreen = ({ route, navigation }) => {
     };
     const fetchPlace = async () => {
         try {
-            const response = await fetch(BASE_URL + `/api/places/${placeId}`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -115,12 +117,44 @@ const PlaceScreen = ({ route, navigation }) => {
         }
     };
 
+    const PlaceSubscriptionPlansModal = () => {
+        return (
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={subscriptionPlansModalVisible}
+                onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchPlace(); }}
+            >
+                <View>
+                    <View style={{width: '100%', height: '100%', padding: 10, backgroundColor:'rgba(0,0,0,0.6)', justifyContent: 'center'}}>
+                        <View style={{ width: '100%', minHeight: width }}>
+                            <SubscriptionPlansModal
+                                userToken={userToken}
+                                subscriptionTexts={{ button_text: "Join this Place" }}
+                                object={{
+                                    get_key: 'plans_ids',
+                                    get_id: place.subscription_plans.map(plan => plan.id),
+                                    obj_key: 'place_id',
+                                    obj_id: place.id,
+                                    plans_in: place.subscription_plans
+                                }}
+                                patternMode='see'
+                            />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    };
+
     if (!place || !place.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
     const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : place.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+            
+            <PlaceSubscriptionPlansModal />
 
             <ScrollView style={styles.container}>
 
@@ -167,8 +201,14 @@ const PlaceScreen = ({ route, navigation }) => {
                         </>
                         : joined === "none" || preview ?
                             <>
-                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={onJoinLeavePlace}>
-                                    <Text style={styles.buttonText}>{place.is_privated ? "Request to Join Place" : "Join Place"}</Text>
+                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={()=>{
+                                    if(place.is_privated && place.subscription_plans.length > 0){
+                                        setSubscriptionPlansModalVisible(true);
+                                    } else {
+                                        onJoinLeavePlace();
+                                    }
+                                }}>
+                                    <Text style={styles.buttonText}>Join Place</Text>
                                 </TouchableOpacity>
                                 <View>
                                     <Text style={[styles.joinText, { color: '#AAA' }]}>

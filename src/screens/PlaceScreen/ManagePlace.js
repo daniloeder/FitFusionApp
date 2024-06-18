@@ -7,6 +7,7 @@ import ShowMedia from '../../components/ShowMedia/ShowMedia.js';
 import OpenTimes from '../../components/Forms/OpenTimes.js';
 import OpenTimesTable from '../../components/OpenTimesTable/OpenTimesTable.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import ManageUsers from '../../components/Management/ManageUsers.js';
 import QRScanner from '../../components/QRScanner/QRScanner.js';
@@ -24,6 +25,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [isClientRequestsModalVisible, setClientRequestsModalVisible] = useState(false);
     const [isClientManagerModalVisible, setClientManagerModalVisible] = useState(false);
+    const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
     const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
     const [clientRequests, setClientRequests] = useState([]);
     const [scannedUserData, setScannedUserData] = useState(null);
@@ -363,6 +365,41 @@ const PlaceScreen = ({ route, navigation }) => {
         );
     };
 
+    const ManagerSubscriptionPlansModal = () => {
+        return (
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={subscriptionPlansModalVisible}
+                onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchPlace(); }}
+            >
+                <View style={styles.clientManagerModalContainer}>
+                    <View style={[styles.clientManagerModalContent, {padding: 3}]}>
+                        <Text style={styles.clientManagerModalTitle}>Subscription Plans</Text>
+                        <View style={{ width: '100%', minHeight: width, backgroundColor: '#FFF' }}>
+                            <SubscriptionPlansModal
+                                userToken={userToken}
+                                subscriptionTexts={{ button_text: "Testing..." }}
+                                object={{
+                                    get_key: 'plans_ids',
+                                    get_id: place.subscription_plans.map(plan => plan.id),
+                                    obj_key: 'place_id',
+                                    obj_id: place.id,
+                                    plans_in: place.subscription_plans,
+                                    extra: {
+                                        type: 'join_place',
+                                        place_id: place.id,
+                                    }
+                                }}
+                                patternMode='manager'
+                            />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        );
+    };
+
     const updateExistingImages = async () => {
         setEditImages(false);
         const existingImagesData = selectedImages.map((img, index) => ({
@@ -435,7 +472,6 @@ const PlaceScreen = ({ route, navigation }) => {
                         <Pressable
                             onPress={() => {
                                 setScannedUserModalVisible(true);
-                                //fetchPayments(33);
                             }}
                             style={[styles.createEventButton, { height: 'auto', width: width * 0.3, position: 'absolute', maxWidth: width * 0.3, flexDirection: 'column', padding: width * 0.05 }]}
                         >
@@ -466,6 +502,14 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
 
+                <Pressable
+                    onPress={() => setSubscriptionPlansModalVisible(true)}
+                    style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
+                >
+                    <Icons name="Subscription" size={width * 0.08} />
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Subscription Plans</Text>
+                </Pressable>
+
                 {place.created_by == userId ?
                     <Pressable
                         onPress={() => {
@@ -482,7 +526,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         }}
                         style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
                     >
-                        <Icons name="Edit" size={width * 0.06} />
+                        <Icons name="Edit" size={width * 0.07} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Edit Place</Text>
                     </Pressable>
                     : ''
@@ -500,6 +544,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 <ScannedUserModal />
                 <ClientManagerModal />
                 <ClientRequestsModal />
+                <ManagerSubscriptionPlansModal />
 
                 <Text style={styles.title}>{place.name}</Text>
 
@@ -651,7 +696,6 @@ const styles = StyleSheet.create({
         marginLeft: 'auto',
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
     },
     infoBlock: {
         width: width * 0.82,

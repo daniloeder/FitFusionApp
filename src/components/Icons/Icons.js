@@ -81,6 +81,7 @@ import Paste from './../../../assets/icons/paste.svg';
 import Fitness from './../../../assets/icons/fitness.svg';
 
 import GradientCircle from './../../../assets/icons/gradientCircle.svg';
+import Subscription from './../../../assets/icons/subscription.svg';
 
 const Icons = ({
   name,
@@ -174,6 +175,7 @@ const Icons = ({
     Fitness: Fitness,
 
     GradientCircle: GradientCircle,
+    Subscription: Subscription,
 
   }[name];
 
