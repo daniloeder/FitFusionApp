@@ -18,8 +18,9 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
                         : 'rgba(250, 128, 114, 0.5)'
                 }]}
             >
-                <Text style={styles.paymentTitle}>Last Due Payment:</Text>
-                <Text style={styles.paymentInfoText}>Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
+                <Text style={styles.paymentTitle}>Subscription Status:</Text>
+                <Text style={styles.paymentInfoText}>Subscription Plan: {subscriptionData.plan_name}</Text>
+                <Text style={styles.paymentInfoText}>Payment Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
                 <Text style={styles.paymentInfoText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
                 {subscriptionData.recurring && <Text style={styles.paymentInfoText}>Days Left to Next Payment: {subscriptionData.days_payment_deadline}</Text>}
                 <TouchableOpacity
@@ -27,7 +28,7 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
                     style={styles.detailsButton}
                 >
                     <Text style={{ fontWeight: '500', color: '#555' }}>
-                        See Payment Details
+                        See Subscription Details
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -40,8 +41,9 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
             >
                 <View style={styles.modalContainer}>
                     <ScrollView style={styles.scrollView}>
-                        <Text style={styles.paymentsModalTextTitle}>Last Payment</Text>
-                        <Text style={styles.paymentsModalText}>Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
+                        <Text style={styles.paymentsModalTextTitle}>Subscription Data</Text>
+                        <Text style={styles.paymentsModalText}>Subscription Plan: {subscriptionData.plan_name}</Text>
+                        <Text style={styles.paymentsModalText}>Payment Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
                         <Text style={styles.paymentsModalText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
                         <Text style={styles.paymentsModalText}>Period: {PLANS_PERIODS[subscriptionData.period]}</Text>
                         <Text style={styles.paymentsModalText}>From: {subscriptionData.date_start}</Text>

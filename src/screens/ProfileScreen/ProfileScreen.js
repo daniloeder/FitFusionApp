@@ -13,12 +13,15 @@ import CustomInput from '../../components/Forms/CustomInput';
 import CustomPicker from '../../components/CustomPicker/CustomPicker';
 import * as DocumentPicker from 'expo-document-picker';
 import QRGenerator from '../../components/QRScanner/QRGenerator';
+import PaymentCard from '../../components/Management/PaimentCard.js';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
+
   const { userToken } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
@@ -42,6 +45,8 @@ const ProfileScreen = ({ route }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [editImages, setEditImages] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+
+  const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -79,6 +84,12 @@ const ProfileScreen = ({ route }) => {
       fetchProfile();
     }, [userToken])
   );
+
+  useEffect(() => {
+    if (route.params.upgrade) {
+      setSubscriptionPlansModalVisible(true);
+    }
+  }, [route.params.upgrade]);
 
   useEffect(() => {
     if (selectedProfileImage.length) {
@@ -259,9 +270,36 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
+  const PlaceSubscriptionPlansModal = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={subscriptionPlansModalVisible}
+        onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchProfile(); }}
+      >
+        <View>
+          <View style={{ width: '100%', height: '100%', padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center' }}>
+            <View style={{ width: '100%', minHeight: width }}>
+              <SubscriptionPlansModal userToken={userToken}
+                subscriptionTexts={{ button_text: "Update Plan" }}
+                object={{ mode: 'app' }}
+                patternMode='see'
+              setConfirmedSubscription={()=>fetchProfile()}
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+
+      <PlaceSubscriptionPlansModal />
+
       {isLoading ? <ActivityIndicator size="large" color="#FFF" />
         :
         <ScrollView
@@ -480,7 +518,8 @@ const ProfileScreen = ({ route }) => {
             </>
             :
             <>
-              <TouchableOpacity style={{
+              <TouchableOpacity
+              style={{
                 width: '90%',
                 marginLeft: '5%',
                 justifyContent: 'center',
@@ -491,7 +530,7 @@ const ProfileScreen = ({ route }) => {
                 marginTop: 10,
               }}
                 onPress={() => {
-                  navigation.navigate('FitnessScreen')
+                  navigation.navigate('Fitness')
                 }}
               >
                 <Text style={{
@@ -499,9 +538,19 @@ const ProfileScreen = ({ route }) => {
                   fontSize: 16,
                   fontWeight: 'bold',
                 }}>
-                  Fitness Plans
+                  Fitness Screen
                 </Text>
               </TouchableOpacity>
+
+              {profile.subscription && profile.subscription.user_subscription && (
+                <View style={{ marginTop: 15, width: '90%', marginLeft: '5%' }}>
+                  <PaymentCard
+                    subscriptionData={profile.subscription.user_subscription}
+                    setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
+                  />
+                </View>
+              )}
+
               <TouchableOpacity style={styles.editButton} onPress={() => setEditProfile(true)}>
                 <Text style={styles.editButtonText}>Edit Profile</Text>
               </TouchableOpacity>

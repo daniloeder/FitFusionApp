@@ -7,6 +7,7 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import UsersBall from '../../components/UsersBall/UsersBall.js';
 import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
+import { update } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -78,24 +79,24 @@ const HomeScreen = ({ route, navigation }) => {
   };
   const fetchUserProfileImages = async (participants) => {
     if (participants.length) {
-        try {
-            const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
-            const data = await response.json();
-            if (response.ok) {
-                setCloserUsers(prevCloserUsers => {
-                    const updatedCloserUsers = [...prevCloserUsers];
-                    for (const member of data) {
-                        const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
-                        updatedCloserUsers[index].profile_image = member.profile_image;
-                    }
-                    return updatedCloserUsers;
-                });
+      try {
+        const response = await fetch(BASE_URL + `/api/users/get-user-profile-images/?user_ids=${participants.join()}`);
+        const data = await response.json();
+        if (response.ok) {
+          setCloserUsers(prevCloserUsers => {
+            const updatedCloserUsers = [...prevCloserUsers];
+            for (const member of data) {
+              const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
+              updatedCloserUsers[index].profile_image = member.profile_image;
             }
-        } catch (error) {
-            console.error('Error fetching user profile images:', error);
+            return updatedCloserUsers;
+          });
         }
+      } catch (error) {
+        console.error('Error fetching user profile images:', error);
+      }
     }
-};
+  };
 
   const fetchNearbyPlaces = async (userToken, location) => {
     try {
@@ -182,16 +183,16 @@ const HomeScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (closerUsers.length > 0) {
-        const closerUsers_without_image = closerUsers.filter(member => {
-            return member.profile_image === undefined
-        }).map(member => {
-            return member.id
-        })
-        if (closerUsers_without_image.length > 0) {
-            fetchUserProfileImages(closerUsers_without_image);
-        }
+      const closerUsers_without_image = closerUsers.filter(member => {
+        return member.profile_image === undefined
+      }).map(member => {
+        return member.id
+      })
+      if (closerUsers_without_image.length > 0) {
+        fetchUserProfileImages(closerUsers_without_image);
+      }
     }
-}, [closerUsers]);
+  }, [closerUsers]);
 
   useEffect(() => {
     if (userLocation) {
@@ -324,7 +325,7 @@ const HomeScreen = ({ route, navigation }) => {
         {closerUsers ?
           <>
             {places.length ? <Text style={styles.subtitle}>Near Users:</Text> : ''}
-            <View style={{width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between'}}>
+            <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {closerUsers.slice(0, 8).map(user => {
                 return <UsersBall key={user.id} user={user} onPress={setClickedUser} size={0.9} />
               })}
@@ -428,6 +429,32 @@ const HomeScreen = ({ route, navigation }) => {
           }}
         >
           <Text style={styles.viewProfileButtonText}>View Profile</Text>
+        </TouchableOpacity>
+
+
+        <TouchableOpacity
+          style={{
+            width: '90%',
+            marginLeft: '5%',
+            justifyContent: 'center',
+            backgroundColor: '#2196F3',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginTop: 10,
+            marginBottom: 100
+          }}
+          onPress={() => {
+            navigation.navigate('Profile', { upgrade: true });
+          }}
+        >
+          <Text style={{
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 'bold',
+          }}>
+            Upgrade to Premium
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
