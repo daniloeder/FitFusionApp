@@ -490,6 +490,9 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
         if (useCreditCard) {
             setUseCreditCard(plans.length > 0);
         }
+        if (usePayPal) {
+            setUsePayPal(plans.length > 0);
+        }
     }, [plans])
 
     useEffect(() => {

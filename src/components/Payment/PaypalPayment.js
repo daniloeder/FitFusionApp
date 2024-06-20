@@ -70,13 +70,12 @@ const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentD
         }
     }, []);
 
-
     return (
         <View style={{ flex: 1, marginTop: 0 }}>
             {(loading || !paymentId) ? <ActivityIndicator size="large" color="#000" /> :
-                <Modal visible={showWebView} animationType="slide" onRequestClose={onClose}>
-                    <View style={{ width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 1)' }}>
-                        <View style={{ width: '90%', height: '90%', margin: '5%' }}>
+                <Modal visible={showWebView} animationType="slide" transparent onRequestClose={onClose}>
+                    <View style={{ width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.3)', alignItems: 'center', justifyContent: 'center' }}>
+                        <View style={{ width: '90%', minHeight: '90%', margin: '5%' }}>
                             <WebView
                                 originWhitelist={['*']}
                                 source={{ uri: `${BASE_URL}/api/payments/paypal-page/?currency=${currency}&amount=${amount}&payment_id=${paymentId}` }}
