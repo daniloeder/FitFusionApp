@@ -337,7 +337,7 @@ const HomeScreen = ({ route, navigation }) => {
 
         {closerPlaces && closerPlaces.length ?
           <>
-            <Text style={styles.subtitle}>Near Places:</Text>
+            <Text style={styles.subtitle}>Nearby Places:</Text>
             <View style={styles.nearPlacesContainer}>
               {closerPlaces.slice(0, 4).map((place, index) => {
                 return (
@@ -354,13 +354,13 @@ const HomeScreen = ({ route, navigation }) => {
                     <Text style={styles.nearPlacesLocationText}>
                       Location: {place.location}
                     </Text>
-                    {place.sport_types_keys && place.sport_types_keys.length ? (
+                    {place.sport_types && place.sport_types.length ? (
                       <View>
                         <Text style={styles.nearPlacesSportTypesText}>
                           Favorite Sports:
                         </Text>
                         <SportsItems
-                          favoriteSports={place.sport_types_keys}
+                          favoriteSports={place.sport_types}
                         />
                       </View>
                     ) : (
@@ -375,7 +375,7 @@ const HomeScreen = ({ route, navigation }) => {
 
         {closerEvents && closerEvents.length ?
           <>
-            <Text style={styles.subtitle}>Near Events:</Text>
+            <Text style={styles.subtitle}>Nearby Events:</Text>
             <View style={styles.nearPlacesContainer}>
               {closerEvents.slice(0, 4).map((event, index) => {
                 return (
@@ -389,13 +389,14 @@ const HomeScreen = ({ route, navigation }) => {
                       <Text style={[styles.buttonText, { alignSelf: 'center', maxWidth: width * 0.7 }]}>{event.title}</Text>
                       <Text style={styles.eventDate}>Date: {event.date}</Text>
                       <Text style={styles.eventDate}>Time: {event.time}</Text>
+                      <Text style={styles.eventDate}>Location: {event.location}</Text>
 
                       <View>
                         <Text style={[styles.nearPlacesSportTypesText, { marginRight: 10 }]}>
                           Sports:
                         </Text>
                         <SportsItems
-                          favoriteSports={event.sport_types_keys}
+                          favoriteSports={event.sport_types}
                         />
                       </View>
                     </TouchableOpacity>
