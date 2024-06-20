@@ -67,7 +67,7 @@ const EventScreen = ({ route, navigation }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await fetch(BASE_URL + `/api/events/${eventId}`, {
+      const response = await fetch(BASE_URL + `/api/events/${eventId}/`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`,
@@ -132,7 +132,7 @@ const EventScreen = ({ route, navigation }) => {
             <View style={{ width: '100%', minHeight: width, backgroundColor: '#FFF' }}>
               <SubscriptionPlansModal
                 userToken={userToken}
-                subscriptionTexts={{ button_text: "Join this Event" }}
+                subscriptionTexts={{ button_text: !joined ? "Join this Event" : "Update Subscription" }}
                 object={{
                   get_key: 'plans_ids',
                   get_id: event.subscription_plans.map(plan => plan.id),
@@ -245,9 +245,10 @@ const EventScreen = ({ route, navigation }) => {
               </Text>
             </View>
 
-            {event.payments && (
+            {event.subscription && (
               <PaymentCard
-                paymentData={event.payments}
+                subscriptionData={event.subscription}
+                setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
               />
             )}
           </>

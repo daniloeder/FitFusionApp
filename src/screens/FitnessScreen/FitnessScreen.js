@@ -10,6 +10,7 @@ import { TextInput } from 'react-native-gesture-handler';
 import SelectBox from '../../components/Tools/SelectBox';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import DatePicker from '../../components/Forms/DatePicker';
+import PaymentCard from '../../components/Management/PaimentCard.js';
 
 const width = Dimensions.get('window').width;
 
@@ -2591,8 +2592,8 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                 </View>
                 <TouchableOpacity
                     style={{ width: '100%', height: 40, backgroundColor: '#4CAF50', borderRadius: 5, alignItems: 'center', justifyContent: 'center', marginTop: 10 }}
-                    onPress={()=>{
-                        if(payments.total_unreceived_usd >= 100){
+                    onPress={() => {
+                        if (payments.total_unreceived_usd >= 100) {
                             requestWithdrawal();
                         } else {
                             Alert.alert('Error!', 'You need to have at least $100 to request a withdrawal.');
@@ -2862,6 +2863,9 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                     <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16 }}>Leave Room</Text>
                                                 </TouchableOpacity>
 
+                                                {selectedUserRequest.current_subscription && (
+                                                    <PaymentCard subscriptionData={selectedUserRequest.current_subscription} />
+                                                )}
                                                 {selectedUserRequest.subscriptions.map(subscription => <SubscriptionItem key={subscription.id} subscription={subscription} />)}
                                             </> :
                                                 <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>No Rooms to Show Yet</Text>
@@ -3848,7 +3852,7 @@ const FitnessScreen = ({ route, navigation }) => {
     }, [route]);
 
     useEffect(() => {
-        if(confirmedSubscription && confirmedSubscription.current_data && confirmedSubscription.current_data.settings){
+        if (confirmedSubscription && confirmedSubscription.current_data && confirmedSubscription.current_data.settings) {
             setUserSubscriptionPlan(confirmedSubscription);
         }
     }, [confirmedSubscription]);

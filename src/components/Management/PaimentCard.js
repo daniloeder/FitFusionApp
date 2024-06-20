@@ -3,25 +3,30 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, Dimensions } from 'rea
 
 const width = Dimensions.get('window').width;
 
-const PaymentCard = ({ paymentData, startVisible=false }) => {
+const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, startVisible = false }) => {
     const [paymentModalVisible, setPaymentModalVisible] = useState(startVisible);
-    if (!paymentData.latest) {
-        return
-    }
+
+    STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
+    PLANS_PERIODS = { 'dayly': 'Dayly', 'weekly': 'Weekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly' };
+
     return (
         <>
             <View
-                style={[styles.paymentCard, { backgroundColor: paymentData.regular ? 'rgba(144, 238, 144, 0.5)' : 'rgba(250, 128, 114, 0.5)' }]}
+                style={[styles.paymentCard, {
+                    backgroundColor: subscriptionData.status === 'active' ?
+                        !subscriptionData.recurring || subscriptionData.days_payment_deadline > 3 ? 'rgba(144, 238, 144, 0.5)' : 'rgba(255, 215, 0, 0.5)'
+                        : 'rgba(250, 128, 114, 0.5)'
+                }]}
             >
-                {paymentData.days_until_next > 0 ? <Text style={{color:'#FFF', marginLeft:'auto'}}>Days Left to Next Payment: {paymentData.days_until_next}</Text> : !paymentData.regular ? <Text style={{color:'red', fontWeight:'bold', marginLeft:'auto'}}>Late payment by {-paymentData.days_until_next} days</Text> : '' }
                 <Text style={styles.paymentTitle}>Last Due Payment:</Text>
-                <Text style={styles.paymentInfoText}>Amount: ${paymentData.latest.amount}</Text>
-                <Text style={styles.paymentInfoText}>Payment Status: {paymentData.latest.status}</Text>
+                <Text style={styles.paymentInfoText}>Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
+                <Text style={styles.paymentInfoText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
+                {subscriptionData.recurring && <Text style={styles.paymentInfoText}>Days Left to Next Payment: {subscriptionData.days_payment_deadline}</Text>}
                 <TouchableOpacity
                     onPress={() => setPaymentModalVisible(true)}
                     style={styles.detailsButton}
                 >
-                    <Text>
+                    <Text style={{ fontWeight: '500', color: '#555' }}>
                         See Payment Details
                     </Text>
                 </TouchableOpacity>
@@ -36,16 +41,20 @@ const PaymentCard = ({ paymentData, startVisible=false }) => {
                 <View style={styles.modalContainer}>
                     <ScrollView style={styles.scrollView}>
                         <Text style={styles.paymentsModalTextTitle}>Last Payment</Text>
-                        <Text style={styles.paymentsModalText}>Amount: ${paymentData.latest.amount}</Text>
-                        <Text style={styles.paymentsModalText}>Payment Status: {paymentData.latest.status}</Text>
-                        <Text style={styles.paymentsModalText}>From: {paymentData.latest.date_from}</Text>
-                        <Text style={styles.paymentsModalText}>To: {paymentData.latest.date_to}</Text>
-                        <Text style={styles.paymentsModalText}>Due Date: {paymentData.latest.due_date}</Text>
+                        <Text style={styles.paymentsModalText}>Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
+                        <Text style={styles.paymentsModalText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
+                        <Text style={styles.paymentsModalText}>Period: {PLANS_PERIODS[subscriptionData.period]}</Text>
+                        <Text style={styles.paymentsModalText}>From: {subscriptionData.date_start}</Text>
+                        <Text style={styles.paymentsModalText}>To: {subscriptionData.date_end}</Text>
+                        <Text style={styles.paymentsModalText}>Payment Due Date: {subscriptionData.due_date}</Text>
                     </ScrollView>
 
-                    {paymentData.latest.status !== 'Paid' && (
-                        <TouchableOpacity onPress={() => { }} style={styles.payNowButton}>
-                            <Text style={styles.buttonText}>Pay Now</Text>
+                    {setSubscriptionPlansModalVisible && (subscriptionData.status !== 'active' || subscriptionData.days_payment_deadline < 4) && (
+                        <TouchableOpacity onPress={() => {
+                            setPaymentModalVisible(false);
+                            setSubscriptionPlansModalVisible(true);
+                        }} style={styles.payNowButton}>
+                            <Text style={styles.buttonText}>Renew Subscription</Text>
                         </TouchableOpacity>
                     )}
 
@@ -141,6 +150,11 @@ const styles = {
         marginTop: 15,
         alignItems: 'center',
     },
+    buttonText: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: width * 0.04,
+    }
 };
 
 export default PaymentCard;

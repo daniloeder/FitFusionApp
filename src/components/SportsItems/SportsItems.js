@@ -31,7 +31,7 @@ const SportsItems = ({ favoriteSports, size = width }) => {
 
     return (
         <View style={styles.favoriteSports}>
-            {favoriteSports.slice(0, 10).map((sport) =>
+            {favoriteSports && favoriteSports.slice(0, 10).map((sport) =>
                 <View key={sport} style={styles.sportItem}>
                     <Text style={{ color: '#FFF', fontSize: size * 0.03 }}>
                         {SportsNames([sport])}

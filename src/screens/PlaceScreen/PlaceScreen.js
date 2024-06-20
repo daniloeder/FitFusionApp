@@ -26,20 +26,20 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [preview, setPreview] = useState(route.params.placePreview);
 
-  useFocusEffect(
-    useCallback(() => {
-        setUserImages([]);
-        setClients([]);
-        setPlace(null);
-        if (preview) {
-            setPlace(preview);
-        } else if (placeId) {
-            fetchPlace();
-        } else {
-            Alert.alert('Place error.');
-        }
-    }, [placeId, preview])
-  );
+    useFocusEffect(
+        useCallback(() => {
+            setUserImages([]);
+            setClients([]);
+            setPlace(null);
+            if (preview) {
+                setPlace(preview);
+            } else if (placeId) {
+                fetchPlace();
+            } else {
+                Alert.alert('Place error.');
+            }
+        }, [placeId, preview])
+    );
 
     useEffect(() => {
         setPlace(preview);
@@ -73,7 +73,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 const data = await response.json();
                 setPlace(data);
                 if (data.joined) {
-                    setJoined('joined');
+                    setJoined(true);
                 }
                 setClients(data.clients || []);
                 fetchUserProfileImages(data.clients);
@@ -90,7 +90,7 @@ const PlaceScreen = ({ route, navigation }) => {
             return
         }
         try {
-            const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined === "joined" || joined === "requested" ? 'leave' : 'join'}/`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined ? 'leave' : 'error'}/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
@@ -101,14 +101,14 @@ const PlaceScreen = ({ route, navigation }) => {
 
             if (response.status === 200) {
                 if (data.status === "joined") {
-                    setJoined("joined");
+                    setJoined(true);
                 } else if (data.status === "requested") {
-                    setJoined("requested");
+                    setJoined(false);
                 } else if (data.status === "removed_request" || data.status === "removed") {
-                    setJoined("none");
+                    setJoined(false);
                 }
             } else if (response.status === 400) {
-                setJoined("none");
+                setJoined(false);
             } else {
                 console.error('Failed to join the event.');
             }
@@ -126,17 +126,21 @@ const PlaceScreen = ({ route, navigation }) => {
                 onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchPlace(); }}
             >
                 <View>
-                    <View style={{width: '100%', height: '100%', padding: 10, backgroundColor:'rgba(0,0,0,0.6)', justifyContent: 'center'}}>
+                    <View style={{ width: '100%', height: '100%', padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center' }}>
                         <View style={{ width: '100%', minHeight: width }}>
                             <SubscriptionPlansModal
                                 userToken={userToken}
-                                subscriptionTexts={{ button_text: "Join this Place" }}
+                                subscriptionTexts={{ button_text: joined ? "Update Subscription" : "Join this Place" }}
                                 object={{
                                     get_key: 'plans_ids',
                                     get_id: place.subscription_plans.map(plan => plan.id),
                                     obj_key: 'place_id',
                                     obj_id: place.id,
-                                    plans_in: place.subscription_plans
+                                    plans_in: place.subscription_plans,
+                                    extra: {
+                                      type: 'join_place',
+                                      place_id: place.id,
+                                    }
                                 }}
                                 patternMode='see'
                             />
@@ -153,7 +157,7 @@ const PlaceScreen = ({ route, navigation }) => {
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-            
+
             <PlaceSubscriptionPlansModal />
 
             <ScrollView style={styles.container}>
@@ -182,7 +186,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 </View>
 
                 {place.created_by != userId ?
-                    joined === "joined" ?
+                    joined ?
                         <>
                             <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeavePlace}>
                                 <Text style={styles.buttonText}>Leave Place</Text>
@@ -193,16 +197,17 @@ const PlaceScreen = ({ route, navigation }) => {
                                 </Text>
                             </View>
 
-                            {place.payments && (
+                            {place.subscription && (
                                 <PaymentCard
-                                    paymentData={place.payments} startVisible={route.params.paymentCardVisibel}
+                                    subscriptionData={place.subscription}
+                                    setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
                                 />
                             )}
                         </>
-                        : joined === "none" || preview ?
+                        : !joined || preview ?
                             <>
-                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={()=>{
-                                    if(place.is_privated && place.subscription_plans.length > 0){
+                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
+                                    if (place.is_privated && place.subscription_plans.length > 0) {
                                         setSubscriptionPlansModalVisible(true);
                                     } else {
                                         onJoinLeavePlace();
@@ -216,18 +221,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                     </Text>
                                 </View>
                             </>
-                            : joined === "requested" ?
-                                <>
-                                    <TouchableOpacity style={[styles.button, { backgroundColor: '#CCC' }]} onPress={onJoinLeavePlace}>
-                                        <Text style={styles.buttonText}>Remove Request</Text>
-                                    </TouchableOpacity>
-                                    <View>
-                                        <Text style={[styles.joinText, { color: '#AAA' }]}>
-                                            You requested to join this event.
-                                        </Text>
-                                    </View>
-                                </>
-                                : ''
+                            : ''
                     : ''
                 }
 
@@ -329,11 +323,11 @@ const PlaceScreen = ({ route, navigation }) => {
                     : ''
                 }
                 {preview ?
-                  <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
-                    navigation.navigate("Create Place")
-                  }}>
-                    <Text style={styles.buttonText}>Back to edition</Text>
-                  </TouchableOpacity> : ''
+                    <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
+                        navigation.navigate("Create Place")
+                    }}>
+                        <Text style={styles.buttonText}>Back to edition</Text>
+                    </TouchableOpacity> : ''
                 }
                 <View style={{ marginBottom: 100 }}></View>
             </ScrollView>
