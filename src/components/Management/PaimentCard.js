@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Modal, ScrollView, Dimensions } from 'rea
 
 const width = Dimensions.get('window').width;
 
-const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, startVisible = false }) => {
+const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, startVisible = false, backgroundColor }) => {
     const [paymentModalVisible, setPaymentModalVisible] = useState(startVisible);
 
     STATUS_CHOICES = { 'active': 'Active', 'inactive': 'Inactive', 'cancelled': 'Cancelled', 'pending': 'Pending', 'expired': 'Expired', 'suspended': 'Suspended', 'deleted': 'Deleted' }
@@ -13,16 +13,17 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
         <>
             <View
                 style={[styles.paymentCard, {
-                    backgroundColor: subscriptionData.status === 'active' ?
+                    backgroundColor: backgroundColor || (subscriptionData.status === 'active' ?
                         !subscriptionData.recurring || subscriptionData.days_payment_deadline > 3 ? 'rgba(144, 238, 144, 0.5)' : 'rgba(255, 215, 0, 0.5)'
                         : 'rgba(250, 128, 114, 0.5)'
+                    )
                 }]}
             >
                 <Text style={styles.paymentTitle}>Subscription Status:</Text>
                 <Text style={styles.paymentInfoText}>Subscription Plan: {subscriptionData.plan_name}</Text>
                 <Text style={styles.paymentInfoText}>Payment Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
                 <Text style={styles.paymentInfoText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
-                {subscriptionData.recurring && <Text style={styles.paymentInfoText}>Days Left to Next Payment: {subscriptionData.days_payment_deadline}</Text>}
+                {subscriptionData.recurring && subscriptionData.amount > -1 && <Text style={[styles.paymentInfoText, {color: subscriptionData.days_payment_deadline < 4 ? '#ff8888' : '#000'}]}>Days until next payment: {subscriptionData.days_payment_deadline}</Text>}
                 <TouchableOpacity
                     onPress={() => setPaymentModalVisible(true)}
                     style={styles.detailsButton}
@@ -84,7 +85,6 @@ const styles = {
         shadowOpacity: 0.2,
         shadowRadius: 2,
         elevation: 5,
-        marginBottom: 20,
     },
     paymentTitle: {
         fontSize: width * 0.04,

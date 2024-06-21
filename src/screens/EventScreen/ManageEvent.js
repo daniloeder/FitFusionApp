@@ -6,6 +6,7 @@ import UploadPicker from '../../components/UploadPicker/UploadPicker.js';
 import ShowMedia from '../../components/ShowMedia/ShowMedia.js';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
+import ManageUsers from '../../components/Management/ManageUsers.js';
 import Icons from '../../components/Icons/Icons.js';
 import QRScanner from '../../components/QRScanner/QRScanner.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
@@ -18,6 +19,7 @@ const EventScreen = ({ route, navigation }) => {
   const [event, setEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
+  const [isClientManagerModalVisible, setClientManagerModalVisible] = useState(false);
   const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
   const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
@@ -136,7 +138,7 @@ const EventScreen = ({ route, navigation }) => {
                 <ScrollView style={{ width: '100%' }}>
 
                   {!userPayments || userPayments.participant || (userPayments.payments) ?
-                    <ManageUsers userToken={userToken} userIds={[scannedUserData.id]} placeId={placeId} setUserPayments={!userPayments ? setUserPayments : undefined} />
+                    <ManageUsers userToken={userToken} item='event' itemId={eventId} />
                     :
                     <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a participant of this Place.</Text>
                   }
@@ -236,6 +238,34 @@ const EventScreen = ({ route, navigation }) => {
     );
   };
 
+  const ClientManagerModal = () => {
+    return (
+        <Modal
+            animationType="slide"
+            transparent={true}
+            visible={isClientManagerModalVisible}
+            onRequestClose={() => setClientManagerModalVisible(false)}
+        >
+            <View style={styles.clientManagerModalContainer}>
+                <View style={styles.clientManagerModalContent}>
+                    <Text style={styles.clientManagerModalTitle}>Clients Management</Text>
+
+                    <ScrollView style={{ width: '100%' }}>
+                        <ManageUsers userToken={userToken} item='event' itemId={eventId} />
+                    </ScrollView>
+
+                    <TouchableOpacity
+                        style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+                        onPress={() => setClientManagerModalVisible(false)}
+                    >
+                        <Text style={styles.buttonText}>Close</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
 
@@ -291,11 +321,11 @@ const EventScreen = ({ route, navigation }) => {
           }
           {event.creator == userId ?
             <Pressable
-              onPress={() => setParticipantManagerModalVisible(true)}
-              style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
+              onPress={() => setClientManagerModalVisible(true)}
+              style={[styles.createEventButton, { minWidth: width * 0.6 }]}
             >
               <Icons name="ParticipantEdit" size={width * 0.08} />
-              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Manager</Text>
+              <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Clients Manager</Text>
             </Pressable>
             : ''
           }
@@ -313,6 +343,9 @@ const EventScreen = ({ route, navigation }) => {
         }
 
         <ManagerSubscriptionPlansModal />
+
+        <ClientManagerModal />
+
         <Pressable
           onPress={() => setSubscriptionPlansModalVisible(true)}
           style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}

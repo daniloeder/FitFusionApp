@@ -302,7 +302,7 @@ const PlaceScreen = ({ route, navigation }) => {
                         <Text style={styles.clientManagerModalTitle}>Clients Management</Text>
 
                         <ScrollView style={{ width: '100%' }}>
-                            <ManageUsers userToken={userToken} userIds={place.clients} placeId={placeId} />
+                            <ManageUsers userToken={userToken} item='place' itemId={placeId} />
                         </ScrollView>
 
                         <TouchableOpacity
@@ -338,7 +338,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                 <ScrollView style={{ width: '100%' }}>
 
                                     {!userPayments || userPayments.client || (userPayments.payments) ?
-                                        <ManageUsers userToken={userToken} userIds={[scannedUserData.id]} placeId={placeId} setUserPayments={!userPayments ? setUserPayments : undefined} />
+                                        <ManageUsers userToken={userToken} item='place' itemId={placeId} />
                                         :
                                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 30 }}>This user is not a client of this Place.</Text>
                                     }
@@ -374,7 +374,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchPlace(); }}
             >
                 <View style={styles.clientManagerModalContainer}>
-                    <View style={[styles.clientManagerModalContent, {padding: 3}]}>
+                    <View style={[styles.clientManagerModalContent, { padding: 3 }]}>
                         <Text style={styles.clientManagerModalTitle}>Subscription Plans</Text>
                         <View style={{ width: '100%', minHeight: width, backgroundColor: '#FFF' }}>
                             <SubscriptionPlansModal

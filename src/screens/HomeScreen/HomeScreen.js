@@ -7,7 +7,6 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import UsersBall from '../../components/UsersBall/UsersBall.js';
 import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
-import { update } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -41,10 +40,33 @@ const PlaceList = ({ places, navigation }) =>
     </View>
   ))
 
+const EventList = ({ events, navigation }) =>
+  events.map((event) => (
+    <View key={event.id.toString()} style={styles.placeItem}>
+      <Text style={styles.placeTitle}>{event.title}</Text>
+      <Text style={styles.eventDate}>Date: {event.date}</Text>
+      <Text style={styles.eventDate}>Time: {event.time}</Text>
+      <Text style={styles.eventDate}>Location: {event.location}</Text>
+      <SportsItems
+        favoriteSports={event.sport_types}
+      />
+      <TouchableOpacity
+        style={styles.viewPlaceButton}
+        onPress={() => {
+          navigation.navigate('Event', { eventId: event.id });
+        }}
+      >
+        <Text style={styles.buttonText}>View Event</Text>
+      </TouchableOpacity>
+    </View>
+  ));
+
+
 const HomeScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
   const [data, setData] = useState(null);
   const [places, setPlaces] = useState([]);
+  const [events, setEvents] = useState([]);
   const [joinedEvents, setJoinedEvents] = useState([]);
   const [joinedPlaces, setJoinedPlaces] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
@@ -205,6 +227,7 @@ const HomeScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (data) {
       setPlaces(data.places);
+      setEvents(data.events);
       setJoinedEvents(data.joined_events);
       setJoinedPlaces(data.joined_places);
     }
@@ -320,6 +343,14 @@ const HomeScreen = ({ route, navigation }) => {
               )
             })}
           </> : ''
+        }
+        {(events.length || places.length) ? <>
+          {events.length ? <>
+            <Text style={styles.subtitle}>My Events:</Text>
+            <EventList events={events.slice(0, 3)} navigation={navigation} />
+          </> : ''}
+        </> : ''
+
         }
 
         {closerUsers ?
