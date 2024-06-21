@@ -2326,6 +2326,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                         }
                                     }}
                                     patternMode='see'
+                                    single
                                     setConfirmedSubscription={setConfirmedSubscription}
                                 />
                             </>

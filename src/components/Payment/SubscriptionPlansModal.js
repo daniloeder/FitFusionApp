@@ -8,7 +8,7 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', table = false, confirmedSubscription }) => {
+const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscriptionTexts, patternMode = 'see', table = false, single = true, confirmedSubscription }) => {
 
     const [subscriptionPlansOptions, setSubscriptionPlansOptions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -138,7 +138,10 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
 
     const colors = ['#FF0000', '#FF7F00', '#FFFF00', '#B2FF59', '#00FF00'];
     const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NZD', 'NOK', 'BRL'];
-    const plans_periods = { 'dayly': 'Dayly', 'weekly': 'Weekly', 'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly' };
+    const plans_periods = {
+        //'dayly': 'Dayly', 'weekly': 'Weekly',
+        'monthly': 'Monthly', 'quarterly': 'Quarterly', 'semesterly': 'Semesterly', 'yearly': 'Yearly'
+    };
 
     const onClose = () => {
         setStatus('plans');
@@ -342,21 +345,21 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                     <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000', marginRight: 10 }}>{newPlan.currency} {newPlan.price}</Text>
                 </View>
 
-                <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Plan Period:</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {Object.keys(plans_periods).map((period, index) => {
-                        return (
-                            <TouchableOpacity key={index} style={{ backgroundColor: period === newPlan.period ? '#000' : '#FFF', padding: 5, borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginHorizontal: 5, marginTop: 3 }}
-                                onPress={() => setNewPlan({
-                                    ...newPlan,
-                                    period: period
-                                })}
-                            >
-                                <Text style={{ color: period === newPlan.period ? '#FFF' : '#000', fontSize: 10, fontWeight: 'bold' }}>{plans_periods[period]}</Text>
-                            </TouchableOpacity>
-                        )
-                    })}
-                </View>
+                {!single && <><Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Plan Period:</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {Object.keys(plans_periods).map((period, index) => {
+                            return (
+                                <TouchableOpacity key={index} style={{ backgroundColor: period === newPlan.period ? '#000' : '#FFF', padding: 5, borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginHorizontal: 5, marginTop: 3 }}
+                                    onPress={() => setNewPlan({
+                                        ...newPlan,
+                                        period: period
+                                    })}
+                                >
+                                    <Text style={{ color: period === newPlan.period ? '#FFF' : '#000', fontSize: 10, fontWeight: 'bold' }}>{plans_periods[period]}</Text>
+                                </TouchableOpacity>
+                            )
+                        })}
+                    </View></>}
 
                 <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#000' }}>Benefits:</Text>
                 <View>
