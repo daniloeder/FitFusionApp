@@ -158,7 +158,7 @@ const PlaceScreen = ({ route, navigation }) => {
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-            <PlaceSubscriptionPlansModal />
+            {!preview && <PlaceSubscriptionPlansModal />}
 
             <ScrollView style={styles.container}>
 
@@ -182,7 +182,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
                     <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
-                    <SportsItems favoriteSports={place.sport_types_keys} />
+                    <SportsItems favoriteSports={place.sport_types} />
                 </View>
 
                 {place.created_by != userId ?
@@ -324,7 +324,9 @@ const PlaceScreen = ({ route, navigation }) => {
                 }
                 {preview ?
                     <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
-                        navigation.navigate("Create Place")
+                        setPlace(null);
+                        setPreview(null);
+                        navigation.navigate("Create Place");
                     }}>
                         <Text style={styles.buttonText}>Back to edition</Text>
                     </TouchableOpacity> : ''

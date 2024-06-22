@@ -23,7 +23,6 @@ const PlaceScreen = ({ route, navigation }) => {
 
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
-    const [isClientRequestsModalVisible, setClientRequestsModalVisible] = useState(false);
     const [isClientManagerModalVisible, setClientManagerModalVisible] = useState(false);
     const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
     const [scannedUserModalVisible, setScannedUserModalVisible] = useState(false);
@@ -46,7 +45,7 @@ const PlaceScreen = ({ route, navigation }) => {
                 Alert.alert('Place error.');
                 return;
             }
-        }, [])
+        }, [placeId])
     );
     useFocusEffect(
         useCallback(() => {
@@ -56,13 +55,6 @@ const PlaceScreen = ({ route, navigation }) => {
             }
         }, [route.params.isParticipantRequestModalVisible])
     );
-
-    useEffect(() => {
-        if (isClientRequestsModalVisible) {
-            setClientRequestsModalVisible(true);
-            fetchClientRequests();
-        }
-    }, [isClientRequestsModalVisible]);
 
     useEffect(() => {
         if (place && place.client_status) {
@@ -233,62 +225,7 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('An error occurred:', error);
         }
     }
-    const ClientRequestsModal = () => {
-        return (
-            <Modal
-                transparent={true}
-                visible={isClientRequestsModalVisible}
-                onRequestClose={() => setClientRequestsModalVisible(false)}
-            >
-                <View style={styles.clientRequestsModalContainer}>
-                    <View style={styles.clientRequestsModalContent}>
-                        <Text style={styles.clientRequestsModalTitle}>Clients Requests</Text>
-                        <ScrollView>
-                            {clientRequests.map((request, index) => {
-                                return (
-                                    <View key={index} style={styles.clientRequestItem}>
-                                        <View style={[styles.userBall, { borderColor: request.user.gender === 'M' ? '#0033FF' : request.user.gender === 'F' ? '#FF3399' : '#DDD' }]}>
-                                            {request.user.profile_image ?
-                                                <Image style={styles.userBallImageProfile}
-                                                    source={{ uri: `data:image/jpeg;base64,${request.user.profile_image}` }}
-                                                    onError={(error) => console.error('Image Error:', error)}
-                                                />
-                                                :
-                                                <Icons name="Profile" size={width * 0.08} />
-                                            }
-                                        </View>
-                                        <View style={{ marginLeft: '5%' }}>
-                                            <Text style={styles.requestUsername}>{request.user.name}</Text>
-                                            <View style={styles.clientclientclientclientRequestButtons}>
-                                                <TouchableOpacity
-                                                    style={[styles.clientRequestButton, styles.approveButton]}
-                                                    onPress={() => handleRequest(true, request.user.id, index)}
-                                                >
-                                                    <Text style={styles.buttonText}>Approve</Text>
-                                                </TouchableOpacity>
-                                                <TouchableOpacity
-                                                    style={[styles.clientRequestButton, styles.denyButton]}
-                                                    onPress={() => handleRequest(false, request.user.id, index)}
-                                                >
-                                                    <Text style={styles.buttonText}>Deny</Text>
-                                                </TouchableOpacity>
-                                            </View>
-                                        </View>
-                                    </View>
-                                )
-                            })}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
-                            onPress={() => setClientRequestsModalVisible(false)}
-                        >
-                            <Text style={styles.buttonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal>
-        );
-    };
+
     const ClientManagerModal = () => {
         return (
             <Modal
@@ -491,16 +428,6 @@ const PlaceScreen = ({ route, navigation }) => {
                         : ''
                     }
                 </View>
-                {place.created_by == userId && (clientStatus === 'requested' || clientStatus === 'owner') ?
-                    <Pressable
-                        onPress={() => setClientRequestsModalVisible(true)}
-                        style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
-                    >
-                        <Icons name="ParticipantRequest" size={width * 0.08} />
-                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Clients Requests</Text>
-                    </Pressable>
-                    : ''
-                }
 
                 <Pressable
                     onPress={() => setSubscriptionPlansModalVisible(true)}
@@ -519,7 +446,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                     name: place.name,
                                     description: place.description,
                                     location: place.location,
-                                    sportType: place.sport_types_keys,
+                                    sportType: place.sport_types,
                                     coordinates: { "latitude": latitude, "longitude": longitude },
                                 }
                             })
@@ -543,7 +470,6 @@ const PlaceScreen = ({ route, navigation }) => {
                 }
                 <ScannedUserModal />
                 <ClientManagerModal />
-                <ClientRequestsModal />
                 <ManagerSubscriptionPlansModal />
 
                 <Text style={styles.title}>{place.name}</Text>
@@ -556,7 +482,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 <View style={[styles.infoBlock, { marginTop: width * 0.05 }]}>
                     <Icons name="Sport" size={width * 0.055} style={[styles.infoIcons, { marginBottom: 'auto', paddingTop: width * 0.08 }]} />
-                    <SportsItems favoriteSports={place.sport_types_keys} />
+                    <SportsItems favoriteSports={place.sport_types} />
                 </View>
 
                 <View style={[styles.infoBlock, setOpenCloseTime ? { width: width * 0.96, marginLeft: -width * 0.06 } : {}]}>

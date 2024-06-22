@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
+import { OSMPlacesAutocomplete, GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
 import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import CustomSelect from '../../components/CustomSelect/CustomSelect.js';
@@ -51,11 +52,11 @@ function validateOpenTimes(data) {
 const CreatePlaceScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
     const { preview } = route.params;
-    const [name, setName] = useState(preview && preview.name || '');
-    const [description, setDescription] = useState(preview && preview.description || '');
-    const [location, setLocation] = useState(preview && preview.location || '');
-    const [sportsType, setSportsType] = useState(preview && preview.sportType || []);
-    const [coordinates, setCoordinates] = useState(preview && preview.coordinates || '');
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [location, setLocation] = useState('');
+    const [sportsType, setSportsType] = useState([]);
+    const [coordinates, setCoordinates] = useState('');
 
     const [selectedImages, setSelectedImages] = useState([]);
     const [selectedVideo, setSelectedVideo] = useState([]);
@@ -73,6 +74,18 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         place_images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
+
+    useFocusEffect(
+        useCallback(() => {
+            if (preview) {
+                setName(preview.name);
+                setDescription(preview.description);
+                setLocation(preview.location);
+                setSportsType(preview.sportType);
+                setCoordinates(preview.coordinates);
+            }
+        }, [route.params.preview])
+    );
 
     function convertOpenTimes(dates) {
         return {
@@ -149,7 +162,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
             if (response.ok) {
                 const responseData = await response.json();
-                navigation.navigate(preview ? 'Manage Place' : 'Place', { placeId: responseData.id });
+                //console.log('Place created:', responseData);
+                navigation.navigate('Place', { placeId: responseData.id });
             } else {
                 const errorData = await response.json();
                 Alert.alert('Error', `Creation failed: ${errorData.detail}`);
@@ -179,7 +193,11 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                 <CustomSelect options={[{ id: 1, name: "Private" }, { id: 2, name: "Public" }]} selectedOption={privated} setSelectedOption={setPrivated} />
 
                 <Text style={styles.inputTitles}>Location</Text>
-                <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
+
+                <OSMPlacesAutocomplete setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
+
+                {//<GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
+                }
                 {coordinates ? <ShowOnMap coordinates={coordinates} /> : null}
 
                 {!preview ?
