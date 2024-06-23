@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
@@ -30,24 +30,17 @@ const PlaceScreen = ({ route, navigation }) => {
         useCallback(() => {
             setUserImages([]);
             setClients([]);
-            setPlace(null);
-            if (preview) {
-                setPlace(preview);
+            if (route.params.placePreview) {
+                setPreview(route.params.placePreview);
+                setPlace(route.params.placePreview);
             } else if (placeId) {
                 fetchPlace();
             } else {
+                setPlace(null);
                 Alert.alert('Place error.');
             }
-        }, [placeId, preview])
+        }, [placeId, route.params.placePreview])
     );
-
-    useEffect(() => {
-        setPlace(preview);
-    }, [preview]);
-
-    useEffect(() => {
-        setPreview(route.params.placePreview);
-    }, [route.params.eventPreview]);
 
     const fetchUserProfileImages = async (clients) => {
         if (clients.length) {

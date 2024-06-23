@@ -9,6 +9,7 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -27,11 +28,16 @@ const EventScreen = ({ route, navigation }) => {
 
   useFocusEffect(
     useCallback(() => {
-      setEvent(null);
       setJoined(false);
       setParticipants([]);
-      if (eventId) {
+      if (route.params.eventPreview) {
+        setPreview(route.params.eventPreview);
+        setEvent(route.params.eventPreview);
+      } else if (eventId) {
         fetchEvent();
+      } else {
+        setEvent(null);
+        Alert.alert('Event error.');
       }
     }, [eventId])
   );
@@ -186,7 +192,7 @@ const EventScreen = ({ route, navigation }) => {
         </Modal>
         : ''
       }
-      <ManagerSubscriptionPlansModal />
+      {!preview && <ManagerSubscriptionPlansModal />}
 
       <ScrollView style={styles.container}
         showsVerticalScrollIndicator={false}
@@ -255,10 +261,12 @@ const EventScreen = ({ route, navigation }) => {
           :
           <>
             <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
-              if (event.subscription_plans.length > 0) {
-                setSubscriptionPlansModalVisible(true);
-              } else {
-                onJoinLeaveEvent();
+              if (!preview) {
+                if (event.subscription_plans.length > 0) {
+                  setSubscriptionPlansModalVisible(true);
+                } else {
+                  onJoinLeaveEvent();
+                }
               }
             }}>
               <Text style={styles.buttonText}>Join Event</Text>
@@ -366,6 +374,8 @@ const EventScreen = ({ route, navigation }) => {
 
         {preview ?
           <TouchableOpacity style={[styles.button, { backgroundColor: 'red', marginTop: width * 0.1, paddingVertical: width * 0.05 }]} onPress={() => {
+            setEvent(null);
+            setPreview(null);
             navigation.navigate("Create Event")
           }}>
             <Text style={styles.buttonText}>Back to edition</Text>

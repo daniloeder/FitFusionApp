@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Dimensions, LogBox, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
+import { OSMPlacesAutocomplete, GoogleAutocompletePicker, ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import CustomPicker from '../../components/CustomPicker/CustomPicker.js';
 import CustomSelect from '../../components/CustomSelect/CustomSelect.js';
 import UploadPicker from '../../components/UploadPicker/UploadPicker';
@@ -15,6 +16,8 @@ LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 
 const CreateEventScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
+    const { preview } = route.params;
+    console.log('create even screen', preview)
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
@@ -40,6 +43,18 @@ const CreateEventScreen = ({ route, navigation }) => {
         images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
+    
+    useFocusEffect(
+        useCallback(() => {
+            if (preview) {
+                setTitle(preview.title);
+                setDescription(preview.description);
+                setLocation(preview.location);
+                setFavoriteSports(preview.sport_types);
+                setCoordinates(preview.coordinates);
+            }
+        }, [route.params.preview])
+    );
 
     const fetchPlaces = async () => {
         try {
@@ -104,7 +119,9 @@ const CreateEventScreen = ({ route, navigation }) => {
         favoriteSports.map(sport => sport.id || sport).forEach(sportId => {
             logAndAppend(eventFormData, 'sport_types', String(sportId));
         });
-        logAndAppend(eventFormData, 'place', eventPlace[0].id);
+        if (eventPlace) {
+            logAndAppend(eventFormData, 'place', eventPlace.id);
+        }
 
         const coordinatesString = JSON.stringify({
             type: "Point",
@@ -133,8 +150,8 @@ const CreateEventScreen = ({ route, navigation }) => {
         }
 
         try {
-            const eventResponse = await fetch(BASE_URL + '/api/events/', {
-                method: 'POST',
+            const eventResponse = await fetch(BASE_URL + `/api/events/${preview ? preview.eventId + '/' : ''}`, {
+                method: preview ? 'PATCH' : 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,
                     'Content-Type': 'multipart/form-data'
@@ -143,6 +160,17 @@ const CreateEventScreen = ({ route, navigation }) => {
             });
 
             if (eventResponse.ok) {
+                setTitle('');
+                setDescription('');
+                setLocation('');
+                setDate('');
+                setTime('');
+                setFavoriteSports([]);
+                setCoordinates('');
+                setSelectedImages([]);
+                setSelectedVideo([]);
+                setPlaces([]);
+                setEventPlace([]);
                 const eventData = await eventResponse.json();
                 navigation.navigate('Event', { eventId: eventData.id })
             } else {
@@ -188,47 +216,56 @@ const CreateEventScreen = ({ route, navigation }) => {
                 />
 
                 <Text style={styles.inputTitles}>Date and Time of Event</Text>
-                <DatePicker date={date} setDate={setDate} setTime={setTime} dateType="YYYY/MM/DD" customStyle={styles.dataPikerContainer} />
+                <DatePicker date={date} setDate={setDate} setTime={setTime} mode="datetime" dateType="YYYY/MM/DD" customStyle={styles.dataPikerContainer} />
 
                 <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
                 <Text style={styles.inputTitles}>Event Place (Optional)</Text>
-                <CustomSelect options={places} selectedOption={eventPlace || []} setSelectedOption={setEventPlace} />
+                <CustomSelect options={places} selectedOption={eventPlace || null} setSelectedOption={setEventPlace} />
 
                 <Text style={styles.inputTitles}>Location</Text>
-                <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
+                <OSMPlacesAutocomplete setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
+                {//<GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} />
+                }
                 {coordinates ? <ShowOnMap coordinates={coordinates} /> : ''}
 
-                <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
-                <View style={{ flexDirection: 'row' }}>
+                {!preview ? <>
+                    <Text style={styles.inputTitles}>Upload Images (Up to 5)</Text>
+                    <View style={{ flexDirection: 'row' }}>
+                        <UploadPicker
+                            selectedImages={selectedImages}
+                            setSelectedImages={setSelectedImages}
+                            max={5}
+                        />
+                    </View>
+
+                    <View style={styles.selectedImagesContainer}>
+                        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+                        </ScrollView>
+                    </View>
+
+                    <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
                     <UploadPicker
-                        selectedImages={selectedImages}
-                        setSelectedImages={setSelectedImages}
-                        max={5}
+                        selectedImages={selectedVideo}
+                        setSelectedImages={setSelectedVideo}
+                        type="video"
+                        max={1}
                     />
-                </View>
 
-                <View style={styles.selectedImagesContainer}>
-                    <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-                    </ScrollView>
-                </View>
+                    <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { checkFieldsAndAlert() ? navigation.navigate('Event', { eventPreview: eventPreview }) : {} }}>
+                        <Text style={styles.buttonText}>Preview Event</Text>
+                    </TouchableOpacity>
 
-                <Text style={styles.inputTitles}>Upload Video (Only 1)</Text>
-                <UploadPicker
-                    selectedImages={selectedVideo}
-                    setSelectedImages={setSelectedVideo}
-                    type="video"
-                    max={1}
-                />
-
-                <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { checkFieldsAndAlert() ? navigation.navigate('Event', { eventPreview: eventPreview }) : {} }}>
-                    <Text style={styles.buttonText}>Preview Event</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { checkFieldsAndAlert() ? createEvent() : {} }}>
-                    <Text style={styles.buttonText}>Create Event</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { checkFieldsAndAlert() ? createEvent() : {} }}>
+                        <Text style={styles.buttonText}>Create Event</Text>
+                    </TouchableOpacity>
+                </>
+                    :
+                    <TouchableOpacity style={[styles.button, { backgroundColor: 'green', marginBottom: width * 0.5 }]} onPress={() => { checkFieldsAndAlert() ? createEvent() : {} }}>
+                        <Text style={styles.buttonText}>Update Event</Text>
+                    </TouchableOpacity>
+                }
             </ScrollView>
 
         </View>

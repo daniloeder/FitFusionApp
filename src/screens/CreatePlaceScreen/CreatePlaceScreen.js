@@ -49,6 +49,8 @@ function validateOpenTimes(data) {
     return true;
 }
 
+PATTERN_DATES = [{ "close_time": "18:00", "date": "Sunday", "open": false, "open_time": "07:00" }, { "close_time": "18:00", "date": "Monday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Tuesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Wednesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Thursday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Friday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Saturday", "open": true, "open_time": "07:00" }]
+
 const CreatePlaceScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
     const { preview } = route.params;
@@ -62,14 +64,14 @@ const CreatePlaceScreen = ({ route, navigation }) => {
     const [selectedVideo, setSelectedVideo] = useState([]);
     const [setOpenCloseTime, setSetOpenCloseTime] = useState(false);
 
-    const [dates, setDates] = useState([{ "close_time": "18:00", "date": "Sunday", "open": false, "open_time": "07:00" }, { "close_time": "18:00", "date": "Monday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Tuesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Wednesday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Thursday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Friday", "open": true, "open_time": "07:00" }, { "close_time": "18:00", "date": "Saturday", "open": true, "open_time": "07:00" }]);
+    const [dates, setDates] = useState(PATTERN_DATES);
 
     const placePreview = {
         name: name,
         description: description,
         location: location,
         coordinates: coordinates,
-        sport_types_keys: sportsType.map(sport => sport.id || sport),
+        sport_types: sportsType.map(sport => sport.id || sport),
         open_times: convertOpenTimes(dates),
         place_images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
@@ -161,8 +163,16 @@ const CreatePlaceScreen = ({ route, navigation }) => {
             });
 
             if (response.ok) {
+                setName('');
+                setDescription('');
+                setLocation('');
+                setSportsType([]);
+                setCoordinates('');
+                setSelectedImages([]);
+                setSelectedVideo([]);
+                setSetOpenCloseTime(false);
+                setDates(PATTERN_DATES);
                 const responseData = await response.json();
-                //console.log('Place created:', responseData);
                 navigation.navigate('Place', { placeId: responseData.id });
             } else {
                 const errorData = await response.json();
@@ -175,6 +185,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
     };
     const [privated, setPrivated] = useState([{ id: 1, name: "Private" }]);
 
+    console.log(name)
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
@@ -229,7 +240,9 @@ const CreatePlaceScreen = ({ route, navigation }) => {
                             </TouchableOpacity>
                         }
 
-                        <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => { navigation.navigate('Place', { placePreview: placePreview }) }}>
+                        <TouchableOpacity style={[styles.button, { backgroundColor: '#777' }]} onPress={() => {
+                            navigation.navigate('Place', { placePreview: placePreview })
+                        }}>
                             <Text style={styles.buttonText}>Preview Place</Text>
                         </TouchableOpacity>
 

@@ -12,7 +12,12 @@ const DatePicker = ({ date, setDate, setTime, mode = "datetime", dateType = "DD/
 
     const handleConfirm = (selectedDate) => {
         if (mode === "datetime") {
-            setTime(moment(selectedDate).format("YYYY-MM-DD HH:mm:ss"));
+            if (setDate && setTime) {
+                setDate(moment(selectedDate).format("YYYY-MM-DD"));
+                setTime(moment(selectedDate).format("HH:mm"));
+            } else {
+                setTime(moment(selectedDate).format("YYYY-MM-DD HH:mm:ss"));
+            }
         } else if (mode === "date") {
             setDate(moment(selectedDate).format("YYYY-MM-DD"));
         } else if (mode === "time") {

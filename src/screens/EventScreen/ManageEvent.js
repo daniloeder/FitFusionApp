@@ -15,7 +15,7 @@ import { BASE_URL } from '@env';
 const width = Dimensions.get('window').width;
 
 const EventScreen = ({ route, navigation }) => {
-  const { userId, userToken } = route.params;
+  const { eventId, userId, userToken } = route.params;
   const [event, setEvent] = useState(null);
   const [participants, setParticipants] = useState([]);
   const [participantsModalVisible, setParticipantsModalVisible] = useState(false);
@@ -30,8 +30,6 @@ const EventScreen = ({ route, navigation }) => {
   const [editImages, setEditImages] = useState(false);
 
   const [preview, setPreview] = useState(route.params.eventPreview);
-
-  const eventId = route.params.eventId;
 
   const [userPayments, setUserPayments] = useState(false);
   const [scannedUserData, setScannedUserData] = useState(null);
@@ -358,13 +356,13 @@ const EventScreen = ({ route, navigation }) => {
         {event.creator == userId ?
           <Pressable
             onPress={() => {
-              navigation.navigate('Create Place', {
+              navigation.navigate('Create Event', {
                 preview: {
-                  placeId: placeId,
-                  name: place.name,
-                  description: place.description,
-                  location: place.location,
-                  sportType: place.sport_types_keys,
+                  eventId: eventId,
+                  title: event.title,
+                  description: event.description,
+                  location: event.location,
+                  sport_types: event.sport_types,
                   coordinates: { "latitude": latitude, "longitude": longitude },
                 }
               })
