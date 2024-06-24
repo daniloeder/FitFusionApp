@@ -185,7 +185,6 @@ const CreatePlaceScreen = ({ route, navigation }) => {
     };
     const [privated, setPrivated] = useState([{ id: 1, name: "Private" }]);
 
-    console.log(name)
     return (
         <View style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />

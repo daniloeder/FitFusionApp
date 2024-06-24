@@ -17,7 +17,6 @@ LogBox.ignoreLogs(['VirtualizedLists should never be nested']);
 const CreateEventScreen = ({ route, navigation }) => {
     const { userToken } = route.params;
     const { preview } = route.params;
-    console.log('create even screen', preview)
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [location, setLocation] = useState('');
