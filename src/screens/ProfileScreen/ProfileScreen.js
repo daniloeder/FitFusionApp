@@ -11,18 +11,19 @@ import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import CustomPicker from '../../components/CustomPicker/CustomPicker';
+import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import * as DocumentPicker from 'expo-document-picker';
 import QRGenerator from '../../components/QRScanner/QRGenerator';
 import PaymentCard from '../../components/Management/PaimentCard.js';
-import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
 
-  const { userToken } = useGlobalContext();
+  const { userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +47,7 @@ const ProfileScreen = ({ route }) => {
   const [editImages, setEditImages] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
 
-  const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
+  const [updatePlanModal, setUpdatePlanModal] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -85,11 +86,18 @@ const ProfileScreen = ({ route }) => {
     }, [userToken])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      if (route.params.upgrade) {
+        setUpdatePlanModal(true);
+        navigation.setParams({ upgrade: false });
+      }
+    }, [route.params.upgrade])
+  );
+
   useEffect(() => {
-    if (route.params.upgrade) {
-      setSubscriptionPlansModalVisible(true);
-    }
-  }, [route.params.upgrade]);
+    setUpdatePlanModal(false);
+  }, [userSubscriptionPlan]);
 
   useEffect(() => {
     if (selectedProfileImage.length) {
@@ -270,35 +278,29 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  const PlaceSubscriptionPlansModal = () => {
+  const ManagerSubscriptionPlansModal = () => {
     return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={subscriptionPlansModalVisible}
-        onRequestClose={() => { setSubscriptionPlansModalVisible(false); fetchProfile(); }}
-      >
-        <View>
-          <View style={{ width: '100%', height: '100%', padding: 10, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center' }}>
-            <View style={{ width: '100%', minHeight: width }}>
-              <SubscriptionPlansModal userToken={userToken}
+        <Modal
+            animationType="fade"
+            transparent={true}
+            visible={updatePlanModal}
+            onRequestClose={() => { setUpdatePlanModal(false); }}
+        >
+            <SubscriptionPlansModal userToken={userToken}
                 subscriptionTexts={{ button_text: "Update Plan" }}
                 object={{ mode: 'app' }}
-                patternMode='see'
-              setConfirmedSubscription={()=>fetchProfile()}
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
+                patternMode='subscription'
+                confirmedSubscription={setUserSubscriptionPlan}
+            />
+        </Modal>
     );
-  };
+};
 
   return (
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-      <PlaceSubscriptionPlansModal />
+      <ManagerSubscriptionPlansModal />
 
       {isLoading ? <ActivityIndicator size="large" color="#FFF" />
         :
@@ -546,7 +548,7 @@ const ProfileScreen = ({ route }) => {
                 <View style={{ marginTop: 15, width: '90%', marginLeft: '5%' }}>
                   <PaymentCard
                     subscriptionData={profile.subscription.user_subscription}
-                    setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
+                    setSubscriptionPlansModalVisible={setUpdatePlanModal}
                   />
                 </View>
               )}
@@ -568,6 +570,7 @@ const ProfileScreen = ({ route }) => {
               upload={updateExistingImages}
               setEditImages={setEditImages}
               cancel
+              userSubscriptionPlan={{...userSubscriptionPlan, setUpdatePlanModal: setUpdatePlanModal}}
             />
             :
             <>

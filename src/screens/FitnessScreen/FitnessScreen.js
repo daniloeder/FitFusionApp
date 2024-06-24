@@ -11,104 +11,9 @@ import SelectBox from '../../components/Tools/SelectBox';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import DatePicker from '../../components/Forms/DatePicker';
 import PaymentCard from '../../components/Management/PaimentCard.js';
+import { checkAvailableFeature } from '../../utils/helpers';
 
 const width = Dimensions.get('window').width;
-
-const checkAvailableFeature = (feature, data) => {
-    if (feature === 'create_new_plan' && (data.userSubscriptionPlan.current_data.settings[data.plan].max[0] && data.plansLength >= data.userSubscriptionPlan.current_data.settings[data.plan].max[1])) {
-        Alert.alert('You need to upgrate to create a new plan.', `Max of ${data.userSubscriptionPlan.current_data.settings[data.plan].max[1]} plans with "${data.userSubscriptionPlan.current_data.name}" plan.`,
-            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]
-        );
-        return false;
-    } else if (feature === 'access_other_days' && (Object.keys(data.daysItems[data.plan][data.dayName].items).length === 0 && Object.values(data.daysItems[data.plan]).filter(day => !day.rest).length >= data.userSubscriptionPlan.current_data.settings[data.plan].max_days)) {
-        Alert.alert('You need to upgrate to access others days.', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].max_days} Days on this plan with "${data.userSubscriptionPlan.current_data.name}".`,
-            [{
-                text: 'Cancel',
-                style: 'cancel'
-            },
-            {
-                text: 'Upgrade Plan',
-                onPress: () => data.setUpdatePlanModal(true)
-            }]
-        );
-        return false;
-    } else if (feature === 'use_ai_plan_creation' && (data.userSubscriptionPlan.current_data.settings[data.plan].use_ai === 0)) {
-        Alert.alert('You need to upgrate to continue to use AI.', 'Press Upgrade Plan to continue.',
-            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]
-        );
-        return false;
-    } else if (feature === 'save_plan' && (data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[2] < data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[1])) {
-        Alert.alert('You need to upgrate to Save more plans.', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[2]} Saves with "${data.userSubscriptionPlan.current_data.name}" plan.`,
-            [{
-                text: 'Cancel',
-                style: 'cancel'
-            },
-            {
-                text: 'Upgrade Plan',
-                onPress: () => data.setUpdatePlanModal(true)
-            }]
-        );
-        return false;
-    } else if (feature === 'saved_plan') {
-        const maxSaves = data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[2] - data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[1]
-        if (data.userSubscriptionPlan.current_data.settings[data.plan].max_saves[0] && maxSaves < 10) {
-            Alert.alert('Plan Saved', `You are able to Save more ${maxSaves} with ${data.userSubscriptionPlan.current_data.name} plan.`, [{ text: 'OK' }]);
-            data.setUserSubscriptionPlan(prevState => {
-                const updatedFeatures = { ...prevState.current_data.settings };
-                const maxSaves = [...updatedFeatures[data.plan].max_saves];
-                maxSaves[1] += 1;
-                updatedFeatures[data.plan] = {
-                    ...updatedFeatures[data.plan],
-                    max_saves: maxSaves,
-                };
-                return {
-                    ...prevState,
-                    update: true,
-                    current_data: {
-                        ...prevState.current_data,
-                        settings: updatedFeatures,
-                    }
-                };
-            });
-        }
-    } else if (feature === 'max_items_per_group' && (Object.keys(data.daysItems[data.plan][data.dayName].items[data.muscleGroup]).length >= data.userSubscriptionPlan.current_data.settings[data.plan].max_items_per_group)) {
-        Alert.alert('You need to upgrate to add more exercises.', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].max_items_per_group} exercises per Muscle Group with "${data.userSubscriptionPlan.current_data.name}" plan.`,
-            [{
-                text: 'Cancel',
-                style: 'cancel'
-            },
-            {
-                text: 'Upgrade Plan',
-                onPress: () => data.setUpdatePlanModal(true)
-            }]
-        );
-        return false;
-    } else if (feature === 'items_alternatives' && (!data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[0] || (data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[1] >= data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[2]))) {
-        Alert.alert('You need to upgrate to set new Alternatives.', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[2]} Alternatives changes with "${data.userSubscriptionPlan.current_data.name}" plan.`,
-            [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]);
-        return false;
-    } else if (feature === 'items_alternatives_updated') {
-        Alert.alert('Alternative Updated!', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[2] - data.userSubscriptionPlan.current_data.settings[data.plan].items_alternatives[1] - 1} Alternatives changes left with "${data.userSubscriptionPlan.current_data.name}" plan.`);
-    } else if (feature === 'max_groups_per_day' && (Object.keys(data.daysItems[data.plan][data.dayName].items).length >= data.userSubscriptionPlan.current_data.settings[data.plan].max_groups_per_day)) {
-        Alert.alert('You need to upgrate to add more Muscle Groups.', `Max ${data.userSubscriptionPlan.current_data.settings[data.plan].max_groups_per_day} Muscle Groups per Day with "${data.userSubscriptionPlan.current_data.name}" plan.`,
-            [{
-                text: 'Cancel',
-                style: 'cancel'
-            },
-            {
-                text: 'Upgrade Plan',
-                onPress: () => data.setUpdatePlanModal(true)
-            }]
-        );
-        return false;
-    } else if (feature === 'store_exercises_images' && (!data.userSubscriptionPlan.current_data.settings[data.plan].store_exercises_images)) {
-        if (!data.online) {
-            Alert.alert('You are offline and can\'t see or save images.', 'Please upgrade to Save images and see them offline.',
-                [{ text: 'Cancel', style: 'cancel' }]);
-        }
-    }
-    return true;
-}
 
 const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100, textColor = "#1C274C", selectedColor = "#FFF", unselectedColor = "#DDD" }) => {
     const styles = StyleSheet.create({
@@ -142,7 +47,7 @@ const Tabs = ({ index, name, setSelectedTab, isSelected, len, TabSize = 100, tex
     );
 };
 
-const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, showExerciseDetails, setShowExerciseDetails, setAlternativeExercise, getAlternativeExercise, removeExercise, plan, userSubscriptionPlan }) => {
+const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, showExerciseDetails, setShowExerciseDetails, setAlternativeExercise, getAlternativeExercise, removeExercise, plan, userSubscriptionPlan, mode }) => {
     const onClose = () => {
         setShowExerciseDetails(false);
         setAlternativeExercise(false);
@@ -182,7 +87,7 @@ const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, sh
             <View style={styles.details_container}>
                 <ScrollView style={styles.details_itemscroll}>
                     <Text style={styles.details_title}>{exercise.title}</Text>
-                    {image && checkAvailableFeature('store_exercises_images', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, online: online }) &&
+                    {image && checkAvailableFeature('store_exercises_images', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, online: online }, mode) &&
                         <Image
                             source={{ uri: image }}
                             style={styles.details_image}
@@ -650,7 +555,7 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
     )
 }
 
-const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercises, edit, addExercise, removeExercise, updateExerciseDone, updateExerciseSetsDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, adding, userSubscriptionPlan }) => {
+const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercises, edit, addExercise, removeExercise, updateExerciseDone, updateExerciseSetsDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, adding, userSubscriptionPlan, mode }) => {
     const [showBallon, setShowBallon] = useState(false);
     const [showSetsEditModal, setShowSetsEditModal] = useState(false);
     const [showExerciseDetails, setShowExerciseDetails] = useState(false);
@@ -673,6 +578,7 @@ const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercis
                         removeExercise={removeExercise}
                         plan={plan}
                         userSubscriptionPlan={userSubscriptionPlan}
+                        mode={mode}
                     />
                     :
                     <FoodDetails
@@ -754,7 +660,7 @@ const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercis
     )
 }
 
-const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, fetchManyFoods, userSubscriptionPlan }) => {
+const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, exercises, allExercises, addExercise, removeExercise, removeMuscleGroup, updateExerciseDone, updateExerciseSetsDone, unavailableExercises, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, fetchManyFoods, userSubscriptionPlan, mode }) => {
     const [edit, setEdit] = useState(false);
     const [add, setAdd] = useState(false);
 
@@ -784,6 +690,7 @@ const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, e
                     getAlternativeExercise={getAlternativeExercise}
                     fetchManyExercises={fetchManyExercises}
                     userSubscriptionPlan={userSubscriptionPlan}
+                    mode={mode}
                 />
 
             ) : ''}
@@ -822,6 +729,7 @@ const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, e
                 fetchManyExercises={fetchManyExercises}
                 fetchManyFoods={fetchManyFoods}
                 userSubscriptionPlan={userSubscriptionPlan}
+                mode={mode}
             />}
 
         </View>
@@ -846,7 +754,7 @@ const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMu
     )
 }
 
-const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises, fetchManyExercises, fetchManyFoods, userSubscriptionPlan }) => {
+const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExercises, addExercise, updateUnavailableExercises, fetchManyExercises, fetchManyFoods, userSubscriptionPlan, mode }) => {
     const [search, setSearch] = useState('');
     useEffect(() => {
         if (exercises.length < 20) {
@@ -888,6 +796,7 @@ const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExe
                                 updateUnavailableExercises={updateUnavailableExercises}
                                 adding
                                 userSubscriptionPlan={userSubscriptionPlan}
+                                mode={mode}
                             />
                         )
                     }) : ''}
@@ -897,7 +806,7 @@ const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExe
     )
 }
 
-const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength, room }) => {
+const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength, room, mode }) => {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(false);
     const [useAI, setUseAI] = useState(false);
@@ -1049,7 +958,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
     });
 
     function checkBeforeCreation() {
-        if (!checkAvailableFeature("create_new_plan", { userSubscriptionPlan: userSubscriptionPlan, plansLength: plansLength, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
+        if (!checkAvailableFeature("create_new_plan", { userSubscriptionPlan: userSubscriptionPlan, plansLength: plansLength, plan: plan, setUpdatePlanModal: setUpdatePlanModal }, mode)) return;
         if (!trainingName) {
             alert('Please enter a workout name')
             return false
@@ -1195,7 +1104,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     if (useAI) {
                                         if (plan === "workout") {
                                             if (checkBeforeCreation()) {
-                                                if (!checkAvailableFeature('use_ai_plan_creation', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
+                                                if (!checkAvailableFeature('use_ai_plan_creation', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal }, mode)) return;
                                                 setGenerating(true);
                                                 GenerateWeekWorkoutPlan({
                                                     "name": trainingName,
@@ -3373,9 +3282,9 @@ const FitnessScreen = ({ route, navigation }) => {
     }
 
     const updatePlans = async ({ name = selectedPlan.name, room = (managerData && managerData.room), send_to_user = false }) => {
-        if (!checkAvailableFeature('save_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
+        if (!checkAvailableFeature('save_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal }, managerData ? 'personal_trainer' : 'user')) return;
         setAddNewMuscleGroup(false);
-        checkAvailableFeature('saved_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUserSubscriptionPlan: setUserSubscriptionPlan, })
+        checkAvailableFeature('saved_plan', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUserSubscriptionPlan: setUserSubscriptionPlan }, managerData ? 'personal_trainer' : 'user')
         try {
             const response = await fetch(BASE_URL + `/api/exercises/plan/${planId}/`, {
                 method: 'PUT',
@@ -3682,7 +3591,7 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
-        if (!checkAvailableFeature('max_items_per_group', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName, muscleGroup: muscleGroup })) return;
+        if (!checkAvailableFeature('max_items_per_group', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName, muscleGroup: muscleGroup }, managerData ? 'personal_trainer' : 'user')) return;
 
         setEdit(true);
 
@@ -3719,8 +3628,8 @@ const FitnessScreen = ({ route, navigation }) => {
         setEdit(true);
 
         if (replace) {
-            if (!checkAvailableFeature('items_alternatives', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal })) return;
-            checkAvailableFeature('items_alternatives_updated', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, daysItems: daysItems, dayName: dayName });
+            if (!checkAvailableFeature('items_alternatives', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal }, managerData ? 'personal_trainer' : 'user')) return;
+            checkAvailableFeature('items_alternatives_updated', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, daysItems: daysItems, dayName: dayName }, managerData ? 'personal_trainer' : 'user');
             setUserSubscriptionPlan(prevUserSubscriptionPlan => ({
                 ...prevUserSubscriptionPlan,
                 update: true,
@@ -3777,7 +3686,7 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addMuscleGroup = (dayName, muscleGroup) => {
-        if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName })) return;
+        if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName }, managerData ? 'personal_trainer' : 'user')) return;
 
         if (Object.keys(daysItems[plan][dayName].items).length === 0) {
             if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
@@ -3842,6 +3751,23 @@ const FitnessScreen = ({ route, navigation }) => {
             setStatus("error");
         }
     };
+    const ManagerSubscriptionPlansModal = () => {
+        return (
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={true}
+                onRequestClose={() => { setUpdatePlanModal(false); }}
+            >
+                <SubscriptionPlansModal userToken={userToken}
+                    subscriptionTexts={{ button_text: "Update Plan" }}
+                    object={{ mode: 'app' }}
+                    patternMode='subscription'
+                    confirmedSubscription={setConfirmedSubscription}
+                />
+            </Modal>
+        );
+    };
 
     useEffect(() => {
         if (!managerData) {
@@ -3854,9 +3780,11 @@ const FitnessScreen = ({ route, navigation }) => {
     }, [route]);
 
     useEffect(() => {
+        setUpdatePlanModal(false);
         if (confirmedSubscription && confirmedSubscription.current_data && confirmedSubscription.current_data.settings) {
             setUserSubscriptionPlan(confirmedSubscription);
         }
+        fetchPlans();
     }, [confirmedSubscription]);
 
     useEffect(() => {
@@ -3958,7 +3886,7 @@ const FitnessScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor={managerData ? "#333300" : "#991B1B"} thirdColor="#1A202C" />
 
-            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} />
+            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} mode={managerData ? 'personal_trainer' : 'user'} />
             {selectedPlan && <>
                 <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
                 <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
@@ -4043,7 +3971,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                     index={index}
                                     name={dayName}
                                     setSelectedTab={() => {
-                                        if (!checkAvailableFeature('access_other_days', { userSubscriptionPlan: userSubscriptionPlan, daysItems: daysItems, plan: plan, dayName: dayName, setUpdatePlanModal: setUpdatePlanModal })) return;
+                                        if (!checkAvailableFeature('access_other_days', { userSubscriptionPlan: userSubscriptionPlan, daysItems: daysItems, plan: plan, dayName: dayName, setUpdatePlanModal: setUpdatePlanModal }, managerData ? 'personal_trainer' : 'user')) return;
                                         if (plan === 'workout') {
                                             setSelectedDay({ name: dayName.slice(0, 3), items: { ...dayDetails } })
                                         } else {
@@ -4089,6 +4017,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                                     userSubscriptionPlan={userSubscriptionPlan}
                                                     fetchManyExercises={fetchManyExercises}
                                                     fetchManyFoods={fetchManyFoods}
+                                                    mode={managerData ? 'personal_trainer' : 'user'}
                                                 />
                                             }
                                             ) : <View><Text style={{ fontSize: 20, color: '#aaa', fontWeight: 'bold', textAlign: 'center', padding: 10 }}>No workout for this day</Text></View>}
@@ -4169,11 +4098,11 @@ const FitnessScreen = ({ route, navigation }) => {
                             </TouchableOpacity>
                         </>
                     ) :
-                        <SubscriptionPlansModal userToken={userToken}
+                        updatePlanModal ? <ManagerSubscriptionPlansModal /> : <SubscriptionPlansModal userToken={userToken}
                             subscriptionTexts={{ button_text: "Update Plan" }}
                             object={{ mode: 'app' }}
                             patternMode='none'
-                            setConfirmedSubscription={setConfirmedSubscription}
+                            confirmedSubscription={setConfirmedSubscription}
                         />
                     }
 

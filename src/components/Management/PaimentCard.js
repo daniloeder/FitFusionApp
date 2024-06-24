@@ -23,7 +23,7 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
                 <Text style={styles.paymentInfoText}>Subscription Plan: {subscriptionData.plan_name}</Text>
                 <Text style={styles.paymentInfoText}>Payment Amount: ${subscriptionData.amount} {subscriptionData.currency}</Text>
                 <Text style={styles.paymentInfoText}>Payment Status: {STATUS_CHOICES[subscriptionData.status]}</Text>
-                {subscriptionData.recurring && subscriptionData.amount > 0 && <Text style={[styles.paymentInfoText, {color: subscriptionData.days_payment_deadline < 4 ? '#ff8888' : '#000'}]}>Days until next payment: {subscriptionData.days_payment_deadline}</Text>}
+                {subscriptionData.recurring && subscriptionData.amount > 0 && <Text style={[styles.paymentInfoText, { color: subscriptionData.days_payment_deadline < 4 ? '#ff8888' : '#000' }]}>Days until next payment: {subscriptionData.days_payment_deadline}</Text>}
                 <TouchableOpacity
                     onPress={() => setPaymentModalVisible(true)}
                     style={styles.detailsButton}
@@ -52,12 +52,12 @@ const PaymentCard = ({ subscriptionData, setSubscriptionPlansModalVisible, start
                         <Text style={styles.paymentsModalText}>Payment Due Date: {subscriptionData.due_date}</Text>
                     </ScrollView>
 
-                    {setSubscriptionPlansModalVisible && (subscriptionData.status !== 'active' || subscriptionData.days_payment_deadline < 4) && (
+                    {setSubscriptionPlansModalVisible && (subscriptionData.status !== 'active' || subscriptionData.days_payment_deadline < 4 || parseFloat(subscriptionData.amount) === 0) && (
                         <TouchableOpacity onPress={() => {
                             setPaymentModalVisible(false);
                             setSubscriptionPlansModalVisible(true);
                         }} style={styles.payNowButton}>
-                            <Text style={styles.buttonText}>Renew Subscription</Text>
+                            <Text style={styles.buttonText}>Update Subscription</Text>
                         </TouchableOpacity>
                     )}
 
