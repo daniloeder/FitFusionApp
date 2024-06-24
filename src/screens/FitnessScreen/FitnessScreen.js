@@ -2149,6 +2149,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                             obj_id: selectedEvaluation && selectedEvaluation.id,
                                             plans_in: selectedEvaluation && selectedEvaluation.subscription_plans,
                                         }}
+                                        single
                                         patternMode='manager'
                                         setConfirmedSubscription={setNewUserRequest}
                                     />

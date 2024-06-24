@@ -227,6 +227,7 @@ const EventScreen = ({ route, navigation }) => {
                     event_id: event.id,
                   }
                 }}
+                single
                 patternMode='manager'
               />
             </View>
