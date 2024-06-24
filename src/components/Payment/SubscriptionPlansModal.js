@@ -294,7 +294,6 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
 
     const EditPlan = ({ plan }) => {
         const [newPlan, setNewPlan] = useState(plan);
-        console.log('newPlan', newPlan)
 
         const [editOptions, setEditOptions] = useState(undefined);
 
@@ -507,7 +506,6 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
 
     if (table && subscriptionPlansOptions) return <PricePlanTable options={subscriptionPlansOptions} />;
 
-    console.log('subscriptionPlan', subscriptionPlan)
     const PlansBody = () =>
         <View style={styles.section}>
             <Text style={styles.title}>{mode !== 'subscription' ? "Plans" : "Upgrade Plans"}</Text>
