@@ -18,7 +18,7 @@ const CustomSelect = ({ options, selectedOption, setSelectedOption }) => {
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
-                animationType="slide"
+                animationType="fade"
             >
                 <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
                     <View style={styles.modalContent}>

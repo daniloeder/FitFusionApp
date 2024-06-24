@@ -242,7 +242,9 @@ const EventScreen = ({ route, navigation }) => {
 
         {joined ?
           <>
-            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeaveEvent}>
+            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={()=>{
+              Alert.alert("Are you sure you want to leave this event?", "", [{ text: "Cancel", style: "cancel" }, { text: "Leave", onPress: onJoinLeaveEvent }]);
+            }}>
               <Text style={styles.buttonText}>Leave Event</Text>
             </TouchableOpacity>
             <View>
@@ -261,11 +263,15 @@ const EventScreen = ({ route, navigation }) => {
           :
           <>
             <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
-              if (!preview) {
-                if (event.subscription_plans.length > 0) {
-                  setSubscriptionPlansModalVisible(true);
+              if (!preview && event.creator !== userId) {
+                if (event.is_private) {
+                  if (event.subscription_plans.length === 0) {
+                    Alert.alert('The owner still not published any subscription plan. Try again later.');
+                  } else {
+                    setSubscriptionPlansModalVisible(true);
+                  }
                 } else {
-                  onJoinLeaveEvent();
+                  Alert.alert("Are you sure you want to join this event?", "", [{ text: "Cancel", style: "cancel" }, { text: "Join", onPress: onJoinLeaveEvent }]);
                 }
               }
             }}>
@@ -303,9 +309,9 @@ const EventScreen = ({ route, navigation }) => {
           {event.participants_amount > 10 ? (<Text style={styles.moreText}>+{event.participants_amount - 10}</Text>) : ''}
           {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
           {participants.length > 0 ?
-            <View style={styles.seeMoreButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </View> :
+            //<View style={styles.seeMoreButton}><Text style={styles.seeAllText}>See All</Text></View>
+            ''
+            :
             !preview ? <Text style={styles.moreText}>There is still no participants.</Text> : ''
           }
         </Pressable>

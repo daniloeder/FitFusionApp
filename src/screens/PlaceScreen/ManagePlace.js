@@ -202,29 +202,6 @@ const PlaceScreen = ({ route, navigation }) => {
             console.error('An error occurred:', error);
         }
     };
-    async function handleRequest(approve, userRequestId, index) {
-        const apiUrl = BASE_URL + `/api/places/${placeId}/approve-request/${userRequestId}/?approve=${approve ? 'approve' : 'deny'}`;
-        const requestOptions = {
-            method: 'POST',
-            headers: {
-                'Authorization': `Token ${userToken}`,
-                'Content-Type': 'application/json',
-            },
-        };
-
-        try {
-            const response = await fetch(apiUrl, requestOptions);
-            const data = await response.json();
-
-            if (response.ok) {
-                setClientRequests(prevRequests => prevRequests.slice(0, index).concat(prevRequests.slice(index + 1)));
-            } else {
-                console.error('Request failed:', data);
-            }
-        } catch (error) {
-            console.error('An error occurred:', error);
-        }
-    }
 
     const ClientManagerModal = () => {
         return (
@@ -447,6 +424,7 @@ const PlaceScreen = ({ route, navigation }) => {
                                     description: place.description,
                                     location: place.location,
                                     sportType: place.sport_types,
+                                    is_private: place.is_private,
                                     coordinates: { "latitude": latitude, "longitude": longitude },
                                 }
                             })

@@ -115,7 +115,7 @@ const CreatePlaceScreen = ({ route, navigation }) => {
         logAndAppend(placeFormData, 'name', name);
         logAndAppend(placeFormData, 'description', description);
         if (privated.id === 1) {
-            logAndAppend(placeFormData, 'is_privated', true);
+            logAndAppend(placeFormData, 'is_private', true);
         }
         logAndAppend(placeFormData, 'location', location);
         sportsType.forEach(sport => {

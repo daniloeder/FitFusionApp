@@ -42,7 +42,7 @@ const CreateEventScreen = ({ route, navigation }) => {
         images: selectedImages.filter(item => item !== null).map(item => ({ photo: item.uri })),
         videos: selectedVideo.length ? selectedVideo[0].uri : null,
     }
-    
+
     useFocusEffect(
         useCallback(() => {
             if (preview) {
@@ -112,6 +112,9 @@ const CreateEventScreen = ({ route, navigation }) => {
         const eventFormData = new FormData();
         logAndAppend(eventFormData, 'title', title);
         logAndAppend(eventFormData, 'description', description);
+        if (privated.id === 1) {
+            logAndAppend(eventFormData, 'is_private', true);
+        }
         logAndAppend(eventFormData, 'location', location);
         logAndAppend(eventFormData, 'date', date);
         logAndAppend(eventFormData, 'time', time);
@@ -187,6 +190,7 @@ const CreateEventScreen = ({ route, navigation }) => {
             console.error('Event creation error:', error);
         }
     };
+    const [privated, setPrivated] = useState([{ id: 1, name: "Private (only for payers)" }]);
 
     useEffect(() => {
         fetchPlaces();
@@ -220,8 +224,13 @@ const CreateEventScreen = ({ route, navigation }) => {
                 <Text style={styles.inputTitles}>Sports Type (max 5)</Text>
                 <CustomPicker options={Object.values(SportsTypes('en'))} selectedOptions={SportsNames(numbers = favoriteSports.map(sport => sport.id || sport), index = true)} setSelectedOptions={setFavoriteSports} max={5} />
 
-                <Text style={styles.inputTitles}>Event Place (Optional)</Text>
-                <CustomSelect options={places} selectedOption={eventPlace || null} setSelectedOption={setEventPlace} />
+                <Text style={styles.inputTitles}>Is Private</Text>
+                <CustomSelect options={[{ id: 1, name: "Private (only for payers)" }, { id: 2, name: "Public (open to anyone)" }]} selectedOption={privated} setSelectedOption={setPrivated} />
+
+                {places && places.length > 0 && <>
+                    <Text style={styles.inputTitles}>Event Place (Optional)</Text>
+                    <CustomSelect options={places} selectedOption={eventPlace || null} setSelectedOption={setEventPlace} />
+                </>}
 
                 <Text style={styles.inputTitles}>Location</Text>
                 <OSMPlacesAutocomplete setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />

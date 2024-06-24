@@ -239,31 +239,31 @@ const EventScreen = ({ route, navigation }) => {
 
   const ClientManagerModal = () => {
     return (
-        <Modal
-            animationType="slide"
-            transparent={true}
-            visible={isClientManagerModalVisible}
-            onRequestClose={() => setClientManagerModalVisible(false)}
-        >
-            <View style={styles.clientManagerModalContainer}>
-                <View style={styles.clientManagerModalContent}>
-                    <Text style={styles.clientManagerModalTitle}>Clients Management</Text>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isClientManagerModalVisible}
+        onRequestClose={() => setClientManagerModalVisible(false)}
+      >
+        <View style={styles.clientManagerModalContainer}>
+          <View style={styles.clientManagerModalContent}>
+            <Text style={styles.clientManagerModalTitle}>Clients Management</Text>
 
-                    <ScrollView style={{ width: '100%' }}>
-                        <ManageUsers userToken={userToken} item='event' itemId={eventId} />
-                    </ScrollView>
+            <ScrollView style={{ width: '100%' }}>
+              <ManageUsers userToken={userToken} item='event' itemId={eventId} />
+            </ScrollView>
 
-                    <TouchableOpacity
-                        style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
-                        onPress={() => setClientManagerModalVisible(false)}
-                    >
-                        <Text style={styles.buttonText}>Close</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+            <TouchableOpacity
+              style={[styles.clientRequestButton, { backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }]}
+              onPress={() => setClientManagerModalVisible(false)}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     );
-};
+  };
 
   if (!event || !event.coordinates) return <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />;
   const [longitude, latitude] = preview ? [preview.coordinates.longitude, preview.coordinates.latitude] : event.coordinates.match(/-?\d+\.\d+/g).map(Number);
@@ -364,6 +364,7 @@ const EventScreen = ({ route, navigation }) => {
                   description: event.description,
                   location: event.location,
                   sport_types: event.sport_types,
+                  is_private: event.is_private,
                   coordinates: { "latitude": latitude, "longitude": longitude },
                 }
               })
@@ -430,9 +431,8 @@ const EventScreen = ({ route, navigation }) => {
           {event.participants_amount > 5 ? (<Text style={styles.moreText}>+{event.participants_amount - 5}</Text>) : ''}
           {preview ? (<Text style={styles.moreText}>+125</Text>) : ''}
           {participants.length > 0 ?
-            <View style={styles.seeMoreButton}>
-              <Text style={styles.seeAllText}>See All</Text>
-            </View> :
+            //<View style={styles.seeMoreButton}><Text style={styles.seeAllText}>See All</Text></View>
+            '' :
             <Text style={styles.moreText}>There is still no participants.</Text>
           }
         </Pressable>

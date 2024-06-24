@@ -131,8 +131,8 @@ const PlaceScreen = ({ route, navigation }) => {
                                     obj_id: place.id,
                                     plans_in: place.subscription_plans,
                                     extra: {
-                                      type: 'join_place',
-                                      place_id: place.id,
+                                        type: 'join_place',
+                                        place_id: place.id,
                                     }
                                 }}
                                 patternMode='see'
@@ -178,44 +178,49 @@ const PlaceScreen = ({ route, navigation }) => {
                     <SportsItems favoriteSports={place.sport_types} />
                 </View>
 
-                {place.created_by != userId ?
-                    joined ?
-                        <>
-                            <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={onJoinLeavePlace}>
-                                <Text style={styles.buttonText}>Leave Place</Text>
-                            </TouchableOpacity>
-                            <View>
-                                <Text style={[styles.joinText, { color: '#22AA00' }]}>
-                                    You joined this place.
-                                </Text>
-                            </View>
+                {joined ?
+                    <>
+                        <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={()=>{
+                            Alert.alert("Are you sure you want to leave this place?", "", [{ text: "Cancel", style: "cancel" }, { text: "Leave", onPress: onJoinLeavePlace }]);
+                        }}>
+                            <Text style={styles.buttonText}>Leave Place</Text>
+                        </TouchableOpacity>
+                        <View>
+                            <Text style={[styles.joinText, { color: '#22AA00' }]}>
+                                You joined this place.
+                            </Text>
+                        </View>
 
-                            {place.subscription && (
-                                <PaymentCard
-                                    subscriptionData={place.subscription}
-                                    setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
-                                />
-                            )}
-                        </>
-                        : !joined || preview ?
-                            <>
-                                <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
-                                    if (place.is_privated && place.subscription_plans.length > 0) {
-                                        setSubscriptionPlansModalVisible(true);
+                        {place.subscription && (
+                            <PaymentCard
+                                subscriptionData={place.subscription}
+                                setSubscriptionPlansModalVisible={setSubscriptionPlansModalVisible}
+                            />
+                        )}
+                    </>
+                    :
+                    <>
+                        <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
+                            if(place.created_by != userId){
+                                if (place.is_private) {
+                                    if (place.subscription_plans.length === 0) {
+                                      Alert.alert('The owner still not published any subscription plan. Try again later.');
                                     } else {
-                                        onJoinLeavePlace();
+                                      setSubscriptionPlansModalVisible(true);
                                     }
-                                }}>
-                                    <Text style={styles.buttonText}>Join Place</Text>
-                                </TouchableOpacity>
-                                <View>
-                                    <Text style={[styles.joinText, { color: '#AAA' }]}>
-                                        You are not at this place.{place.is_privated ? " (Privated)" : ""}
-                                    </Text>
-                                </View>
-                            </>
-                            : ''
-                    : ''
+                                } else {
+                                    Alert.alert("Are you sure you want to join this place?", "", [{ text: "Cancel", style: "cancel" }, { text: "Join", onPress: onJoinLeavePlace }]);
+                                }
+                            }
+                        }}>
+                            <Text style={styles.buttonText}>Join Place</Text>
+                        </TouchableOpacity>
+                        <View>
+                            <Text style={[styles.joinText, { color: '#AAA' }]}>
+                                You are not at this place.{place.is_privated ? " (Privated)" : ""}
+                            </Text>
+                        </View>
+                    </>
                 }
 
                 <Text style={styles.clientTitle}>Clients</Text>
