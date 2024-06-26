@@ -75,7 +75,7 @@ const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
   );
 };
 
-function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DELTA = 0.008, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
+function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELTA = 0.01, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
   const { userToken } = route.params;
   const navigation = useNavigation();
   const MAX_DISTANCE_METERS = 500;
@@ -97,69 +97,6 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
   const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
-  const updatePlaces = async () => {
-    try {
-      const placesResponse = await fetch(BASE_URL + `/api/places/nearby-places/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${userToken}`
-        }
-      });
-
-      if (!placesResponse.ok) {
-        throw new Error('Network response was not ok' + placesResponse.statusText);
-      }
-      const placesData = await placesResponse.json();
-      if (placesData.length === 0) {
-        return
-      }
-
-      // Update places by ensuring that each place has a unique key
-      setPlaces((prevPlaces) => {
-        const newPlaces = [...prevPlaces];
-        placesData.forEach((place) => {
-          if (!newPlaces.some((existingPlace) => existingPlace.id === place.id)) {
-            newPlaces.push(place);
-          }
-        });
-        return newPlaces;
-      });
-    } catch (error) {
-      console.error('There was a problem with fetching places: ', error);
-    }
-  };
-
-  const updateEvents = async () => {
-    try {
-      const eventsResponse = await fetch(BASE_URL + `/api/events/nearby-events/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Token ${userToken}`
-        }
-      });
-
-      if (!eventsResponse.ok) {
-        throw new Error('Network response was not ok' + eventsResponse.statusText);
-      }
-      const eventsData = await eventsResponse.json();
-      if (eventsData.length === 0) {
-        return
-      }
-
-      // Update events by ensuring that each event has a unique key
-      setEvents((prevEvents) => {
-        const newEvents = [...prevEvents];
-        eventsData.forEach((event) => {
-          if (!newEvents.some((existingEvent) => existingEvent.id === event.id)) {
-            newEvents.push(event);
-          }
-        });
-        return newEvents;
-      });
-    } catch (error) {
-      console.error('There was a problem with fetching events: ', error);
-    }
-  };
   const fetchUserProfileImages = async (userIds) => {
     const batchSize = 5;
 
@@ -197,32 +134,31 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
     }
     return null;
   }
-  const updateUsers = async () => {
+  const fetchUsersEventsPlaces = async () => {
     try {
-      const usersResponse = await fetch(BASE_URL + `/api/users/nearby-users/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
+      const usersResponse = await fetch(BASE_URL + `/api/users/nearby-all/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {
           'Authorization': `Token ${userToken}`
         }
       });
 
-      let usersData = await usersResponse.json();
-      if (usersData.length === 0) {
-        return;
-      }
-
       if (!usersResponse.ok) {
         throw new Error('Network response was not ok' + usersResponse.statusText);
       }
 
-      usersData = usersData.map(user => {
+      const allData = await usersResponse.json();
+      // allData = {"users":[{"id":79,"username":"miabrown","name":"Mia Brown","gender":"F","favorite_sports":[9],"coordinates":"SRID=4326;POINT (13.406927756403112 52.51206149838055)","age":34},{"id":64,"username":"charlottetaylor","name":"Charlotte Taylor","gender":"F","favorite_sports":[18,19],"coordinates":"SRID=4326;POINT (13.409384114785983 52.50695755560761)","age":34},{"id":61,"username":"sophiadavis","name":"Sophia Davis","gender":"F","favorite_sports":[9],"coordinates":"SRID=4326;POINT (13.402184783211293 52.511894657269494)","age":34},{"id":62,"username":"isabelladavis","name":"Isabella Davis","gender":"F","favorite_sports":[2,18,29],"coordinates":"SRID=4326;POINT (13.414875148838998 52.51706465187279)","age":34}],"events":[{"id":1,"title":"Grand Slam Gala","location":"Potsdamer Platz, 10785 Berlin, Germany","sport_types":[2],"date":"2024-06-24","time":"14:44:00","subscription":{"id":184,"amount":"0.00","currency":"USD","date_start":"2024-06-24","date_end":"2024-07-24","due_date":"2024-06-27","status":"active","generated_at":"2024-06-24","recurring":true,"notes":"","days_payment_deadline":29,"plan_name":"Plan Name","period":null}}],"places":[]}
+
+      // filter users not in users
+      usersData = allData.users.filter(user => !users[user.id]).map(user => {
         const userCoords = parseCoordinates(user.coordinates);
         const adjustedCurrentPosition = {
           lat: currentPosition.latitude,
           lng: currentPosition.longitude
         };
         const distance = calculateDistance(adjustedCurrentPosition, userCoords);
-        
+
         return {
           ...user,
           distance: distance
@@ -235,6 +171,26 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         newUsers[user.id] = { ...(newUsers[user.id] || {}), ...user };
       });
       setUsers(newUsers);
+
+      setEvents((prevEvents) => {
+        const newEvents = [...prevEvents];
+        allData.events.forEach((event) => {
+          if (!newEvents.some((existingEvent) => existingEvent.id === event.id)) {
+            newEvents.push(event);
+          }
+        });
+        return newEvents;
+      });
+
+      setPlaces((prevPlaces) => {
+        const newPlaces = [...prevPlaces];
+        allData.places.forEach((place) => {
+          if (!newPlaces.some((existingPlace) => existingPlace.id === place.id)) {
+            newPlaces.push(place);
+          }
+        });
+        return newPlaces;
+      });
 
       // Fetch profile images for users without images
       const usersNeedingImages = usersData.filter(user => !newUsers[user.id] || !newUsers[user.id].profile_image).map(user => user.id);
@@ -254,20 +210,18 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
         console.error('Permission to access location was denied');
         return;
       }
-  
-      
-      let location = await Location.getCurrentPositionAsync({});
-      
+
+      //let location = await Location.getCurrentPositionAsync({});
+
       const locationData = {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
-        longitudeDelta: PATTERN_ZOOM_LATITUDE_DELTA,
+        latitude: 52.5200,//location.coords.latitude,
+        longitude: 13.4050,//location.coords.longitude,
+        latitudeDelta: 0.01,//PATTERN_ZOOM_LATITUDE_DELTA,
+        longitudeDelta: 0.01//PATTERN_ZOOM_LATITUDE_DELTA,
       };
       setUserLocation(locationData);
-      setCurrentPosition(locationData);
-  
-      setCoordinatesList([{ lat: location.coords.latitude, lng: location.coords.longitude }]);
+
+      setCoordinatesList([{ lat: 52.5200, lng: 13.4050 }]);
     };
 
     fetchAndSetUserLocation();
@@ -275,10 +229,8 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
 
   useEffect(() => {
-    if (currentPosition) {
-      updatePlaces();
-      updateEvents();
-      updateUsers();
+    if (currentPosition && currentPosition.latitudeDelta < MAX_ZOOM_LATITUDE_DELTA * 1.5) {
+      fetchUsersEventsPlaces();
     }
   }, [currentPosition]);
 
@@ -300,7 +252,13 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.025, PATTERN_ZOOM_LATITUDE_DEL
 
   const handleRegionChange = (newRegion) => {
     setCurrentPosition(newRegion)
-    //pickerCoordinates = null;
+    if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
+      mapRef.current.animateToRegion({
+        ...newRegion,
+        latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
+        longitudeDelta: MAX_ZOOM_LATITUDE_DELTA * (newRegion.longitudeDelta / newRegion.latitudeDelta),
+      });
+    }
 
     // Check if there's any existing coordinate that is closer than MAX_DISTANCE_METERS
     const isTooClose = coodinatesList.some((coordinate) => {
