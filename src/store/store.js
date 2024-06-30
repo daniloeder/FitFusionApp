@@ -71,3 +71,16 @@ export async function deleteData(key) {
     return false;
   }
 }
+
+export async function getAllKeys(keyStart) {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const notificationKeys = keyStart ? allKeys.filter(key => key.startsWith(keyStart)) : allKeys;
+    const notificationData = await AsyncStorage.multiGet(notificationKeys);
+    const parsedData = notificationData.map(([key, value]) => JSON.parse(value));
+  
+    return parsedData;
+  } catch (error) {
+    console.error('Error fetching notification data from AsyncStorage:', error);
+  }
+}

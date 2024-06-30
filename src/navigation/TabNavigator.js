@@ -201,12 +201,6 @@ const TabNavigator = () => {
   const addNotification = (notification) => {
     setNotifications(currentNotifications => [...currentNotifications, notification]);
   };
-  const markAllAsRead = () => {
-    const updatedNotifications = notifications.map(notification => {
-      return { ...notification, is_read: true };
-    });
-    setNotifications(updatedNotifications);
-  };
 
   const { chats } = useChat();
 
@@ -286,7 +280,7 @@ const TabNavigator = () => {
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <GlobalProvider userToken={userToken} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification} markAllAsRead={markAllAsRead} setCurrentChat={setCurrentChat}>
+    <GlobalProvider userToken={userToken} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification} setCurrentChat={setCurrentChat}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
