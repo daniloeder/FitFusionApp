@@ -7,7 +7,7 @@ export const GlobalProvider = ({ children, userToken, userSubscriptionPlan, setU
   const [online, setOnline] = useState(true);
   const [webSocket, setWebSocket] = useState(null);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
-  const { handleNewMessage } = useChat();
+  const { handleNewMessage, handleChatInfo } = useChat();
 
   // Function to send messages
   const sendMessage = useCallback((message) => {
@@ -19,14 +19,18 @@ export const GlobalProvider = ({ children, userToken, userSubscriptionPlan, setU
   const handleMessage = useCallback((e) => {
     try {
       const message = JSON.parse(e.data);
+      console.log("Received message: ", message);
+      if (message.new_connection) {
+          const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
+          ws.addEventListener('message', handleMessage);
+      }
       if (message.type === "chat_message") {
-        handleNewMessage(message);
+        const chatId = message.chat_room;
+        handleNewMessage(chatId, message);
       } else if (message.type === "notification") {
         addNotification(message);
-      } else if (message.type === "new_chat_room") {
-        handleNewMessage(message.message_content);
-        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
-        ws.addEventListener('message', handleMessage);
+      } else if (message.type === "get_chat_info") {
+        handleChatInfo(message);
       }
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
@@ -72,7 +76,7 @@ export const GlobalProvider = ({ children, userToken, userSubscriptionPlan, setU
   }, [connectWebSocket]);
 
   return (
-    <GlobalContext.Provider value={{ online, userToken, userSubscriptionPlan, setUserSubscriptionPlan, webSocket, sendMessage, markAllAsRead, setCurrentChat }}>
+    <GlobalContext.Provider value={{ online, userToken, userSubscriptionPlan, setUserSubscriptionPlan, sendMessage, markAllAsRead, setCurrentChat }}>
       {children}
     </GlobalContext.Provider>
   );

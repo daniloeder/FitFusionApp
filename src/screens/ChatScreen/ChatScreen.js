@@ -11,44 +11,16 @@ import { BASE_URL } from '@env';
 const { width } = Dimensions.get('window');
 
 const ChatScreen = ({ route, navigation }) => {
-  const { chats, markMessagesAsRead, handleNewMessage } = useChat();
-  const { userToken, userId, participantId, chatImage, chatName } = route.params;
-  const [messages, setMessages] = useState([]);
+  const { chats, markMessagesAsRead } = useChat();
+  const { userId, participantId, chatImage, chatName } = route.params;
   const [chatId, setChatId] = useState(false);
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const { webSocket, sendMessage, setCurrentChat } = useGlobalContext();
-
-  webSocket.onmessage = (e) => {
-    try {
-      const message = JSON.parse(e.data);
-      if (!chatId && !Object.keys(chats).includes(message.chat_room)) {
-        setChatId(message.chat_room);
-      }
-      handleNewMessage(message);
-    } catch (error) {
-      console.error('Error parsing WebSocket message:', error);
-    }
-  };
-
-  const fetchMessages = async () => {
-    try {
-      const response = await fetch(BASE_URL + `/api/chatrooms/${chatId}/messages/`, {
-        headers: {
-          'Authorization': `Token ${userToken}`,
-        },
-      });
-      const data = await response.json();
-      setMessages(data.reverse());
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    }
-  };
+  const { sendMessage, setCurrentChat } = useGlobalContext();
 
   useEffect(() => {
-    setMessages([]);
     setChatId(route.params.chatId || false);
     setCurrentChat(route.params.chatId);
   }, [route.params.chatId]);
@@ -81,7 +53,7 @@ const ChatScreen = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       if (chatId) {
-        fetchMessages();
+        markMessagesAsRead(chatId)
       }
       return () => {
         markMessagesAsRead(chatId);
@@ -94,8 +66,8 @@ const ChatScreen = ({ route, navigation }) => {
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
       <View style={styles.container}>
         <TouchableOpacity
-          onPress={()=>navigation.navigate('User Profile', { id: participantId })}
-        style={styles.userInfo}>
+          onPress={() => navigation.navigate('User Profile', { id: participantId })}
+          style={styles.userInfo}>
           {onlineStatus && (
             <View style={styles.onlineDot}></View>
           )}
@@ -110,21 +82,22 @@ const ChatScreen = ({ route, navigation }) => {
           }
           <Text style={styles.chatName}>{chatName}</Text>
         </TouchableOpacity>
-        
-        {chats[chatId] && chats[chatId].messages && <FlatList
-          data={[...messages, ...chats[chatId].messages].reverse()}
-          ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
-              <Text style={styles.messageText}>{item.text}</Text>
-              <Text style={{ color: item.sender === userId ? '#BBB' : '#888', position: 'absolute', right: 5, bottom: 1, fontSize: 7 }}>
-                {formatDate(item.created_at)}
-              </Text>
-            </View>
-          )}
-          inverted
-        />}
+
+        {chats[chatId] && chats[chatId].messages &&
+          <FlatList
+            data={Object.values(chats[chatId].messages).reverse()}
+            ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
+                <Text style={styles.messageText}>{item.text}</Text>
+                <Text style={{ color: item.sender === userId ? '#BBB' : '#888', position: 'absolute', right: 5, bottom: 1, fontSize: 7 }}>
+                  {formatDate(item.created_at)}
+                </Text>
+              </View>
+            )}
+            inverted
+          />}
       </View>
       <View style={styles.inputContainer}>
         <TextInput
@@ -178,7 +151,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textShadowColor: '#000',
     textShadowRadius: 10,
-    marginHorizontal: width*0.02,
+    marginHorizontal: width * 0.02,
   },
   messageBox: {
     minWidth: '18%',
