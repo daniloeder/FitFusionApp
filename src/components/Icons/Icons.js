@@ -83,6 +83,10 @@ import Fitness from './../../../assets/icons/fitness.svg';
 import GradientCircle from './../../../assets/icons/gradientCircle.svg';
 import Subscription from './../../../assets/icons/subscription.svg';
 
+import SingleTick from './../../../assets/icons/single-tick.svg';
+import DoubleTick from './../../../assets/icons/double-tick.svg';
+import GreenDoubleTick from './../../../assets/icons/green-double-tick.svg';
+
 const Icons = ({
   name,
   size = 15,
@@ -173,6 +177,10 @@ const Icons = ({
     Add: Add,
     Paste: Paste,
     Fitness: Fitness,
+
+    SingleTick: SingleTick,
+    DoubleTick: DoubleTick,
+    GreenDoubleTick: GreenDoubleTick,
 
     GradientCircle: GradientCircle,
     Subscription: Subscription,

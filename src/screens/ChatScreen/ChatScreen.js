@@ -85,17 +85,20 @@ const ChatScreen = ({ route, navigation }) => {
 
         {chats[chatId] && chats[chatId].messages &&
           <FlatList
-            data={Object.values(chats[chatId].messages).reverse()}
+            data={Object.values(chats[chatId].messages).sort((a, b) => a.id - b.id).reverse()}
             ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
-                <Text style={styles.messageText}>{item.text}</Text>
-                <Text style={{ color: item.sender === userId ? '#BBB' : '#888', position: 'absolute', right: 5, bottom: 1, fontSize: 7 }}>
-                  {formatDate(item.created_at)}
-                </Text>
-              </View>
-            )}
+            renderItem={({ item }) => {
+              return (
+                <View key={item.id} style={[styles.messageBox, item.sender === userId ? styles.myMessage : styles.otherMessage]}>
+                  <Text style={styles.messageText}>{item.text}</Text>
+                  <View style={{ position: 'absolute', right: 5, bottom: 1, flexDirection: 'row' }}>
+                    <Text style={{ color: item.sender === userId ? '#BBB' : '#888', fontSize: 7 }}>{formatDate(item.created_at)}</Text>
+                    {item.sender === userId && <Icons name={item.read ? "DoubleTick" : (item.received ? "DoubleTick" : "SingleTick")} size={width * 0.03} fill={'#ddd'} style={{ marginLeft: 3 }} />}
+                  </View>
+                </View>
+              )
+            }}
             inverted
           />}
       </View>

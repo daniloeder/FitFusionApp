@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { storeData } from './../store/store';
+import { set } from 'firebase/database';
 
 export const ChatContext = createContext();
 
@@ -76,8 +77,34 @@ export const ChatProvider = ({ children }) => {
         });
     };
 
+    const userReceivedMessage = (message) => {
+        setChats(prevChats => {
+            const currentChat = prevChats[message.chat_room];
+
+            if (!currentChat) {
+                return prevChats;
+            }
+            return {
+                ...prevChats,
+                [message.chat_room]: {
+                    ...currentChat,
+                    messages: currentChat.messages.map(msg => {
+                        if (msg.id === message.message_id) {
+                            return {
+                                ...msg,
+                                received: true
+                            };
+                        }
+
+                        return msg;
+                    })
+                }
+            };
+        });
+    }
+
     return (
-        <ChatContext.Provider value={{ chats, setChats, markMessagesAsRead, handleNewMessage, handleChatInfo }}>
+        <ChatContext.Provider value={{ chats, setChats, markMessagesAsRead, handleNewMessage, handleChatInfo, userReceivedMessage }}>
             {children}
         </ChatContext.Provider>
     );
