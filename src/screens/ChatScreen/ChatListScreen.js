@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useGlobalContext } from './../../services/GlobalContext';
 import { useChat } from '../../utils/chats';
@@ -12,11 +12,12 @@ import { getAllKeys, deleteData } from '../../store/store';
 const { width } = Dimensions.get('window');
 
 const ChatListScreen = ({ route, navigation }) => {
-  const { userToken } = route.params;
   const [chatRooms, setChatRooms] = useState([]);
   const [onlineStatus, setOnlineStatus] = useState({});
 
-  const { sendMessage, setCurrentChat } = useGlobalContext();
+  const { userId, sendMessage, setChatId } = useGlobalContext();
+
+  const [requestedChatInfoIds, setRequestedChatInfoIds] = useState([]);
 
   const { chats, setChats } = useChat();
 
@@ -45,41 +46,60 @@ const ChatListScreen = ({ route, navigation }) => {
     )
   }
 
-  useEffect(() => {
-    if (Object.keys(chats).length === 0) {
-      getAllKeys('chats_').then(data => {
-        const chatDict = data.reduce((acc, item, index) => {
-          acc[item.id] = item;
-          if (index > 10) {
-            deleteData('chats_' + item.id);
-          }
-          return acc;
-        }, {});
-  
-        setChats(chatDict);
-      });
-    }
-  }, []);  
-
-  useFocusEffect(
-    useCallback(() => {
-      setCurrentChat(0);
-    }, [userToken, chats])
-  );
-
   const sortedChatRooms = [...chatRooms].sort((a, b) => {
     return new Date(b.last_message_time) - new Date(a.last_message_time);
   });
 
+  useFocusEffect(
+    useCallback(() => {
+      setChatId(null);
+      getAllKeys(`${userId}_chats_`).then(data => {
+        const chatDict = data.reduce((acc, item) => {
+          acc[item.id] = {
+            ...item,
+            messages: item.messages.slice(-100),
+          };
+          return acc;
+        }, {});
+        
+        const sortedRoomsIds = Object.keys(chatDict).sort((a, b) => {
+          return new Date(chatDict[b].last_message_time) - new Date(chatDict[a].last_message_time);
+        });
+
+        for (let i = 0; i < sortedRoomsIds.length; i++) {
+          if (i < 5) {
+            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-100);
+          } else if (i < 10) {
+            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-15);
+          } else {
+            chatDict[sortedRoomsIds[i]].messages = []
+            deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
+          }
+          //deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
+        }
+
+        setChats(chatDict);
+      });
+    }, [userId])
+  );
+
   useEffect(() => {
     if (Object.keys(chats).length > 0) {
-      setChatRooms(Object.values(chats));
+      setChatRooms(Object.values(chats).map(chat => {
+        return {
+          ...chat,
+          messages: chat.messages.slice(-1),
+        }
+      }));
+    } else {
+      setChatRooms([]);
     }
   }, [chats]);
 
   useEffect(() => {
-    for (let i = 0; i < chatRooms.length; i++) {
-      if (!chatRooms[i].chat_info.id) {
+    for (let i = chatRooms.length - 1; i >= 0; i--) {
+      if (!chatRooms[i].chat_info.id && !requestedChatInfoIds.includes(chatRooms[i].id)) {
+        setRequestedChatInfoIds(prev => [...prev, chatRooms[i].id]);
         sendMessage({ type: "get_chat_info", chat_room_id: chatRooms[i].id });
       }
     }
@@ -95,13 +115,12 @@ const ChatListScreen = ({ route, navigation }) => {
         <FlatList
           data={sortedChatRooms}
           keyExtractor={chat => chat.id}
-          renderItem={({ item: chat, index }) => {
+          renderItem={({ item: chat }) => {
 
             const isGroupChat = chat.is_group_chat;
             const chatImage = chat.chat_info && chat.chat_info.image;
             const chatName = isGroupChat ? 'Group Chat' : chat.chat_info && chat.chat_info.name;
 
-            let lastMessageText = ""
             if (chat.messages) {
               lastMessageText = chat.messages[chat.messages.length - 1].text;
             } else {
@@ -116,8 +135,25 @@ const ChatListScreen = ({ route, navigation }) => {
             return (
               <TouchableOpacity
                 style={styles.chatRoomBox}
+                onLongPress={() => {
+                  Alert.alert('Delete chat', 'Are you sure you want to delete this chat?', [{ text: 'Cancel', style: 'cancel', }, {
+                    text: 'OK', style: 'destructive',
+                    onPress: () => {
+                      deleteData(`${userId}_chats_${chat.id}`);
+                      setChats(prev => {
+                        const newChats = { ...prev };
+                        delete newChats[chat.id];
+                        return newChats;
+                      });
+                    },
+                  },
+                  ],
+                    { cancelable: true },
+                  );
+                }}
                 onPress={() => {
-                  navigation.navigate('Chat', { chatId: chat.id, participantId: chat.id, chatImage: chatImage, chatName: chatName })
+                  setChatId(chat.id);
+                  navigation.navigate('Chat', { participantId: chat.chat_info.is_group ? chat.chat_info.chat_user_id : null, chatImage: chatImage, chatName: chatName, isGroupChat: chat.chat_info.is_group });
                 }}
               >
                 {chatImage ?

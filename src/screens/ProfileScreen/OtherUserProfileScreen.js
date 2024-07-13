@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from 'react-native';
+import { useGlobalContext } from './../../services/GlobalContext';
 import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import ShowMedia from '../../components/ShowMedia/ShowMedia';
@@ -11,6 +12,7 @@ const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
     let { userToken, id } = route.params;
+    const { setChatId } = useGlobalContext();
 
     const [profile, setProfile] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -47,13 +49,16 @@ const ProfileScreen = ({ route }) => {
 
             if (response.ok) {
                 const data = await response.json();
+                
                 if (data.error) {
                     console.error('Error starting chat:', data.error);
                 } else {
                     if (data.exists) {
-                        navigation.navigate('Chat', { chatId: data.id, chatImage: data.participant.profile_image ? data.participant.profile_image.image : null, chatName: data.participant_name });
+                        setChatId(data.id);
+                        navigation.navigate('Chat', { chatId: data.id, chatImage: profile.profile_image.image, chatName: profile.name, isGroupChat: false, participantId: participantId });
                     } else {
-                        navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image ? profile.profile_image.image : null, chatName: profile.name });
+                        setChatId(null);
+                        navigation.navigate('Chat', { participantId: participantId, chatImage: profile.profile_image.image, chatName: profile.name, isGroupChat: false });
                     }
                 }
             } else {

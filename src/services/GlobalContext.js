@@ -1,96 +1,134 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { deleteAuthToken } from '../store/store';
 import { useChat } from '../utils/chats';
 
 const GlobalContext = createContext(null);
 
-export const GlobalProvider = ({ children, userToken, userSubscriptionPlan, setUserSubscriptionPlan, addNotification, markAllAsRead, setCurrentChat }) => {
+export const GlobalProvider = ({ children, userId, userToken, setUserToken, chatId, setChatId, userSubscriptionPlan, setUserSubscriptionPlan, addNotification, markAllAsRead }) => {
   const [online, setOnline] = useState(true);
   const [webSocket, setWebSocket] = useState(null);
-  const [receivedMessage, setReceivedMessage] = useState(null);
+  const [chatWebSocket, setChatWebSocket] = useState(null);
+  const [receivedMessagesIds, setReceivedMessagesIds] = useState(null);
+  const [chatRoomIds, setChatRoomIds] = useState([]);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
-  const { handleNewMessage, handleChatInfo, userReceivedMessage } = useChat();
-
-  // Function to send messages
-  const sendMessage = useCallback((message) => {
-    if (webSocket && webSocket.readyState === WebSocket.OPEN) {
-      webSocket.send(JSON.stringify(message));
-    }
-  }, [webSocket]);
+  const { handleNewMessage, handleNewMessages, handleChatInfo, userReceivedMessages, handleSendingMessageError, setChats } = useChat();
+  const latestUserToken = useRef(userToken);
 
   useEffect(() => {
-    if (receivedMessage && webSocket) {
+    latestUserToken.current = userToken;
+  }, [userToken]);
+
+  const sendMessage = useCallback((message) => {
+    if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+      //console.log("Sending message: ", message);
+      chatWebSocket.send(JSON.stringify(message));
+    }
+  }, [chatWebSocket]);
+
+  useEffect(() => {
+    if (receivedMessagesIds && chatWebSocket) {
       sendMessage({
         type: 'message_arrived',
-        message_id: receivedMessage.id,
+        message_ids: receivedMessagesIds
       });
     }
-  }, [receivedMessage]);
+  }, [receivedMessagesIds, sendMessage]);
 
   const handleMessage = useCallback((e) => {
     try {
       const message = JSON.parse(e.data);
-      console.log("Received message: ", message);
-      if (message.new_connection) {
-        const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
-        ws.addEventListener('message', handleMessage);
-      }
+      console.log("Received message: ", userId, message);
 
       if (message.type === "chat_message") {
         const chatId = message.chat_room;
-        handleNewMessage(chatId, message);
-        setReceivedMessage(message);
-      } else if (message.type === "user_received_message") {
-        userReceivedMessage(message);
+        handleNewMessage(userId, chatId, message);
+        setReceivedMessagesIds([message.id]);
+      } else if (message.type === "chat_messages") {
+        handleNewMessages(userId, message.messages_data);
+        setReceivedMessagesIds(message.messages_data.map(message => message.id));
+      } else if (message.type === "user_received_messages") {
+        userReceivedMessages(userId, message);
       } else if (message.type === "notification") {
         addNotification(message);
       } else if (message.type === "get_chat_info") {
-        handleChatInfo(message);
+        handleChatInfo(userId, message);
+      } else if (message.type === "sending_message_error"){
+        handleSendingMessageError(userId, message);
       }
     } catch (error) {
       console.error('Error parsing WebSocket message:', error);
     }
-  }, []);
+  }, [userToken]);
 
   const connectWebSocket = useCallback(() => {
-    if (!userToken) {
+    if (!latestUserToken.current) {
       return;
     }
 
-    const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${userToken}`);
+    const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${latestUserToken.current}`);
+    const chatSocket = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${latestUserToken.current}`);
 
     ws.onopen = () => {
       console.log('WebSocket Connected');
       setWebSocket(ws);
+      ws.onmessage = handleMessage;
+      ws.onerror = (e) => {
+        console.error('WebSocket Error:', e.message);
+      };
+      ws.onclose = (e) => {
+        console.log('WebSocket Disconnected:', e.reason);
+        setWebSocket(null);
+        // Reconnect after a delay
+        setTimeout(() => {
+          connectWebSocket();
+        }, reconnectDelay);
+      };
     };
 
-    ws.onmessage = handleMessage;
-
-    ws.onerror = (e) => {
-      console.error('WebSocket Error:', e.message);
+    chatSocket.onopen = () => {
+      setChatWebSocket(chatSocket);
+      chatSocket.onmessage = handleMessage;
+      chatSocket.onerror = (e) => {
+        console.error('WebSocket Error:', e.message);
+      };
+      chatSocket.onclose = (e) => {
+        console.log('WebSocket Disconnected:', e.reason);
+        setChatWebSocket(null);
+        setTimeout(connectWebSocket, reconnectDelay);
+      };
     };
 
-    ws.onclose = (e) => {
-      console.log('WebSocket Disconnected:', e.reason);
-      setWebSocket(null);
-      // Reconnect after a delay
-      setTimeout(connectWebSocket, reconnectDelay);
+    return () => {
+      ws.close();
+      chatSocket.close();
     };
+  }, [handleMessage]);
 
-    return () => ws.close(); // Cleanup function to close WebSocket
-  }, [userToken, handleMessage]);
+  const handleLogout = () => {
+    setChats({});
+    deleteAuthToken();
+    setUserToken(null);
+
+    if (webSocket) {
+      webSocket.close();
+    }
+    if (chatWebSocket) {
+      chatWebSocket.close();
+    }
+  };
 
   useEffect(() => {
-    connectWebSocket();
+    if (userToken) {
+      connectWebSocket();
+    }
     return () => {
-      setWebSocket((ws) => {
-        if (ws) ws.close();
-        return null;
-      });
+      if (webSocket) webSocket.close();
+      if (chatWebSocket) chatWebSocket.close();
     };
-  }, [connectWebSocket]);
+  }, [connectWebSocket, userToken]);
 
   return (
-    <GlobalContext.Provider value={{ online, userToken, userSubscriptionPlan, setUserSubscriptionPlan, sendMessage, markAllAsRead, setCurrentChat }}>
+    <GlobalContext.Provider value={{ userId, online, userToken, chatId, setChatId, userSubscriptionPlan, setUserSubscriptionPlan, sendMessage, markAllAsRead, handleLogout }}>
       {children}
     </GlobalContext.Provider>
   );

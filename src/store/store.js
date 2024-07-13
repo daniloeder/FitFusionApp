@@ -78,7 +78,7 @@ export async function getAllKeys(keyStart) {
     const notificationKeys = keyStart ? allKeys.filter(key => key.startsWith(keyStart)) : allKeys;
     const notificationData = await AsyncStorage.multiGet(notificationKeys);
     const parsedData = notificationData.map(([key, value]) => JSON.parse(value));
-  
+
     return parsedData;
   } catch (error) {
     console.error('Error fetching notification data from AsyncStorage:', error);

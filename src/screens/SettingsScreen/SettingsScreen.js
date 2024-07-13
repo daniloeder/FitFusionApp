@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { deleteAuthToken } from './../../store/store';
+import { useGlobalContext } from './../../services/GlobalContext';
 import { BASE_URL } from '@env';
 
 const SettingsScreen = ({ route, navigation }) => {
   const { userToken } = route.params;
   const [isNotificationEnabled, setNotificationEnabled] = useState(true);
   const [selectedLanguage, setSelectedLanguage] = useState('English');
+
+  const { handleLogout } = useGlobalContext();
 
   const createPersonalTrainerAccount = async () => {
     try {
@@ -28,11 +29,6 @@ const SettingsScreen = ({ route, navigation }) => {
     } catch (error) {
       Alert.alert('Error creating personal trainer account', error);
     }
-  };
-
-  const handleLogout = () => {
-    deleteAuthToken();
-    navigation.navigate('Auth', { screen: 'LoginScreen' });
   };
 
   return (
@@ -72,17 +68,17 @@ const SettingsScreen = ({ route, navigation }) => {
           alignItems: 'center',
           marginTop: 10,
         }}
-        onPress={() => {
-          Alert.alert('Create Personal Trainer Account', 'Are you a professional personal trainer?', [
-            {
-              text: 'Yes',
-              onPress: () => createPersonalTrainerAccount(),
-            },
-            {
-              text: 'No',
-            },
-          ]);
-        }}
+          onPress={() => {
+            Alert.alert('Create Personal Trainer Account', 'Are you a professional personal trainer?', [
+              {
+                text: 'Yes',
+                onPress: () => createPersonalTrainerAccount(),
+              },
+              {
+                text: 'No',
+              },
+            ]);
+          }}
         >
           <Text style={{
             color: '#fff',
@@ -94,7 +90,14 @@ const SettingsScreen = ({ route, navigation }) => {
         </TouchableOpacity>
 
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => {
+          handleLogout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Auth' }],
+          });
+          navigation.navigate('Auth', { screen: 'LoginScreen' });
+        }}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>

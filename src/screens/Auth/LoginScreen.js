@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
 import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
 import FacebookLogin from '../../components/FacebookLogin/FacebookLogin';
-import { storeAuthToken, fetchAuthToken, storeData } from '../../store/store';
+import { storeAuthToken, fetchAuthToken, fetchData, storeData } from '../../store/store';
 import { BASE_URL } from '@env';
 
 const { width, height } = Dimensions.get('window');
@@ -89,16 +89,23 @@ function LoginScreen() {
     }, [socialToken])
 
     useEffect(() => {
-        fetchAuthToken()
-          .then((userToken) => {
-            if (userToken) {
-              GoToHome(userToken);
-            }
+        fetchData('user_id')
+          .then((id) => {
+            fetchAuthToken()
+              .then((token) => {
+                console.log(`User id: ${id}, token: ${token}`);
+                if (id && token) {
+                    GoToHome(token);
+                }
+              })
+              .catch((error) => {
+                console.error('Error fetching user token:', error);
+              });
           })
           .catch((error) => {
             console.error('Error fetching user token:', error);
           });
-    }, []);
+      }, [])
 
 
     return (

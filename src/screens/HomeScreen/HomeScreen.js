@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Modal } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
+import { useGlobalContext } from './../../services/GlobalContext';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import UsersBall from '../../components/UsersBall/UsersBall.js';
@@ -63,7 +64,7 @@ const EventList = ({ events, navigation }) =>
 
 
 const HomeScreen = ({ route, navigation }) => {
-  const { userToken } = route.params;
+  const { userToken } = useGlobalContext();
   const [data, setData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
@@ -183,23 +184,17 @@ const HomeScreen = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    fetchAuthToken()
-      .then((userToken) => {
-        if (userToken) {
-          fetchHome();
+    if (userToken) {
+      fetchHome();
 
-          fetchData('@userLocation')
-            .then((fetchedLocation) => {
-              setUserLocation(fetchedLocation);
-            })
-            .catch((error) => {
-              console.error('Error fetching user token:', error);
-            });
-        }
-      })
-      .catch((error) => {
-        console.error('Error fetching user token:', error);
-      });
+      fetchData('@userLocation')
+        .then((fetchedLocation) => {
+          setUserLocation(fetchedLocation);
+        })
+        .catch((error) => {
+          console.error('Error fetching user token:', error);
+        });
+    }
   }, []);
 
 

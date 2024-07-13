@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Alert, View, Text } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Dimensions, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icons from '../components/Icons/Icons';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
-import { fetchAuthToken, fetchData } from '../store/store';
-import { useNavigation } from '@react-navigation/native';
+import { fetchAuthToken, deleteAuthToken, fetchData } from '../store/store';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { BASE_URL } from '@env';
 
@@ -124,10 +123,11 @@ async function registerForPushNotificationsAsync(userToken) {
 }
 
 const TabNavigator = () => {
+  const { chats } = useChat();
   const navigation = useNavigation();
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
-  const [currentChat, setCurrentChat] = useState(0);
+  const [chatId, setChatId] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
@@ -202,26 +202,30 @@ const TabNavigator = () => {
     setNotifications(currentNotifications => [...currentNotifications, notification]);
   };
 
-  const { chats } = useChat();
-
   useFocusEffect(
     useCallback(() => {
       fetchData('user_id')
         .then((id) => {
-          setUserId(id);
-          fetchAuthToken()
-            .then((token) => {
-              if (id && token) {
-                setUserToken(token);
-                registerForPushNotificationsAsync(token);
-                fetchSubscriptionPlans(token);
-              } else {
-                navigation.navigate('Auth', { screen: 'LoginScreen' });
-              }
-            })
-            .catch((error) => {
-              console.error('Error fetching user token:', error);
-            });
+          if (id) {
+            fetchAuthToken()
+              .then((token) => {
+                if (token) {
+                  setUserId(id);
+                  setUserToken(token);
+                  registerForPushNotificationsAsync(token);
+                  fetchSubscriptionPlans(token);
+                  navigation.navigate('Home');
+                } else {
+                  navigation.navigate('Auth', { screen: 'LoginScreen' });
+                }
+              })
+              .catch((error) => {
+                console.error('Error fetching user token:', error);
+              });
+          } else {
+            deleteAuthToken();
+            navigation.navigate('Auth', { screen: 'LoginScreen' });
+          }
         })
         .catch((error) => {
           console.error('Error fetching user token:', error);
@@ -233,7 +237,7 @@ const TabNavigator = () => {
     Notifications.setNotificationHandler({
       handleNotification: async (notification) => {
         const chat_id = notification.request.content.data.chat_id;
-        const shouldShow = notification.request.content.data.shouldShow && chat_id != currentChat;
+        const shouldShow = notification.request.content.data.shouldShow && chat_id != chatId;
 
         return {
           shouldShowAlert: shouldShow,
@@ -257,7 +261,7 @@ const TabNavigator = () => {
       }
     });
 
-  }, [currentChat]);
+  }, [chatId]);
 
   useEffect(() => {
     Notifications.setNotificationChannelAsync('default', {
@@ -272,15 +276,11 @@ const TabNavigator = () => {
     };
   }, []);
 
-  if (!userToken) {
-    return null;
-  }
-
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <GlobalProvider userToken={userToken} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification} setCurrentChat={setCurrentChat}>
+    <GlobalProvider userId={userId} userToken={userToken} setUserToken={setUserToken} chatId={chatId} setChatId={setChatId} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification}>
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{

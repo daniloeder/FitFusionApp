@@ -1,29 +1,47 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Keyboard, Dimensions, Image, BackHandler } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useGlobalContext } from './../../services/GlobalContext';
 import { useChat } from '../../utils/chats';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import Icons from '../../components/Icons/Icons';
 import { formatDate } from './../../utils/helpers';
+import { getAllKeys } from '../../store/store';
 import { BASE_URL } from '@env';
 
 const { width } = Dimensions.get('window');
 
 const ChatScreen = ({ route, navigation }) => {
-  const { chats, markMessagesAsRead } = useChat();
-  const { userId, participantId, chatImage, chatName } = route.params;
-  const [chatId, setChatId] = useState(false);
+  const { chats, setChats, tChat, setTChat, markMessagesAsRead } = useChat();
+  const { userId, participantId, chatImage, chatName, isGroupChat } = route.params;
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const { sendMessage, setCurrentChat } = useGlobalContext();
+  const { chatId, setChatId, sendMessage } = useGlobalContext();
 
   useEffect(() => {
-    setChatId(route.params.chatId || false);
-    setCurrentChat(route.params.chatId);
-  }, [route.params.chatId]);
+    if (chatId) {
+      if (chats[chatId]) {
+        if (chats[chatId].unread > 0) {
+          markMessagesAsRead(userId, chatId);
+        }
+      } else if (userId) {
+        getAllKeys(`${userId}_chats_${chatId}`).then(data => {
+          const chatDict = data.reduce((acc, item) => {
+            acc[item.id] = {
+              ...item,
+              messages: item.messages.slice(-100),
+            };
+            return acc;
+          }, {});
+          if (Object.keys(chatDict).length > 0) {
+            setChats(chatDict);
+          }
+        });
+      }
+    }
+  }, [chatId, chats]);
 
   useEffect(() => {
 
@@ -50,23 +68,35 @@ const ChatScreen = ({ route, navigation }) => {
     }
   }, [isKeyboardVisible, navigation]);
 
+  useEffect(() => {
+    if (participantId && tChat[participantId] && tChat[participantId].chat_info.is_defined) {
+      setChatId(tChat[participantId].chat_info.id);
+    }
+  }, [tChat]);
+
   useFocusEffect(
     useCallback(() => {
-      if (chatId) {
-        markMessagesAsRead(chatId)
-      }
+      const onBackPress = () => setChatId(null);
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => {
-        markMessagesAsRead(chatId);
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
       };
-    }, [chatId])
+    }, [])
   );
+
+  const chat_messages = chats[chatId] && chats[chatId].messages ? Object.values(chats[chatId].messages).sort((a, b) => a.id - b.id).reverse() : []
+  const t_chat_messages = participantId && tChat[participantId] && tChat[participantId].messages ? Object.values(tChat[participantId].messages).sort((a, b) => a.id - b.id) : []
 
   return (
     <KeyboardAvoidingView style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
       <View style={styles.container}>
         <TouchableOpacity
-          onPress={() => navigation.navigate('User Profile', { id: participantId })}
+          onPress={() => {
+            if (!isGroupChat) {
+              navigation.navigate('User Profile', { id: participantId })
+            }
+          }}
           style={styles.userInfo}>
           {onlineStatus && (
             <View style={styles.onlineDot}></View>
@@ -83,9 +113,9 @@ const ChatScreen = ({ route, navigation }) => {
           <Text style={styles.chatName}>{chatName}</Text>
         </TouchableOpacity>
 
-        {chats[chatId] && chats[chatId].messages &&
+        {
           <FlatList
-            data={Object.values(chats[chatId].messages).sort((a, b) => a.id - b.id).reverse()}
+            data={t_chat_messages.concat(chat_messages)}
             ListFooterComponent={<View style={{ marginTop: width * 0.12 }}></View>}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => {
@@ -94,7 +124,9 @@ const ChatScreen = ({ route, navigation }) => {
                   <Text style={styles.messageText}>{item.text}</Text>
                   <View style={{ position: 'absolute', right: 5, bottom: 1, flexDirection: 'row' }}>
                     <Text style={{ color: item.sender === userId ? '#BBB' : '#888', fontSize: 7 }}>{formatDate(item.created_at)}</Text>
-                    {item.sender === userId && <Icons name={item.read ? "DoubleTick" : (item.received ? "DoubleTick" : "SingleTick")} size={width * 0.03} fill={'#ddd'} style={{ marginLeft: 3 }} />}
+                    {item.sender === userId && <Icons name={
+                      !item.temp ? (item.received_by && item.received_by.length > 1 ? "DoubleTick" : "SingleTick") : "Watch"
+                    } size={width * 0.03} fill={'#ddd'} style={{ marginLeft: 3 }} />}
                   </View>
                 </View>
               )
@@ -112,7 +144,30 @@ const ChatScreen = ({ route, navigation }) => {
         />
         <TouchableOpacity style={styles.sendButton} onPress={() => {
           if (input.trim() !== '') {
-            sendMessage(chatId ? { type: "chat_message", text: input, chat_room_id: chatId } : { type: "chat_message", text: input, participant_id: participantId });
+
+            const chat_code = "chat_" + Math.floor(Math.random() * 1000000000).toString();
+            if (chatId) {
+              sendMessage({ type: "chat_message", text: input, chat_room_id: chatId, chat_code: chat_code })
+            } else {
+              sendMessage({ type: "chat_message", text: input, participant_id: participantId, chat_code: chat_code })
+            }
+
+            if (participantId) {
+              setTChat(prevTChats => {
+                p_messages = prevTChats[participantId] ? prevTChats[participantId].messages : []
+                return {
+                  ...prevTChats,
+                  [participantId]: {
+                    chat_info: { id: chatId || chat_code, chat_user_id: participantId },
+                    messages: [
+                      { id: 't_' + p_messages.length, text: input, sender: userId, received_by: [], created_at: new Date().toISOString(), chat_code: chat_code, temp: true },
+                      ...p_messages
+                    ]
+                  }
+                }
+              });
+            }
+
             setInput('');
           }
         }}>
@@ -157,7 +212,7 @@ const styles = StyleSheet.create({
     marginHorizontal: width * 0.02,
   },
   messageBox: {
-    minWidth: '18%',
+    minWidth: '25%',
     padding: 5,
     paddingBottom: 10,
     paddingHorizontal: 10,
