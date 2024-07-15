@@ -129,6 +129,7 @@ const TabNavigator = () => {
   const [userToken, setUserToken] = useState(null);
   const [chatId, setChatId] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState({all: false, chat: false, event: false, place: false});
 
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
     type: 'free',
@@ -171,7 +172,10 @@ const TabNavigator = () => {
       });
       const data = await response.json();
       if (data.plan) {
-        setUserSubscriptionPlan(data);
+        setUserSubscriptionPlan(data.plan);
+      }
+      if(data.show_notifications){
+        setShowNotifications(data.show_notifications);
       }
     } catch (error) {
       console.error('There was an error:', error);
@@ -280,7 +284,18 @@ const TabNavigator = () => {
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
-    <GlobalProvider userId={userId} userToken={userToken} setUserToken={setUserToken} chatId={chatId} setChatId={setChatId} userSubscriptionPlan={userSubscriptionPlan} setUserSubscriptionPlan={setUserSubscriptionPlan} addNotification={addNotification}>
+    <GlobalProvider
+      userId={userId}
+      userToken={userToken}
+      setUserToken={setUserToken}
+      chatId={chatId}
+      setChatId={setChatId}
+      userSubscriptionPlan={userSubscriptionPlan}
+      setUserSubscriptionPlan={setUserSubscriptionPlan}
+      addNotification={addNotification}
+      showNotifications={showNotifications}
+      setShowNotifications={setShowNotifications}
+    >
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{

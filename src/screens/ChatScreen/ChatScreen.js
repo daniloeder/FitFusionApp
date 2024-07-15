@@ -16,9 +16,20 @@ const ChatScreen = ({ route, navigation }) => {
   const { userId, participantId, chatImage, chatName, isGroupChat } = route.params;
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  const [onlineStatus, setOnlineStatus] = useState(true);
 
-  const { chatId, setChatId, sendMessage } = useGlobalContext();
+  const { chatId, showOnline, setChatId, sendMessage, onlineUsers } = useGlobalContext();
+
+  useFocusEffect(
+    useCallback(() => {
+    if (showOnline && participantId) {
+      const intervalId = setInterval(() => {
+        sendMessage({ type: 'is_online', track: [participantId] });
+      }, 2500);
+
+      return () => clearInterval(intervalId);
+    }
+  }, [participantId])
+);
 
   useEffect(() => {
     if (chatId) {
@@ -98,7 +109,7 @@ const ChatScreen = ({ route, navigation }) => {
             }
           }}
           style={styles.userInfo}>
-          {onlineStatus && (
+          {participantId && onlineUsers.includes(participantId) && (
             <View style={styles.onlineDot}></View>
           )}
           {chatImage ?

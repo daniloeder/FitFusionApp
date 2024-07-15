@@ -17,7 +17,6 @@ import QRGenerator from '../../components/QRScanner/QRGenerator';
 import PaymentCard from '../../components/Management/PaimentCard.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
-import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -335,7 +334,7 @@ const ProfileScreen = ({ route }) => {
           </Modal>
 
           <Pressable
-            onPress={() => navigation.navigate('Settings')}
+            onPress={() => navigation.navigate('Settings', {show_online: {online: profile.show_online}})}
             style={styles.settingsButton}
           >
             <Icons name="Settings" size={width * 0.1} />

@@ -1,26 +1,75 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, act } from 'react';
+import { AppState } from 'react-native';
 import { deleteAuthToken } from '../store/store';
 import { useChat } from '../utils/chats';
 
 const GlobalContext = createContext(null);
 
-export const GlobalProvider = ({ children, userId, userToken, setUserToken, chatId, setChatId, userSubscriptionPlan, setUserSubscriptionPlan, addNotification, markAllAsRead }) => {
-  const [online, setOnline] = useState(true);
+export const GlobalProvider = ({
+  children,
+  userId,
+  userToken,
+  setUserToken,
+  chatId,
+  setChatId,
+  userSubscriptionPlan,
+  setUserSubscriptionPlan,
+  addNotification,
+  markAllAsRead,
+  showNotifications,
+  setShowNotifications,
+}) => {
+  const [online, setOnline] = useState(false);
+  const [active, setActive] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [showOnline, setShowOnline] = useState(true);
   const [webSocket, setWebSocket] = useState(null);
   const [chatWebSocket, setChatWebSocket] = useState(null);
   const [receivedMessagesIds, setReceivedMessagesIds] = useState(null);
-  const [chatRoomIds, setChatRoomIds] = useState([]);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
   const { handleNewMessage, handleNewMessages, handleChatInfo, userReceivedMessages, handleSendingMessageError, setChats } = useChat();
   const latestUserToken = useRef(userToken);
+  const latestShowOnline = useRef(showOnline);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    latestShowOnline.current = showOnline;
+  }, [showOnline]);
 
   useEffect(() => {
     latestUserToken.current = userToken;
   }, [userToken]);
 
+  useEffect(() => {
+    if (latestShowOnline.current) {
+      sendMessage({ type: 'is_online', user_id: userId, online });
+
+      return () => {
+        clearInterval(intervalRef.current);
+      };
+    }
+  }, [online, chatWebSocket]);
+
+  useEffect(() => {
+    if (latestShowOnline.current) {
+      const handleAppStateChange = (nextAppState) => {
+        if (nextAppState === 'active') {
+          setOnline(true);
+        } else {
+          setOnline(false);
+        }
+      };
+
+      const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+      return () => {
+        subscription.remove();
+      };
+    }
+  }, []);
+
   const sendMessage = useCallback((message) => {
     if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
-      //console.log("Sending message: ", message);
       chatWebSocket.send(JSON.stringify(message));
     }
   }, [chatWebSocket]);
@@ -37,9 +86,12 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
   const handleMessage = useCallback((e) => {
     try {
       const message = JSON.parse(e.data);
-      console.log("Received message: ", userId, message);
 
-      if (message.type === "chat_message") {
+      if (message.type === "online_status") {
+        if (message.online_users != onlineUsers) {
+          setOnlineUsers(message.online_users);
+        }
+      } else if (message.type === "chat_message") {
         const chatId = message.chat_room;
         handleNewMessage(userId, chatId, message);
         setReceivedMessagesIds([message.id]);
@@ -52,7 +104,7 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
         addNotification(message);
       } else if (message.type === "get_chat_info") {
         handleChatInfo(userId, message);
-      } else if (message.type === "sending_message_error"){
+      } else if (message.type === "sending_message_error") {
         handleSendingMessageError(userId, message);
       }
     } catch (error) {
@@ -61,6 +113,7 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
   }, [userToken]);
 
   const connectWebSocket = useCallback(() => {
+    console.log('Connecting WebSocket');
     if (!latestUserToken.current) {
       return;
     }
@@ -71,6 +124,7 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
     ws.onopen = () => {
       console.log('WebSocket Connected');
       setWebSocket(ws);
+      setActive(true);
       ws.onmessage = handleMessage;
       ws.onerror = (e) => {
         console.error('WebSocket Error:', e.message);
@@ -94,6 +148,7 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
       chatSocket.onclose = (e) => {
         console.log('WebSocket Disconnected:', e.reason);
         setChatWebSocket(null);
+        setActive(false);
         setTimeout(connectWebSocket, reconnectDelay);
       };
     };
@@ -128,7 +183,24 @@ export const GlobalProvider = ({ children, userId, userToken, setUserToken, chat
   }, [connectWebSocket, userToken]);
 
   return (
-    <GlobalContext.Provider value={{ userId, online, userToken, chatId, setChatId, userSubscriptionPlan, setUserSubscriptionPlan, sendMessage, markAllAsRead, handleLogout }}>
+    <GlobalContext.Provider value={{
+      userId,
+      active,
+      userToken,
+      showOnline,
+      chatId,
+      setChatId,
+      onlineUsers,
+      userSubscriptionPlan,
+      setUserSubscriptionPlan,
+      sendMessage,
+      markAllAsRead,
+      handleLogout,
+      showNotifications,
+      setShowNotifications,
+      showOnline,
+      setShowOnline,
+    }}>
       {children}
     </GlobalContext.Provider>
   );

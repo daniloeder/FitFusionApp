@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Dimensions, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useGlobalContext } from './../../services/GlobalContext';
@@ -13,15 +13,15 @@ const { width } = Dimensions.get('window');
 
 const ChatListScreen = ({ route, navigation }) => {
   const [chatRooms, setChatRooms] = useState([]);
-  const [onlineStatus, setOnlineStatus] = useState({});
+  const [usersIdsOnScreen, setUsersIdsOnScreen] = useState([]);
 
-  const { userId, sendMessage, setChatId } = useGlobalContext();
+  const { userId, active, showOnline, onlineUsers, sendMessage, setChatId } = useGlobalContext();
 
   const [requestedChatInfoIds, setRequestedChatInfoIds] = useState([]);
 
   const { chats, setChats } = useChat();
 
-  const UnreadMessagesNumber = ({ number }) => {
+  const UnreadMessagesNumber = ({ number, isOnline }) => {
     return (
       <View
         style={{
@@ -29,7 +29,7 @@ const ChatListScreen = ({ route, navigation }) => {
           borderRadius: width * 0.02,
           backgroundColor: 'rgba(49, 130, 206, 0.8)',
           position: 'absolute',
-          left: '2%',
+          left: isOnline ? 20 : 5,
           bottom: '20%',
         }}
       >
@@ -45,43 +45,6 @@ const ChatListScreen = ({ route, navigation }) => {
       </View>
     )
   }
-
-  const sortedChatRooms = [...chatRooms].sort((a, b) => {
-    return new Date(b.last_message_time) - new Date(a.last_message_time);
-  });
-
-  useFocusEffect(
-    useCallback(() => {
-      setChatId(null);
-      getAllKeys(`${userId}_chats_`).then(data => {
-        const chatDict = data.reduce((acc, item) => {
-          acc[item.id] = {
-            ...item,
-            messages: item.messages.slice(-100),
-          };
-          return acc;
-        }, {});
-        
-        const sortedRoomsIds = Object.keys(chatDict).sort((a, b) => {
-          return new Date(chatDict[b].last_message_time) - new Date(chatDict[a].last_message_time);
-        });
-
-        for (let i = 0; i < sortedRoomsIds.length; i++) {
-          if (i < 5) {
-            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-100);
-          } else if (i < 10) {
-            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-15);
-          } else {
-            chatDict[sortedRoomsIds[i]].messages = []
-            deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
-          }
-          //deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
-        }
-
-        setChats(chatDict);
-      });
-    }, [userId])
-  );
 
   useEffect(() => {
     if (Object.keys(chats).length > 0) {
@@ -105,6 +68,69 @@ const ChatListScreen = ({ route, navigation }) => {
     }
   }, [chatRooms]);
 
+  const sortedChatRooms = [...chatRooms].sort((a, b) => {
+    return new Date(b.last_message_time) - new Date(a.last_message_time);
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      setChatId(null);
+      getAllKeys(`${userId}_chats_`).then(data => {
+        const chatDict = data.reduce((acc, item) => {
+          acc[item.id] = {
+            ...item,
+            messages: item.messages.slice(-100),
+          };
+          return acc;
+        }, {});
+
+        const sortedRoomsIds = Object.keys(chatDict).sort((a, b) => {
+          return new Date(chatDict[b].last_message_time) - new Date(chatDict[a].last_message_time);
+        });
+
+        for (let i = 0; i < sortedRoomsIds.length; i++) {
+          if (i < 9) {
+            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-100);
+          } else if (i < 30) {
+            chatDict[sortedRoomsIds[i]].messages = chatDict[sortedRoomsIds[i]].messages.slice(-15);
+          } else {
+            chatDict[sortedRoomsIds[i]].messages = []
+            deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
+          }
+          //deleteData(`${userId}_chats_${sortedRoomsIds[i]}`);
+        }
+
+        setChats(chatDict);
+      });
+    }, [userId])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (active && showOnline && usersIdsOnScreen.length > 0) {
+        let intervalId;
+        const timeoutId = setTimeout(() => {
+          sendMessage({ type: 'is_online', track: usersIdsOnScreen });
+          intervalId = setInterval(() => {
+            sendMessage({ type: 'is_online', track: usersIdsOnScreen });
+          }, 2500);
+        }, 1000);
+  
+        return () => {
+          clearTimeout(timeoutId);
+          clearInterval(intervalId);
+        };
+      }
+    }, [usersIdsOnScreen, showOnline])
+  );
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if(showOnline){
+      setUsersIdsOnScreen(viewableItems.filter(chat => !chat.item.chat_info.is_group).map(chat => chat.item.chat_info.chat_user_id));
+    }
+  }).current;
+
+
   return (
     <View
       style={styles.gradientContainer}
@@ -115,22 +141,26 @@ const ChatListScreen = ({ route, navigation }) => {
         <FlatList
           data={sortedChatRooms}
           keyExtractor={chat => chat.id}
+
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={useRef({ viewAreaCoveragePercentThreshold: 5 }).current}
+
           renderItem={({ item: chat }) => {
 
-            const isGroupChat = chat.is_group_chat;
+            const isGroupChat = chat.chat_info.is_group;
             const chatImage = chat.chat_info && chat.chat_info.image;
             const chatName = isGroupChat ? 'Group Chat' : chat.chat_info && chat.chat_info.name;
+            const isOnline = !isGroupChat && chat.chat_info.chat_user_id && onlineUsers.includes(chat.chat_info.chat_user_id);
 
-            if (chat.messages) {
+            if (chat.messages && chat.messages.length > 0) {
               lastMessageText = chat.messages[chat.messages.length - 1].text;
             } else {
-              lastMessageText = chat.last_message.text;
+              return;
             }
 
             lastMessageText = lastMessageText.length
               ? ((lastMessageText.length > 85 ? lastMessageText.slice(0, 85) + '...' : lastMessageText) || (lastMessageText.media ? `[${lastMessageText.media}]` : '[Media]'))
               : 'No messages yet';
-            const isOnline = onlineStatus[chat.id];
 
             return (
               <TouchableOpacity
@@ -153,9 +183,12 @@ const ChatListScreen = ({ route, navigation }) => {
                 }}
                 onPress={() => {
                   setChatId(chat.id);
-                  navigation.navigate('Chat', { participantId: chat.chat_info.is_group ? chat.chat_info.chat_user_id : null, chatImage: chatImage, chatName: chatName, isGroupChat: chat.chat_info.is_group });
+                  navigation.navigate('Chat', { participantId: chat.chat_info.is_group ? null : chat.chat_info.chat_user_id, chatImage: chatImage, chatName: chatName, isGroupChat: chat.chat_info.is_group });
                 }}
               >
+                {isOnline && (
+                  <View style={styles.onlineDot}></View>
+                )}
                 {chatImage ?
                   <Image
                     source={{ uri: BASE_URL + `${chatImage}` }}
@@ -165,7 +198,7 @@ const ChatListScreen = ({ route, navigation }) => {
                     <Icons name="Profile" size={width * 0.085} fill={'#1C274C'} />
                   </View>
                 }
-                {chats[chat.id] && chats[chat.id].unread > 0 && <UnreadMessagesNumber number={chats[chat.id].unread} />}
+                {chats[chat.id] && chats[chat.id].unread > 0 && <UnreadMessagesNumber number={chats[chat.id].unread} isOnline={isOnline} />}
                 <View style={styles.chatTextContainer}>
                   <Text style={styles.chatRoomText}>{chatName}</Text>
                   <Text style={styles.chatRoomDetailText}>{lastMessageText}</Text>
@@ -175,9 +208,6 @@ const ChatListScreen = ({ route, navigation }) => {
                   style={styles.chatRoomRightBlock}
                 >
                   <Text style={styles.chatRoomDetailLastMessageTime}>{formatDate(chat.messages[chat.messages.length - 1]?.created_at)}</Text>
-                  {isOnline && (
-                    <View style={styles.onlineDot}></View>
-                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -237,7 +267,7 @@ const styles = StyleSheet.create({
   onlineDot: {
     width: 10,
     height: 10,
-    marginLeft: 'auto',
+    right: 8,
     backgroundColor: 'green',
     borderRadius: 5,
   },

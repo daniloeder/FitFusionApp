@@ -2728,9 +2728,9 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                         onPress={() => {
                                             if (selectedUserRequest.status !== 'active') {
                                                 Alert.alert("Chat Trainer", "Your Subscription is not active. Are you sure you want to chat trainer?",
-                                                    [{ text: "Cancel", style: "cancel" }, { text: "Chat", onPress: () => { navigation.navigate('Chat', { room: selectedUserRequest.user_owner }); } }]);
+                                                    [{ text: "Cancel", style: "cancel" }, { text: "Chat", onPress: () => { navigation.navigate('User Profile', { id: selectedUserRequest.user_owner }); } }]);
                                             } else {
-                                                navigation.navigate('Chat', { room: selectedUserRequest.user_owner });
+                                                navigation.navigate('User Profile', { id: selectedUserRequest.user_owner });
                                             }
                                         }}
                                         style={[styles.userButtons, { backgroundColor: '#2196F3' }]}
@@ -2857,7 +2857,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                             <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Create Diet</Text>
                                                         </TouchableOpacity>}
                                                     <TouchableOpacity style={[styles.userButtons, { backgroundColor: '#2196F3', paddingHorizontal: 24 }]}
-                                                        onPress={() => { navigation.navigate('Chat', { user: selectedRequest.user.id }); }}
+                                                        onPress={() => { navigation.navigate('User Profile', { id: selectedRequest.user.id }); }}
                                                     >
                                                         <Text style={{ color: '#FFF', fontSize: 8, fontWeight: 'bold' }}>Chat User</Text>
                                                     </TouchableOpacity>
