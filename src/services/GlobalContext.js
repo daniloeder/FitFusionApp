@@ -12,10 +12,10 @@ export const GlobalProvider = ({
   setUserToken,
   chatId,
   setChatId,
+  notifications,
+  setNotifications,
   userSubscriptionPlan,
   setUserSubscriptionPlan,
-  addNotification,
-  markAllAsRead,
   showNotifications,
   setShowNotifications,
 }) => {
@@ -23,7 +23,7 @@ export const GlobalProvider = ({
   const [active, setActive] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [showOnline, setShowOnline] = useState(true);
-  const [webSocket, setWebSocket] = useState(null);
+  const [notificationsWebSocket, setNotificationsWebSocket] = useState(null);
   const [chatWebSocket, setChatWebSocket] = useState(null);
   const [receivedMessagesIds, setReceivedMessagesIds] = useState(null);
   const reconnectDelay = 5000; // 5 seconds delay for reconnection
@@ -74,6 +74,12 @@ export const GlobalProvider = ({
     }
   }, [chatWebSocket]);
 
+  const sendNotificationsMessage = useCallback((message) => {
+    if (notificationsWebSocket && notificationsWebSocket.readyState === WebSocket.OPEN) {
+      notificationsWebSocket.send(JSON.stringify(message));
+    }
+  }, [notificationsWebSocket]);
+
   useEffect(() => {
     if (receivedMessagesIds && chatWebSocket) {
       sendMessage({
@@ -100,8 +106,17 @@ export const GlobalProvider = ({
         setReceivedMessagesIds(message.messages_data.map(message => message.id));
       } else if (message.type === "user_received_messages") {
         userReceivedMessages(userId, message);
-      } else if (message.type === "notification") {
-        addNotification(message);
+      } else if (message.type === "notifications") {
+        if(message.notifications){
+          setNotifications(message.notifications);
+        } else if (message.read_notifications) {
+          setNotifications(prevNotifications => prevNotifications.map(notification => {
+            if(message.read_notifications.includes(notification.id)){
+              return {...notification, is_read: true};
+            }
+            return notification;
+          }));
+        }
       } else if (message.type === "get_chat_info") {
         handleChatInfo(userId, message);
       } else if (message.type === "sending_message_error") {
@@ -118,20 +133,20 @@ export const GlobalProvider = ({
       return;
     }
 
-    const ws = new WebSocket(`ws://192.168.0.118:8000/ws/common/?token=${latestUserToken.current}`);
+    const notificationsSocket = new WebSocket(`ws://192.168.0.118:8000/ws/notifications/?token=${latestUserToken.current}`);
     const chatSocket = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${latestUserToken.current}`);
 
-    ws.onopen = () => {
-      console.log('WebSocket Connected');
-      setWebSocket(ws);
+    notificationsSocket.onopen = () => {
+      console.log('Notifications WebSocket Connected');
+      setNotificationsWebSocket(notificationsSocket);
       setActive(true);
-      ws.onmessage = handleMessage;
-      ws.onerror = (e) => {
+      notificationsSocket.onmessage = handleMessage;
+      notificationsSocket.onerror = (e) => {
         console.error('WebSocket Error:', e.message);
       };
-      ws.onclose = (e) => {
-        console.log('WebSocket Disconnected:', e.reason);
-        setWebSocket(null);
+      notificationsSocket.onclose = (e) => {
+        console.log('Notifications WebSocket Disconnected:', e.reason);
+        setNotificationsWebSocket(null);
         // Reconnect after a delay
         setTimeout(() => {
           connectWebSocket();
@@ -143,10 +158,10 @@ export const GlobalProvider = ({
       setChatWebSocket(chatSocket);
       chatSocket.onmessage = handleMessage;
       chatSocket.onerror = (e) => {
-        console.error('WebSocket Error:', e.message);
+        console.error('Chat WebSocket Error:', e.message);
       };
       chatSocket.onclose = (e) => {
-        console.log('WebSocket Disconnected:', e.reason);
+        console.log('Chat WebSocket Disconnected:', e.reason);
         setChatWebSocket(null);
         setActive(false);
         setTimeout(connectWebSocket, reconnectDelay);
@@ -154,7 +169,7 @@ export const GlobalProvider = ({
     };
 
     return () => {
-      ws.close();
+      notificationsSocket.close();
       chatSocket.close();
     };
   }, [handleMessage]);
@@ -164,8 +179,8 @@ export const GlobalProvider = ({
     deleteAuthToken();
     setUserToken(null);
 
-    if (webSocket) {
-      webSocket.close();
+    if (notificationsWebSocket) {
+      notificationsWebSocket.close();
     }
     if (chatWebSocket) {
       chatWebSocket.close();
@@ -177,7 +192,7 @@ export const GlobalProvider = ({
       connectWebSocket();
     }
     return () => {
-      if (webSocket) webSocket.close();
+      if (notificationsWebSocket) notificationsWebSocket.close();
       if (chatWebSocket) chatWebSocket.close();
     };
   }, [connectWebSocket, userToken]);
@@ -191,10 +206,12 @@ export const GlobalProvider = ({
       chatId,
       setChatId,
       onlineUsers,
+      notifications,
+      setNotifications,
       userSubscriptionPlan,
       setUserSubscriptionPlan,
       sendMessage,
-      markAllAsRead,
+      sendNotificationsMessage,
       handleLogout,
       showNotifications,
       setShowNotifications,

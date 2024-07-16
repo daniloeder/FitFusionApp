@@ -31,7 +31,7 @@ export function timeAgo(timestamp) {
   const seconds = Math.floor(timeDifference / 1000);
 
   if (seconds < 60) {
-    return `${seconds} second${seconds === 1 ? '' : 's'} ago`;
+    return `${seconds+1} second${seconds === 1 ? '' : 's'} ago`;
   }
 
   const minutes = Math.floor(seconds / 60);

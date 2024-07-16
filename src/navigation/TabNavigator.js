@@ -129,7 +129,7 @@ const TabNavigator = () => {
   const [userToken, setUserToken] = useState(null);
   const [chatId, setChatId] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [showNotifications, setShowNotifications] = useState({all: false, chat: false, event: false, place: false});
+  const [showNotifications, setShowNotifications] = useState({ all: false, chat: false, event: false, place: false });
 
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
     type: 'free',
@@ -174,7 +174,7 @@ const TabNavigator = () => {
       if (data.plan) {
         setUserSubscriptionPlan(data.plan);
       }
-      if(data.show_notifications){
+      if (data.show_notifications) {
         setShowNotifications(data.show_notifications);
       }
     } catch (error) {
@@ -201,10 +201,6 @@ const TabNavigator = () => {
       updateUserSubscriptionPlan();
     }
   }, [userSubscriptionPlan]);
-
-  const addNotification = (notification) => {
-    setNotifications(currentNotifications => [...currentNotifications, notification]);
-  };
 
   useFocusEffect(
     useCallback(() => {
@@ -238,47 +234,35 @@ const TabNavigator = () => {
   );
 
   useEffect(() => {
-    Notifications.setNotificationHandler({
-      handleNotification: async (notification) => {
-        const chat_id = notification.request.content.data.chat_id;
-        const shouldShow = notification.request.content.data.shouldShow && chat_id != chatId;
-
-        return {
-          shouldShowAlert: shouldShow,
-          shouldPlaySound: shouldShow,
-          shouldSetBadge: shouldShow,
-        };
-      },
-    });
-
-    // This listener is fired whenever a notification is received while the app is foregrounded
-    Notifications.addNotificationReceivedListener(notification => {
-
-    });
-
-    // This listener is fired whenever a user taps on or interacts with a notification
-    Notifications.addNotificationResponseReceivedListener(notification => {
-      const data = notification.notification.request.content.data
-
-      if (data.type === 'chat_message') {
-        navigation.navigate('Tabs', { screen: 'Chat', params: { chatId: data.chat_id, chatName: data.name, chatImage: data.profile_image } });
-      }
-    });
-
-  }, [chatId]);
-
-  useEffect(() => {
+    if (!showNotifications.all) {
+      return;
+    }
+    // Set notification channel
     Notifications.setNotificationChannelAsync('default', {
       name: 'default',
       importance: Notifications.AndroidImportance.MAX,
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
     });
-
+  
+    // Add notification listeners
+    const notificationReceivedSubscription = Notifications.addNotificationReceivedListener(notification => {
+      // Handle notification received
+    });
+  
+    const notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(notification => {
+      const data = notification.notification.request.content.data;
+  
+      if (data.type === 'chat_message') {
+        navigation.navigate('Tabs', { screen: 'Chat', params: { chatId: data.chat_id, chatName: data.name, chatImage: data.profile_image } });
+      }
+    });
+  
     return () => {
-      Notifications.removeNotificationSubscription();
+      notificationReceivedSubscription.remove();
+      notificationResponseSubscription.remove();
     };
-  }, []);
+  }, [chatId]);  
 
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
@@ -289,10 +273,11 @@ const TabNavigator = () => {
       userToken={userToken}
       setUserToken={setUserToken}
       chatId={chatId}
+      notifications={notifications}
+      setNotifications={setNotifications}
       setChatId={setChatId}
       userSubscriptionPlan={userSubscriptionPlan}
       setUserSubscriptionPlan={setUserSubscriptionPlan}
-      addNotification={addNotification}
       showNotifications={showNotifications}
       setShowNotifications={setShowNotifications}
     >
@@ -449,7 +434,6 @@ const TabNavigator = () => {
         />
         <Tab.Screen
           name="Notifications"
-          initialParams={{ userId, userToken }}
           component={NotificationsScreen}
           options={{
             tabBarIcon: ({ focused }) =>
