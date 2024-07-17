@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, Alert, Dimensions, Pressable, ScrollView } from 'react-native';
+import { View, TouchableOpacity, Text, StyleSheet, Alert, Dimensions, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { useNavigation } from '@react-navigation/native';
 import CustomInput from '../../components/Forms/CustomInput';
-import GoogleLogin from '../../components/GoogleLogin/GoogleAuthScreen';
-import FacebookLogin from '../../components/FacebookLogin/FacebookLogin';
+import SocialAuthButton from '../../components/AuthButtons/AuthButtons';
 import { storeAuthToken, fetchAuthToken, fetchData, storeData } from '../../store/store';
 import { BASE_URL } from '@env';
 
@@ -16,6 +15,7 @@ function LoginScreen() {
     const [password, setPassword] = useState('');
 
     const [socialToken, setSocialToken] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     function GoToHome(token) {
         navigation.navigate('Tabs', {
@@ -25,6 +25,7 @@ function LoginScreen() {
     }
 
     const handleLogin = async () => {
+        setLoading(true);
         try {
             // Check if fields are not empty
             if (!socialToken && (!email || !password)) {
@@ -37,49 +38,41 @@ function LoginScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(socialToken ?
-                    { email, token: socialToken }
-                    :
-                    { username: email, password }
-                )
+                body: JSON.stringify({ token: socialToken })
             });
 
             const responseData = await response.json();
+
             if (response.ok) {
-                if (responseData.token) {
-                    storeData(responseData.user_id, 'user_id');
-                    storeAuthToken(responseData.token)
-                      .then(() => {
-                        GoToHome(responseData.token);
+                const token = responseData.token || responseData.user_data.token;
+                const userId = responseData.user_id || responseData.user_data.user_id;
+                storeData(userId, 'user_id');
+                storeAuthToken(token)
+                    .then(() => {
+                        if (responseData.new) {
+                            navigation.navigate('RegisterScreen', {
+                                userToken: token,
+                                new_: true
+                            });
+                            Alert.alert('Success', 'New account created!');
+                            return;
+                        }
+                        GoToHome(token);
                         Alert.alert('Success', 'Logged in successfully!');
-                      })
-                      .catch((error) => {
+                    })
+                    .catch((error) => {
                         console.error('Error storing token:', error);
-                      });
-                } else {
-                    let errorMessage = responseData.error || responseData.detail || 'Login failed!';
-                    Alert.alert('Login failed', errorMessage);
-                }
+                    });
+
             } else {
-                let errorMessage = '';
-
-                for (const key in responseData) {
-                    if (Array.isArray(responseData[key])) {
-                        errorMessage += responseData[key].join('\n') + '\n';
-                    } else {
-                        errorMessage += responseData[key] + '\n';
-                    }
-                    if (key == 'no_registered') {
-                        navigation.navigate("RegisterScreen");
-                    }
-                }
-
-                Alert.alert('Login failed', errorMessage.trim());
+                let errorMessage = responseData.error || responseData.detail || 'Login failed!';
+                Alert.alert('Login failed', errorMessage);
             }
         } catch (error) {
             console.error("There was an error:", error);
             Alert.alert('Error', 'There was an error with the login process. Please try again.');
         }
+        setLoading(false);
     };
 
     useEffect(() => {
@@ -90,22 +83,21 @@ function LoginScreen() {
 
     useEffect(() => {
         fetchData('user_id')
-          .then((id) => {
-            fetchAuthToken()
-              .then((token) => {
-                console.log(`User id: ${id}, token: ${token}`);
-                if (id && token) {
-                    GoToHome(token);
-                }
-              })
-              .catch((error) => {
+            .then((id) => {
+                fetchAuthToken()
+                    .then((token) => {
+                        if (id && token) {
+                            GoToHome(token);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error fetching user token:', error);
+                    });
+            })
+            .catch((error) => {
                 console.error('Error fetching user token:', error);
-              });
-          })
-          .catch((error) => {
-            console.error('Error fetching user token:', error);
-          });
-      }, [])
+            });
+    }, [])
 
 
     return (
@@ -113,25 +105,34 @@ function LoginScreen() {
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
             <View style={styles.container}>
                 <Text style={styles.title}>Login</Text>
-                <GoogleLogin title="Log In with Google" setGoogleToken={setSocialToken} />
-                <FacebookLogin title="Log In with Facebook" />
-                <CustomInput
-                    placeholder="Email or Username"
-                    placeholderTextColor="#656565"
-                    onChangeText={setEmail}
-                    value={email}
-                />
 
-                <CustomInput
-                    secret
-                    placeholder="Password"
-                    placeholderTextColor="#656565"
-                    onChangeText={setPassword}
-                    value={password}
-                />
-                <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                    <Text style={styles.buttonText}>Login</Text>
-                </TouchableOpacity>
+                {loading && <ActivityIndicator size="large" color="#fff" style />}
+
+                <SocialAuthButton strategy={"oauth_google"} title="Log In with Google" setLoading={setLoading} setSocialToken={setSocialToken} />
+                <SocialAuthButton strategy={"oauth_facebook"} title="Log In with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} />
+                <SocialAuthButton strategy={"oauth_tiktok"} title="Log In with TikTok" setLoading={setLoading} setSocialToken={setSocialToken} />
+
+                <View style={{marginTop: 30}}>
+                    <CustomInput
+                        placeholder="Email or Username"
+                        placeholderTextColor="#656565"
+                        onChangeText={setEmail}
+                        value={email}
+                    />
+
+                    <CustomInput
+                        secret
+                        placeholder="Password"
+                        placeholderTextColor="#656565"
+                        onChangeText={setPassword}
+                        value={password}
+                    />
+
+                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                        <Text style={styles.buttonText}>Login</Text>
+                    </TouchableOpacity>
+
+                </View>
 
                 <Text style={styles.forgotPassword} onPress={() => { navigation.navigate("ForgotPasswordScreen") }}>
                     Forgot Password?
@@ -166,6 +167,7 @@ const styles = StyleSheet.create({
     title: {
         textAlign: 'center',
         fontSize: width * 0.07,
+        marginBottom: 20,
         fontWeight: 'bold',
         color: '#FFF',
     },
