@@ -13,7 +13,6 @@ function RegisterScreen({ route, navigation }) {
 
     const [accessToken, setAccessToken] = useState(null);
     const [socialToken, setSocialToken] = useState(null);
-    const [email, setEmail] = useState('');
     const [username, setUsername] = useState('');
     const [name, setName] = useState('');
     const [gender, setGender] = useState('');
@@ -28,9 +27,14 @@ function RegisterScreen({ route, navigation }) {
 
     useEffect(() => {
         if (route.params) {
-            const { userToken, new_ } = route.params;
+            const { userToken, new_, name, username } = route.params;
+            setName(name || "");
             setAccessToken(userToken);
             setSuccessRegistration(new_);
+            // wait 2 seconds
+            setTimeout(() => {
+                setUsername(username || "");
+            }, 2000);
         }
     }, [route.params]);
 
@@ -80,7 +84,7 @@ function RegisterScreen({ route, navigation }) {
                     'Content-Type': 'application/json',
                     'Authorization': 'Token ' + accessToken
                 },
-                body: JSON.stringify({ date_of_birth: dateOfBirth, gender, username, name, email })
+                body: JSON.stringify({ date_of_birth: dateOfBirth, gender, username, name })
             });
 
             const responseData = await response.json();
@@ -131,11 +135,12 @@ function RegisterScreen({ route, navigation }) {
                         })
                     return;
                 }
-                setEmail('');
-                setName('');
-                setUsername('');
+                setName(responseData.name || '');
                 setAccessToken(responseData.token);
                 setSuccessRegistration(true);
+                setTimeout(() => {
+                    setUsername(responseData.username || '');
+                }, 2000);
                 Alert.alert('Success', 'Registered successfully!');
             } else {
                 let errorMessage = '';
@@ -187,7 +192,10 @@ function RegisterScreen({ route, navigation }) {
     }, [username])
 
     useEffect(() => {
-        setUsername(name.trim().split(/\s+/).join('').toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+        if (!username) {
+            setUsername(name.trim().split(/\s+/).join('').toLowerCase().replace(/[^a-z0-9_-]/g, ''));
+        }
+        checkUsername();
     }, [name])
 
     useEffect(() => {
@@ -213,12 +221,6 @@ function RegisterScreen({ route, navigation }) {
                 {successRegistration ? <>
                     <Text style={styles.successRegistrationText}>{"Registered successfully!\nNow you need just complete missing info!"}</Text>
 
-                    <CustomInput
-                        placeholder="Email"
-                        placeholderTextColor="#656565"
-                        onChangeText={setEmail}
-                        value={email}
-                    />
                     <CustomInput
                         placeholder="Your Name"
                         placeholderTextColor="#656565"

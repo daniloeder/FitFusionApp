@@ -38,7 +38,7 @@ function LoginScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ token: socialToken })
+                body: JSON.stringify(socialToken ? { token: socialToken } : { username: email, password })
             });
 
             const responseData = await response.json();
@@ -51,6 +51,8 @@ function LoginScreen() {
                     .then(() => {
                         if (responseData.new) {
                             navigation.navigate('RegisterScreen', {
+                                name: responseData.user_data.name,
+                                username: responseData.user_data.username,
                                 userToken: token,
                                 new_: true
                             });
@@ -98,7 +100,6 @@ function LoginScreen() {
                 console.error('Error fetching user token:', error);
             });
     }, [])
-
 
     return (
         <ScrollView style={styles.gradientContainer}>
