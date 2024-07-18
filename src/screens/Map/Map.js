@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
+import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
-import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
+import { useGlobalContext } from './../../services/GlobalContext';
 import { SportsNames } from '../../utils/sports';
 import Icons from '../../components/Icons/Icons';
 import { GoogleAutocompletePicker } from '../../components/GoogleMaps/GoogleMaps.js';
@@ -76,8 +78,9 @@ const DoubleCircleOverlay = ({ centerCoordinates, radius }) => {
 };
 
 function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELTA = 0.01, SCROLL_ENABLED = true, ZOOM_ENABLED = true }) {
-  const { userToken } = route.params;
+  const { userToken, checkConnectionError, active } = useGlobalContext();
   const navigation = useNavigation();
+  
   const MAX_DISTANCE_METERS = 500;
 
   const [userLocation, setUserLocation] = useState(null);
@@ -97,7 +100,14 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
 
   const iconNamesByIndex = ["BodyBuilding", "Soccer", "Basketball", "Tennis", "Baseball", "AmericanFootball", "Golf", "Cricket", "Rugby", "Volleyball", "TableTennis", "Badminton", "IceHockey", "FieldHockey", "Swimming", "TrackAndField", "Boxing", "Gymnastics", "MartialArts", "Cycling", "Equestrian", "Fencing", "Bowling", "Archery", "Sailing", "CanoeingKayaking", "Wrestling", "Snowboarding", "Skiing", "Surfing", "Skateboarding", "RockClimbing", "MountainBiking", "RollerSkating", "Other"];
 
+  useFocusEffect(
+    useCallback(() => {
+      checkConnectionError();
+    }, [])
+  );
+
   const fetchUserProfileImages = async (userIds) => {
+    if (!active) return null;
     const batchSize = 5;
 
     for (let i = 0; i < userIds.length; i += batchSize) {
@@ -136,6 +146,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
   }
   const fetchUsersEventsPlaces = async () => {
     try {
+      if (!active) return null;
       const usersResponse = await fetch(BASE_URL + `/api/users/nearby-all/?lat=${currentPosition.latitude}&lng=${currentPosition.longitude}&distance=${MAX_DISTANCE_METERS * 2}`, {
         method: 'GET',
         headers: {

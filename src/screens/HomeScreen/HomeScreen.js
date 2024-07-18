@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Image, Modal } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { fetchAuthToken, deleteAuthToken, fetchData } from '../../store/store';
+import { deleteAuthToken, fetchData } from '../../store/store';
 import { useGlobalContext } from './../../services/GlobalContext';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
@@ -11,7 +11,7 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const PlaceList = ({ places, navigation }) =>
+const PlaceList = ({ places, navigation, checkConnectionError }) =>
   places.map((place) => (
     <View key={place.id.toString()} style={styles.placeItem}>
       <Text style={styles.placeTitle}>{place.name}</Text>
@@ -21,6 +21,7 @@ const PlaceList = ({ places, navigation }) =>
           <TouchableOpacity
             style={styles.eventButton}
             onPress={() => {
+              if(checkConnectionError()) return;
               navigation.navigate('Event', { eventId: event.id });
             }}
           >
@@ -33,6 +34,7 @@ const PlaceList = ({ places, navigation }) =>
       <TouchableOpacity
         style={styles.viewPlaceButton}
         onPress={() => {
+          if(checkConnectionError()) return;
           navigation.navigate('Place', { placeId: place.id });
         }}
       >
@@ -41,7 +43,7 @@ const PlaceList = ({ places, navigation }) =>
     </View>
   ))
 
-const EventList = ({ events, navigation }) =>
+const EventList = ({ events, navigation, checkConnectionError }) =>
   events.map((event) => (
     <View key={event.id.toString()} style={styles.placeItem}>
       <Text style={styles.placeTitle}>{event.title}</Text>
@@ -54,6 +56,7 @@ const EventList = ({ events, navigation }) =>
       <TouchableOpacity
         style={styles.viewPlaceButton}
         onPress={() => {
+          if(checkConnectionError()) return;
           navigation.navigate('Event', { eventId: event.id });
         }}
       >
@@ -64,7 +67,7 @@ const EventList = ({ events, navigation }) =>
 
 
 const HomeScreen = ({ route, navigation }) => {
-  const { userToken } = useGlobalContext();
+  const { active, userToken, checkConnectionError } = useGlobalContext();
   const [data, setData] = useState(null);
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
@@ -230,6 +233,7 @@ const HomeScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (clickedUser) {
+      if(checkConnectionError()) return;
       navigation.navigate('User Profile', { id: clickedUser });
     }
   }, [clickedUser]);
@@ -259,7 +263,7 @@ const HomeScreen = ({ route, navigation }) => {
             Let's start looking for sports places, events and partners near you:
           </Text>
         }
-        <GetUserCoordinates userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
+        <GetUserCoordinates active={active} userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />
 
         {(places.length || joinedEvents.length) ?
           <>
@@ -292,6 +296,7 @@ const HomeScreen = ({ route, navigation }) => {
                   <TouchableOpacity
                     style={styles.joinedEventButton}
                     onPress={() => {
+                      if(checkConnectionError()) return;
                       navigation.navigate('Event', { eventId: event.id });
                     }}
                   >
@@ -319,6 +324,7 @@ const HomeScreen = ({ route, navigation }) => {
                   <TouchableOpacity
                     style={styles.joinedPlaceButton}
                     onPress={() => {
+                      if(checkConnectionError()) return;
                       navigation.navigate('Place', { placeId: place.id });
                     }}
                   >
@@ -368,7 +374,7 @@ const HomeScreen = ({ route, navigation }) => {
               {closerPlaces.slice(0, 4).map((place, index) => {
                 return (
                   <TouchableOpacity key={index}
-                    onPress={() => navigation.navigate('Place', { placeId: place.id })}
+                    onPress={() => {if(checkConnectionError()) return;navigation.navigate('Place', { placeId: place.id })}}
                     style={styles.nearPlacesItem}
                   >
                     <Text style={styles.nearPlacesNameText}>
@@ -409,6 +415,7 @@ const HomeScreen = ({ route, navigation }) => {
                     <TouchableOpacity
                       style={styles.eventButton}
                       onPress={() => {
+                        if(checkConnectionError()) return;
                         navigation.navigate('Event', { eventId: event.id });
                       }}
                     >
@@ -436,6 +443,7 @@ const HomeScreen = ({ route, navigation }) => {
         <TouchableOpacity
           style={styles.createButton}
           onPress={() => {
+            if (checkConnectionError()) return;
             navigation.navigate('Create Event');
           }}
         >
@@ -444,6 +452,7 @@ const HomeScreen = ({ route, navigation }) => {
         <TouchableOpacity
           style={styles.createButton}
           onPress={() => {
+            if (checkConnectionError()) return;
             navigation.navigate('Create Place');
           }}
         >
@@ -472,6 +481,7 @@ const HomeScreen = ({ route, navigation }) => {
             marginBottom: 100
           }}
           onPress={() => {
+            if(checkConnectionError()) return;
             navigation.navigate('Profile', { upgrade: true });
           }}
         >

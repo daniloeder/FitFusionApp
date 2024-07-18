@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
-import { BASE_URL } from '@env';
+import { useGlobalContext } from './../../services/GlobalContext';
 import Icons from '../../components/Icons/Icons';
+import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
 const SearchScreen = ({ navigation }) => {
+  const { checkConnectionError } = useGlobalContext();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState({ events: [], places: [], users: [] });
   const [searched, setSearched] = useState(false);
@@ -36,6 +38,7 @@ const SearchScreen = ({ navigation }) => {
           onChangeText={setQuery}
         />
         <TouchableOpacity style={styles.searchButton} onPress={() => {
+          if(checkConnectionError()) return;
           onSearch();
           setSearched(true);
         }}>
