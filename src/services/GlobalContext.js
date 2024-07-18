@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, act } from 'react';
-import { AppState } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { AppState, Alert } from 'react-native';
 import { deleteAuthToken } from '../store/store';
 import { useChat } from '../utils/chats';
 
@@ -30,7 +30,12 @@ export const GlobalProvider = ({
   const { handleNewMessage, handleNewMessages, handleChatInfo, userReceivedMessages, handleSendingMessageError, setChats } = useChat();
   const latestUserToken = useRef(userToken);
   const latestShowOnline = useRef(showOnline);
-  const intervalRef = useRef(null);
+
+  function checkConnectionError() {
+    if (active) return false;
+    Alert.alert('You are offline.', 'Connection is needed to perform this action.');
+    return true;
+  }
 
   useEffect(() => {
     latestShowOnline.current = showOnline;
@@ -43,10 +48,6 @@ export const GlobalProvider = ({
   useEffect(() => {
     if (latestShowOnline.current) {
       sendMessage({ type: 'is_online', user_id: userId, online });
-
-      return () => {
-        clearInterval(intervalRef.current);
-      };
     }
   }, [online, chatWebSocket]);
 
@@ -94,7 +95,7 @@ export const GlobalProvider = ({
       const message = JSON.parse(e.data);
 
       if (message.type === "online_status") {
-        if (message.online_users != onlineUsers) {
+        if (message.online_users !== onlineUsers) {
           setOnlineUsers(message.online_users);
         }
       } else if (message.type === "chat_message") {
@@ -127,51 +128,58 @@ export const GlobalProvider = ({
     }
   }, [userToken]);
 
-  const connectWebSocket = useCallback(() => {
-    console.log('Connecting WebSocket');
-    if (!latestUserToken.current) {
+  const connectNotificationsWebSocket = useCallback(() => {
+    console.log('Connecting to Notification WebSocket...');
+    if (notificationsWebSocket || !latestUserToken.current) {
       return;
     }
 
     const notificationsSocket = new WebSocket(`ws://192.168.0.118:8000/ws/notifications/?token=${latestUserToken.current}`);
-    const chatSocket = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${latestUserToken.current}`);
 
     notificationsSocket.onopen = () => {
       console.log('Notifications WebSocket Connected');
       setNotificationsWebSocket(notificationsSocket);
-      setActive(true);
       notificationsSocket.onmessage = handleMessage;
       notificationsSocket.onerror = (e) => {
         console.error('WebSocket Error:', e.message);
       };
-      notificationsSocket.onclose = (e) => {
-        console.log('Notifications WebSocket Disconnected:', e.reason);
-        setNotificationsWebSocket(null);
-        // Reconnect after a delay
-        setTimeout(() => {
-          connectWebSocket();
-        }, reconnectDelay);
-      };
+      
+    };
+    notificationsSocket.onclose = (e) => {
+      console.log('Notifications WebSocket Disconnected:', e.reason);
+      setNotificationsWebSocket(null);
+      setTimeout(connectNotificationsWebSocket, reconnectDelay);
     };
 
+    return () => notificationsSocket.close();
+  }, [handleMessage]);
+
+
+  const connectChatWebSocket = useCallback(() => {
+    console.log('Connecting to Chat WebSocket...');
+    if (chatWebSocket || !latestUserToken.current) {
+      return;
+    }
+
+    const chatSocket = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${latestUserToken.current}`);
+
     chatSocket.onopen = () => {
+      console.log('Chat WebSocket Connected');
       setChatWebSocket(chatSocket);
+      setActive(true);
       chatSocket.onmessage = handleMessage;
       chatSocket.onerror = (e) => {
         console.error('Chat WebSocket Error:', e.message);
       };
-      chatSocket.onclose = (e) => {
-        console.log('Chat WebSocket Disconnected:', e.reason);
-        setChatWebSocket(null);
-        setActive(false);
-        setTimeout(connectWebSocket, reconnectDelay);
-      };
     };
 
-    return () => {
-      notificationsSocket.close();
-      chatSocket.close();
+    chatSocket.onclose = (e) => {
+      setActive(false);
+      console.log('Chat WebSocket Disconnected:', e.reason);
+      setTimeout(connectChatWebSocket, reconnectDelay);
     };
+
+    return () => chatSocket.close();
   }, [handleMessage]);
 
   const handleLogout = () => {
@@ -189,13 +197,14 @@ export const GlobalProvider = ({
 
   useEffect(() => {
     if (userToken) {
-      connectWebSocket();
+      connectNotificationsWebSocket();
+      connectChatWebSocket();
     }
     return () => {
       if (notificationsWebSocket) notificationsWebSocket.close();
       if (chatWebSocket) chatWebSocket.close();
     };
-  }, [connectWebSocket, userToken]);
+  }, [connectNotificationsWebSocket, connectChatWebSocket]);
 
   return (
     <GlobalContext.Provider value={{
@@ -217,6 +226,7 @@ export const GlobalProvider = ({
       setShowNotifications,
       showOnline,
       setShowOnline,
+      checkConnectionError,
     }}>
       {children}
     </GlobalContext.Provider>

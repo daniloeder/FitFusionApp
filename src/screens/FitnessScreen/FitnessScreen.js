@@ -52,21 +52,33 @@ const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, sh
         setShowExerciseDetails(false);
         setAlternativeExercise(false);
     };
-    const [image, setImage] = useState(null);
+    const [imageUrl, setImageUrl] = useState(null);
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [rightToSee, setRightToSee] = useState(checkAvailableFeature('store_exercises_images', { userSubscriptionPlan: userSubscriptionPlan, plan: plan }, mode));
+    const [imageAvaliability, setImageAvaliability] = useState(false);
+    const [imageData, setImageData] = useState(null);
 
     useEffect(() => {
-        if (!image || exercise.alternative) {
+        if (imageData) {
+            setImageUrl(`data:image/${exercise.execution_images[0].image_url.split('/').pop().split('.').shift().toLowerCase()};base64,${imageData}`)
+            setImageAvaliability(true);
+        } else {
+            if (online) {
+                setImageUrl(BASE_URL + exercise.execution_images[0].image_url)
+                setImageAvaliability(true);
+                // save data to local storage
+            }
+        }
+    }, [imageData]);
+
+    useEffect(() => {
+        if (rightToSee || online) {
             fetchData("exercise_image_" + exercise.execution_images[0].image_url.split('/').pop())
                 .then(data => {
                     if (data) {
-                        if (online || userSubscriptionPlan.current_data.settings[plan].store_exercises_images) {
-                            setImage(`data:image/${exercise.execution_images[0].image_url.split('/').pop().split('.').shift().toLowerCase()};base64,${data}`)
-                        } else {
-                            Alert.alert('You need to upgrate to Save images and see them offline.', 'Please upgrade to Save images and see them offline.',
-                                [{ text: 'Cancel', style: 'cancel' }]);
-                        }
+                        setImageData(data);
                     } else {
-                        setImage(BASE_URL + exercise.execution_images[0].image_url)
+                        setImageUrl(BASE_URL + exercise.execution_images[0].image_url);
                     }
                 })
                 .catch(error => {
@@ -87,11 +99,21 @@ const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, sh
             <View style={styles.details_container}>
                 <ScrollView style={styles.details_itemscroll}>
                     <Text style={styles.details_title}>{exercise.title}</Text>
-                    {image && checkAvailableFeature('store_exercises_images', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, online: online }, mode) &&
+                    {imageAvaliability ?
                         <Image
-                            source={{ uri: image }}
+                            source={{ uri: imageUrl }}
                             style={styles.details_image}
-                        />}
+                            onLoadEnd={() => setImageLoaded(true)}
+                        /> : <View style={{ width: width * 0.9, height: width * 0.9, padding: 30, backgroundColor: '#ddd', alignItems: 'center', justifyContent: 'center' }}>
+                            <Text style={{ color: '#000', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
+                                {rightToSee ?
+                                    "Sorry for inconvenience,\nbut this exercise image may be not available in your device.\nPlease, connect to the internet to see it."
+                                    : "You are offline and can\'t see or save images.\nPlease upgrade to Save images and see them offline."
+                                }
+                            </Text>
+                        </View>
+                    }
+                    {imageAvaliability && !imageLoaded && <ActivityIndicator size="large" color="#000" />}
                     <Text>{exercise.description}</Text>
                     {exercise.how_to_do && exercise.how_to_do.length ? <View style={styles.details_exerciseInfo}>
                         <Text style={styles.details_sectionTitle}>How to do:</Text>
@@ -472,7 +494,7 @@ const ExerciseSetsIndicators = ({ plan, edit, dayName, muscleGroup, exercise, up
     )
 }
 
-const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon, setAlternativeExercise, addExercise, removeExercise, exerciseId, done, updateExerciseDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, setShowExerciseDetails, adding }) => {
+const BallonDetails = ({ online, plan, dayName, muscleGroup, allExercises, setShowBallon, setAlternativeExercise, addExercise, removeExercise, exerciseId, done, updateExerciseDone, updateUnavailableExercises, getAlternativeExercise, fetchManyExercises, setShowExerciseDetails, adding, checkConnectionError }) => {
     return (
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
 
@@ -524,6 +546,12 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
 
                 {!done && plan === "workout" && <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: width * 0.02 }}>
                     <TouchableOpacity style={{ padding: 10, backgroundColor: '#FFC107', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                        if (!online) {
+                            Alert.alert('You are offline.', 'For a while, this feature is not available when you are offline.', [
+                                { text: 'OK' }
+                            ]);
+                            return;
+                        }
                         updateUnavailableExercises('add', [exerciseId]);
                         if (!adding) removeExercise(dayName, muscleGroup, exerciseId);
                         setShowBallon(false);
@@ -534,6 +562,12 @@ const BallonDetails = ({ plan, dayName, muscleGroup, allExercises, setShowBallon
                     </TouchableOpacity>
 
                     {!adding && <TouchableOpacity style={{ padding: 10, backgroundColor: '#00BCD4', borderRadius: 10, marginLeft: 10 }} onPress={() => {
+                        if (!online) {
+                            Alert.alert('You are offline.', 'Offline exercises alternatives will be available soon.', [
+                                { text: 'OK' }
+                            ]);
+                            return;
+                        }
                         const alternative = getAlternativeExercise(dayName, muscleGroup, exerciseId);
                         if (alternative) {
                             setShowExerciseDetails(true);
@@ -638,6 +672,7 @@ const ExerciseItem = ({ online, plan, dayName, muscleGroup, exercise, allExercis
 
             {showBallon && (
                 <BallonDetails
+                    online={online}
                     plan={plan}
                     dayName={dayName}
                     muscleGroup={muscleGroup}
@@ -669,6 +704,7 @@ const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, e
 
     return (
         <View key={muscleGroup} style={styles.trainingMemberGroup}>
+            {edit && !online && <Text style={{ color: 'red', fontWeight: 'bold', zIndex: 1 }}>You are offline, you can't save changes now!</Text>}
             <View style={styles.muscleGroupHeader}>
                 <Text style={styles.muscleGroupText}>{muscleGroupName}</Text>
             </View>
@@ -736,10 +772,11 @@ const TrainingMember = ({ online, plan, dayName, muscleGroup, muscleGroupName, e
     )
 }
 
-const AddMuscleGroupList = ({ muscleGroups, dayName, addMuscleGroup, setAddNewMuscleGroup }) => {
+const AddMuscleGroupList = ({ online, muscleGroups, dayName, addMuscleGroup, setAddNewMuscleGroup }) => {
 
     return (
         <View style={[styles.trainingMemberGroup, { marginBottom: 20 }]}>
+            {!online && <Text style={{ color: 'red', fontWeight: 'bold', zIndex: 1 }}>You are offline, you can't save changes now!</Text>}
             {muscleGroups.length > 0 ? muscleGroups.map((muscle, index) => {
                 return (
                     <TouchableOpacity key={index} style={styles.planDetailsContainer} onPress={() => { addMuscleGroup(dayName, muscle.id) }}>
@@ -806,7 +843,7 @@ const AddExerciseList = ({ online, plan, dayName, muscleGroup, exercises, allExe
     )
 }
 
-const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength, room, mode }) => {
+const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, GenerateWeekWorkoutPlan, GenerateWeekDietPlan, userSubscriptionPlan, setUpdatePlanModal, plansLength, room, mode, checkConnectionError }) => {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState(false);
     const [useAI, setUseAI] = useState(false);
@@ -1015,6 +1052,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                 You can have {userSubscriptionPlan.current_data.settings[plan].max[1]} plans with "{userSubscriptionPlan.current_data.name}" subscription.
                             </Text>
                                 <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
+                                    if (checkConnectionError()) return;
                                     setUpdatePlanModal(true);
                                 }}>
                                     <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Update Subscription</Text>
@@ -1101,6 +1139,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             <TouchableOpacity
                                 style={[styles.workoutButton, { backgroundColor: '#FF5733' }]}
                                 onPress={() => {
+                                    if (checkConnectionError()) return;
                                     if (useAI) {
                                         if (plan === "workout") {
                                             if (checkBeforeCreation()) {
@@ -1145,6 +1184,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             {!useAI && <TouchableOpacity
                                 style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}
                                 onPress={() => {
+                                    if (checkConnectionError()) return;
                                     if (plan === "workout") {
                                         if (checkBeforeCreation()) {
                                             setGenerating(true);
@@ -1341,7 +1381,7 @@ const NewFoodModal = ({ newFoodModal, setNewFoodModal, createFood, userSubscript
     )
 };
 
-const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrainingPlan, setPlans, updatePlans }) => {
+const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrainingPlan, setPlans, updatePlans, checkConnectionError }) => {
     const [title, setTitle] = useState("");
     const onClose = () => {
         setSettings(false);
@@ -1423,6 +1463,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
                             </TouchableOpacity>
 
                             <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#F44336', marginTop: 5 }]} onPress={() => {
+                                if (checkConnectionError()) return;
                                 Alert.alert("Confirm Deletion", "Are you sure you want to delete this workout plan?",
                                     [{ text: "Cancel", style: "cancel" }, { text: "Delete", onPress: () => { removeTrainingPlan(planId); onClose(); } }]);
                             }}>
@@ -1430,6 +1471,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
                             </TouchableOpacity>
 
                             <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', marginTop: 5 }]} onPress={() => {
+                                if (checkConnectionError()) return;
                                 setPlans(prevPlans => {
                                     const updatedPlans = { ...prevPlans };
                                     updatedPlans[plan] = updatedPlans[plan].map(plan => {
@@ -3022,7 +3064,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
 const FitnessScreen = ({ route, navigation }) => {
 
-    const { online, userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
+    const { userId, active, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError } = useGlobalContext();
 
     const [plan, setPlan] = useState('workout');
     const [plans, setPlans] = useState({ "workout": null, "diet": null });
@@ -3185,7 +3227,10 @@ const FitnessScreen = ({ route, navigation }) => {
 
     const [setting, setSettings] = useState(false);
 
+    const [loadingExercises, setLoadingExercises] = useState(false);
+
     const fetchManyExercisesImages = async (missing_exercises_images) => {
+        if (checkConnectionError()) return;
         try {
             const response = await fetch(BASE_URL + `/api/exercises/all-exercises/?missing_exercises_images=${missing_exercises_images.join(',')}`, {
                 method: 'GET',
@@ -3206,7 +3251,7 @@ const FitnessScreen = ({ route, navigation }) => {
     }
 
     const fetchManyExercises = async ({ exercises_list, muscle_group }) => {
-
+        if (!active) return;
         try {
             const response = await fetch(BASE_URL + `/api/exercises/all-exercises/?${exercises_list && exercises_list.length ? '&exercises_list=' + exercises_list.join(',') : ''}${muscle_group && muscle_group.length ? '&muscle_group=' + muscle_group : ''}`, {
                 method: 'GET',
@@ -3387,6 +3432,23 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const fetchPlans = async () => {
+        if (!active) {
+            fetchData(`${userId}_fitness_plans`).then(data => {
+                if (data) {
+                    setPlans(data);
+                    if (!planId && data[plan].length > 0) {
+                        setPlanId(data[plan][0].id);
+                        setDaysItems(prevDays => ({
+                            ...prevDays,
+                            [plan]: data[plan][0].days
+                        }));
+                    }
+                } else {
+                    Alert.alert("You are offline", "You are offline, please connect to the internet to access your fitness plans.", [{ text: "OK" }], { cancelable: true });
+                }
+            });
+            return;
+        }
         try {
             const response = await fetch(BASE_URL + `/api/exercises/user-plans/`, {
                 method: 'GET',
@@ -3804,44 +3866,50 @@ const FitnessScreen = ({ route, navigation }) => {
     }, [planId]);
 
     useEffect(() => {
-        if (daysItems[plan] && plans[plan]) {
-            let missing_exercises = [];
-            let missing_exercises_images = [];
-            for (const day of Object.keys(daysItems[plan])) {
-                for (const muscleGroup of Object.keys(daysItems[plan][day].items)) {
-                    for (const exercise of Object.keys(daysItems[plan][day].items[muscleGroup])) {
-                        if (!allItems[plan] || !allItems[plan][exercise]) {
-                            fetchData("exercise_" + exercise)
-                                .then((exercise_data) => {
+        const fetchDataAsync = async () => {
+            if (daysItems[plan] && plans[plan]) {
+                let missing_exercises = [];
+                let missing_exercises_images = [];
+
+                setLoadingExercises(true);
+
+                for (const day of Object.keys(daysItems[plan])) {
+                    for (const muscleGroup of Object.keys(daysItems[plan][day].items)) {
+                        for (const exercise of Object.keys(daysItems[plan][day].items[muscleGroup])) {
+                            if (!allItems[plan] || !allItems[plan][exercise]) {
+                                try {
+                                    const exercise_data = await fetchData("exercise_" + exercise);
                                     if (exercise_data) {
                                         setAllItems(prevItems => ({ ...prevItems, [plan]: { ...prevItems[plan], [exercise]: exercise_data } }));
                                         if (exercise_data.execution_images && exercise_data.execution_images.length > 0) {
-                                            fetchData("exercise_image_" + exercise_data.execution_images[0].image_name)
-                                                .then((image_data) => {
-                                                    if (!image_data) {
-                                                        missing_exercises_images.push(exercise);
-                                                    }
-                                                })
+                                            const image_data = await fetchData("exercise_image_" + exercise_data.execution_images[0].image_name);
+                                            if (!image_data) {
+                                                missing_exercises_images.push(exercise);
+                                            }
                                         }
                                     } else {
                                         missing_exercises.push(exercise);
                                     }
-                                })
-                                .catch((error) => console.error('There was a problem with fetching the exercise: \n', error));
+                                } catch (error) {
+                                    console.error('There was a problem with fetching the exercise: \n', error);
+                                }
+                            }
                         }
                     }
                 }
+
+                setTimeout(() => {
+                    if (missing_exercises.length > 0) {
+                        fetchManyExercises({ exercises_list: missing_exercises });
+                    } else if (missing_exercises_images.length > 0) {
+                        fetchManyExercisesImages(missing_exercises_images);
+                    }
+                }, 2000);
+                setLoadingExercises(false);
             }
+        };
 
-            setTimeout(() => {
-                if (missing_exercises.length > 0) {
-                    fetchManyExercises({ exercises_list: missing_exercises });
-                } else if (missing_exercises_images.length > 0) {
-                    fetchManyExercisesImages(missing_exercises_images);
-                }
-            }, 2000);
-        }
-
+        fetchDataAsync();
     }, [daysItems]);
 
     useEffect(() => {
@@ -3849,6 +3917,12 @@ const FitnessScreen = ({ route, navigation }) => {
             setAddNewMuscleGroup(false);
         }
     }, [selectedDay]);
+
+    useEffect(() => {
+        if (plans && !managerData) {
+            storeData(plans, `${userId}_fitness_plans`);
+        }
+    }, [plans]);
 
     const trainCompleted = verifyAllExercisesDone(plan, selectedDay ? selectedDay.name : 'Sun');
     const fit_plans = [{ plan_id: 'workout', plan_name: 'Workout' }, { plan_id: 'diet', plan_name: 'Diet' }, { plan_id: 'management', plan_name: 'Management' }];
@@ -3859,9 +3933,16 @@ const FitnessScreen = ({ route, navigation }) => {
         <View style={styles.container}>
             <GradientBackground firstColor="#1A202C" secondColor={personal ? "#1A202C" : managerData ? "#888" : "#991B1B"} thirdColor="#1A202C" />
 
-            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} mode={managerData ? 'personal_trainer' : 'user'} />
+            {loadingExercises &&
+            <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 100, backgroundColor: 'rgba(0,0,0,0.65)'}}>
+                <ActivityIndicator size="large" color="#FFF" />
+                <Text style={{color: '#FFF', fontWeight: 'bold', fontSize: 16, marginTop: 10}}>Loading data...</Text>
+            </View>
+            }
+
+            <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} mode={managerData ? 'personal_trainer' : 'user'} checkConnectionError={checkConnectionError} />
             {selectedPlan && <>
-                <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} />
+                <SettingsModal planId={planId} plan={plan} plans={plans} settings={setting} setSettings={setSettings} removeTrainingPlan={removeTrainingPlan} setPlans={setPlans} updatePlans={updatePlans} checkConnectionError={checkConnectionError} />
                 <NewFoodModal newFoodModal={newFoodModal} setNewFoodModal={setNewFoodModal} createFood={createFood} userSubscriptionPlan={userSubscriptionPlan} />
             </>}
 
@@ -3907,7 +3988,10 @@ const FitnessScreen = ({ route, navigation }) => {
                         })}
                     </View>
 
-                    {personal ? <PersonalManagementPaste navigation={navigation} userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                    {personal ?
+                        active ?
+                            <PersonalManagementPaste navigation={navigation} userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                            : <Text style={{ color: 'red', fontWeight: 'bold', zIndex: 1 }}>You are offline. Please connect to the internet to access this feature.</Text>
                         : <>
 
                             <View style={{ flexDirection: 'row', marginBottom: 10 }}>
@@ -3971,7 +4055,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                             return (
                                                 <View key={dayName}>
                                                     {Object.keys(dayInfo.items).length > 0 ? Object.entries(dayInfo.items).map(([muscleGroup, exercises_list]) => {
-                                                        return <TrainingMember key={muscleGroup} online={online} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
+                                                        return <TrainingMember key={muscleGroup} online={active} plan={plan} dayName={dayName} muscleGroupName={(plan === "workout" ? muscle_groups[muscleGroup] : meal_groups[muscleGroup]).name} muscleGroup={muscleGroup}
                                                             exercises={
                                                                 Object.entries(exercises_list).map(([exerciseId, exerciseDetails]) => {
                                                                     if (!allItems[plan] || !allItems[plan][exerciseId]) return;
@@ -4023,7 +4107,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                     </TouchableOpacity>
                                 </View>}
 
-                                {selectedDay && addNewMuscleGroup && <AddMuscleGroupList muscleGroups={
+                                {selectedDay && addNewMuscleGroup && <AddMuscleGroupList online={active} muscleGroups={
                                     Object.values(plan === "workout" ? muscle_groups : meal_groups).filter(group => !Object.keys(daysItems[plan][selectedDay.name].items).includes(group.group_id)).map(group => ({ id: group.group_id, name: group.name }))
                                 } dayName={selectedDay.name} addMuscleGroup={addMuscleGroup} setAddNewMuscleGroup={() => setAddNewMuscleGroup(false)} />}
 
@@ -4040,6 +4124,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                     </TouchableOpacity>
 
                                     <TouchableOpacity style={[styles.trainCompleteButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={() => {
+                                        if (checkConnectionError()) return;
                                         if (managerData) {
                                             setPlanId(null);
                                             setManagerData(null);
@@ -4078,12 +4163,14 @@ const FitnessScreen = ({ route, navigation }) => {
                                     </TouchableOpacity>
                                 </>
                             ) :
-                                updatePlanModal ? <ManagerSubscriptionPlansModal /> : <SubscriptionPlansModal userToken={userToken}
-                                    subscriptionTexts={{ button_text: "Update Plan" }}
-                                    object={{ mode: 'app' }}
-                                    patternMode='none'
-                                    confirmedSubscription={setConfirmedSubscription}
-                                />
+                                active && (
+                                    updatePlanModal ? <ManagerSubscriptionPlansModal /> : <SubscriptionPlansModal userToken={userToken}
+                                        subscriptionTexts={{ button_text: "Update Plan" }}
+                                        object={{ mode: 'app' }}
+                                        patternMode='none'
+                                        confirmedSubscription={setConfirmedSubscription}
+                                    />
+                                )
                             }
                         </>}
 

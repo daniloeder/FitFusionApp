@@ -31,7 +31,7 @@ export function timeAgo(timestamp) {
   const seconds = Math.floor(timeDifference / 1000);
 
   if (seconds < 60) {
-    return `${seconds+1} second${seconds === 1 ? '' : 's'} ago`;
+    return `${seconds + 1} second${seconds === 1 ? '' : 's'} ago`;
   }
 
   const minutes = Math.floor(seconds / 60);
@@ -56,9 +56,9 @@ export function timeAgo(timestamp) {
   return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
 }
 
-export const checkAvailableFeature = (feature, data, mode='any') => {
-  if(feature === 'add_max_feed_images'){
-    if(data.len >= data.userSubscriptionPlan.current_data.settings.add_max_feed_images){
+export const checkAvailableFeature = (feature, data, mode = 'any') => {
+  if (feature === 'add_max_feed_images') {
+    if (data.len >= data.userSubscriptionPlan.current_data.settings.add_max_feed_images) {
       Alert.alert('You need to upgrate to add more images.', `Max ${data.userSubscriptionPlan.current_data.settings.add_max_feed_images} images with "${data.userSubscriptionPlan.current_data.name}" plan.`,
         [{ text: 'Cancel', style: 'cancel' }, { text: 'Upgrade Plan', onPress: () => data.setUpdatePlanModal(true) }]
       );
@@ -151,11 +151,8 @@ export const checkAvailableFeature = (feature, data, mode='any') => {
         }]
       );
       return false;
-    } else if (feature === 'store_exercises_images' && (!data.userSubscriptionPlan.current_data.settings[data.plan].store_exercises_images)) {
-      if (!data.online) {
-        Alert.alert('You are offline and can\'t see or save images.', 'Please upgrade to Save images and see them offline.',
-          [{ text: 'Cancel', style: 'cancel' }]);
-      }
+    } else if (feature === 'store_exercises_images' && !data.userSubscriptionPlan.current_data.settings[data.plan].store_exercises_images) {
+      return false;
     }
   } else if (mode === 'personal_trainer') {
     console.log('Personal Trainer Mode')

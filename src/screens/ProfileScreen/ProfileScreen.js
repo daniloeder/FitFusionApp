@@ -22,7 +22,7 @@ const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
 
-  const { userToken, userSubscriptionPlan, setUserSubscriptionPlan } = useGlobalContext();
+  const { userId, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -80,9 +80,11 @@ const ProfileScreen = ({ route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      setProfile([]);
-      fetchProfile();
-    }, [userToken])
+      if (!profile || profile.id !== userId) {
+        setCurrentImage(null);
+        fetchProfile();
+      }
+    }, [userToken, profile])
   );
 
   useFocusEffect(
@@ -105,6 +107,7 @@ const ProfileScreen = ({ route }) => {
   }, [selectedProfileImage]);
 
   const updateExistingImages = async () => {
+    if (checkConnectionError()) return;
     const existingImagesData = selectedImages.map((img, index) => ({
       id: img.id,
       image_id: index + 1
@@ -168,6 +171,7 @@ const ProfileScreen = ({ route }) => {
   };
 
   const updateProfile = async () => {
+    if(checkConnectionError()) return;
     const requestBody = {};
     if (dateOfBirth) {
       requestBody.date_of_birth = dateOfBirth;
@@ -221,6 +225,7 @@ const ProfileScreen = ({ route }) => {
   };
 
   const onSetProfileImage = async () => {
+    if(checkConnectionError()) return;
     if (selectedProfileImage.length === 0) {
       return;
     }

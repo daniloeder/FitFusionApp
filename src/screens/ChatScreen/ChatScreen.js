@@ -17,19 +17,19 @@ const ChatScreen = ({ route, navigation }) => {
   const [input, setInput] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
-  const { chatId, showOnline, setChatId, sendMessage, onlineUsers } = useGlobalContext();
+  const { chatId, showOnline, setChatId, sendMessage, onlineUsers, checkConnectionError } = useGlobalContext();
 
   useFocusEffect(
     useCallback(() => {
-    if (showOnline && participantId) {
-      const intervalId = setInterval(() => {
-        sendMessage({ type: 'is_online', track: [participantId] });
-      }, 2500);
+      if (showOnline && participantId) {
+        const intervalId = setInterval(() => {
+          sendMessage({ type: 'is_online', track: [participantId] });
+        }, 2500);
 
-      return () => clearInterval(intervalId);
-    }
-  }, [participantId])
-);
+        return () => clearInterval(intervalId);
+      }
+    }, [participantId])
+  );
 
   useEffect(() => {
     if (chatId) {
@@ -105,6 +105,7 @@ const ChatScreen = ({ route, navigation }) => {
         <TouchableOpacity
           onPress={() => {
             if (!isGroupChat) {
+              if (checkConnectionError()) return;
               navigation.navigate('User Profile', { id: participantId })
             }
           }}
@@ -155,6 +156,7 @@ const ChatScreen = ({ route, navigation }) => {
         />
         <TouchableOpacity style={styles.sendButton} onPress={() => {
           if (input.trim() !== '') {
+            if (checkConnectionError()) return;
 
             const chat_code = "chat_" + Math.floor(Math.random() * 1000000000).toString();
             if (chatId) {

@@ -34,9 +34,13 @@ async function updateCoordinates(userToken, location) {
     }
 }
 
-function GetUserCoordinates({ userToken, userLocation, setUserLocation }) {
+function GetUserCoordinates({ active, userToken, userLocation, setUserLocation }) {
 
     const requestLocationPermission = async () => {
+        if (!active) {
+            Alert.alert("You are Offline", "Please check your internet connection and try again.");
+            return;
+        }
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
             try {
