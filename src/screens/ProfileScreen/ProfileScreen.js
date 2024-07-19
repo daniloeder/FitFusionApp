@@ -22,7 +22,7 @@ const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
 
-  const { userId, active, userId, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError, checkConnectionError } = useGlobalContext();
+  const { userId, active, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
