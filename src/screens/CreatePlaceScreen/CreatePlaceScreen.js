@@ -204,10 +204,8 @@ const CreatePlaceScreen = ({ route, navigation }) => {
 
                 <Text style={styles.inputTitles}>Location</Text>
 
-                <OSMPlacesAutocomplete setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
-
-                {//<GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
-                }
+                <GoogleAutocompletePicker setLocation={setLocation} setCoordinates={setCoordinates} placeholder={location} />
+                
                 {coordinates ? <ShowOnMap coordinates={coordinates} /> : null}
 
                 {!preview ?

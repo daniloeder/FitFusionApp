@@ -93,8 +93,8 @@ export const ChatProvider = ({ children }) => {
                                 id: chatId,
                                 is_defined: true,
                             }
-                         }
-                    }                    
+                        }
+                    }
 
                 });
             }

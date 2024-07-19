@@ -8,7 +8,7 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages, type = "image", size = 100, max = 1, move = true, cancel, userSubscriptionPlan }) => {
+const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages, type = "image", size = 100, max = 1, move = true, cancel, userSubscriptionPlan, profile = false }) => {
 
     const onImageSelect = (uri) => {
         setSelectedImages([...selectedImages, uri]);
@@ -97,7 +97,12 @@ const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages
                 </View>
             ))}
             {selectedImages && selectedImages.length < max ?
-                <Pressable onPress={()=>checkAvailableFeature('add_max_feed_images', { userSubscriptionPlan: userSubscriptionPlan, setUpdatePlanModal: userSubscriptionPlan.setUpdatePlanModal, len: selectedImages.length }) && pickImage()} style={[styles.addButton, { width: size, height: size }]}>
+                <Pressable onPress={() => {
+                    if (!profile || checkAvailableFeature('add_max_feed_images', { userSubscriptionPlan: userSubscriptionPlan, setUpdatePlanModal: userSubscriptionPlan.setUpdatePlanModal, len: selectedImages.length })) {
+                        pickImage();
+                    } 
+                }}
+                    style={[styles.addButton, { width: size, height: size }]}>
                     <Icons name={type === 'image' ? "AddImage" : "AddVideo"} size={width * 0.12} style={styles.centerIcon} />
                 </Pressable> : ''
             }

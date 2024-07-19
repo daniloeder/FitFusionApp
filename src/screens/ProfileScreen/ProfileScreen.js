@@ -576,6 +576,7 @@ const ProfileScreen = ({ route }) => {
             setEditImages={setEditImages}
             cancel
             userSubscriptionPlan={{ ...userSubscriptionPlan, setUpdatePlanModal: setUpdatePlanModal }}
+            profile
           />
           :
           <>
