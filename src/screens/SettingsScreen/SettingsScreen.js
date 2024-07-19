@@ -5,7 +5,7 @@ import { useGlobalContext } from './../../services/GlobalContext';
 import { BASE_URL } from '@env';
 
 const SettingsScreen = ({ route, navigation }) => {
-  const { userToken, show_online } = route.params;
+  const { userToken, show_online, show_notifications } = route.params;
   const [selectedLanguage, setSelectedLanguage] = useState('English');
   const [updating, setUpdating] = useState(false);
 
@@ -59,6 +59,10 @@ const SettingsScreen = ({ route, navigation }) => {
     }
     setUpdating(false);
   }
+
+  useEffect(() => {
+    setShowNotifications(show_notifications.notifications);
+  }, [show_notifications]);
 
   useEffect(() => {
     if (show_online && show_online.online !== showOnline) {

@@ -316,7 +316,7 @@ const ProfileScreen = ({ route }) => {
       >
         {active && isLoading && <ActivityIndicator size="large" color="#FFF" />}
         <Pressable
-          onPress={() => navigation.navigate('Settings', { show_online: { online: profile.show_online } })}
+          onPress={() => navigation.navigate('Settings', { show_online: { online: profile.show_online }, show_notifications: { notifications: profile.show_notifications } })}
           style={styles.settingsButton}
         >
           <Icons name="Settings" size={width * 0.1} />
