@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert, ScrollView, Dimensions, Modal, Pressable, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
@@ -8,6 +8,7 @@ import SportsItems from '../../components/SportsItems/SportsItems.js';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
+import UsersBall from '../../components/UsersBall/UsersBall.js';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 
@@ -23,6 +24,7 @@ const PlaceScreen = ({ route, navigation }) => {
     const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
     const [userImages, setUserImages] = useState([]);
+    const [owner, setOwner] = useState(null);
 
     const [preview, setPreview] = useState(route.params.placePreview);
 
@@ -41,6 +43,13 @@ const PlaceScreen = ({ route, navigation }) => {
             }
         }, [placeId, route.params.placePreview])
     );
+
+    useEffect(() => {
+        if (userImages.length > 0) {
+            setOwner(userImages.find(item => item.user_id === place.created_by));
+        }
+    }, [userImages]);
+
 
     const fetchUserProfileImages = async (clients) => {
         if (clients.length) {
@@ -69,7 +78,7 @@ const PlaceScreen = ({ route, navigation }) => {
                     setJoined(true);
                 }
                 setClients(data.clients || []);
-                fetchUserProfileImages(data.clients);
+                fetchUserProfileImages([...data.clients, data.created_by]);
             } else {
                 Alert.alert(response.status === 404 ? 'Place not Found.' : 'Unknown error on fetching place.');
             }
@@ -162,7 +171,11 @@ const PlaceScreen = ({ route, navigation }) => {
                     >
                         <Icons name="Settings" size={width * 0.08} />
                         <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Manage Place</Text>
-                    </Pressable> : ''
+                    </Pressable> :
+                    owner ? <View style={{ alignItems: 'center', justifyContent: 'center', marginLeft: 'auto', zIndex: 1, marginBottom: -10 }}>
+                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.03 }}>Place Owner</Text>
+                        <UsersBall key={place.created_by} user={owner} onPress={() => navigation.navigate('User Profile', { id: place.created_by })} size={0.6} />
+                    </View> : ''
                 }
 
                 <Text style={styles.title}>{place.name}</Text>
@@ -180,7 +193,7 @@ const PlaceScreen = ({ route, navigation }) => {
 
                 {joined ?
                     <>
-                        <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={()=>{
+                        <TouchableOpacity style={[styles.button, { backgroundColor: 'red' }]} onPress={() => {
                             Alert.alert("Are you sure you want to leave this place?", "", [{ text: "Cancel", style: "cancel" }, { text: "Leave", onPress: onJoinLeavePlace }]);
                         }}>
                             <Text style={styles.buttonText}>Leave Place</Text>
@@ -201,12 +214,12 @@ const PlaceScreen = ({ route, navigation }) => {
                     :
                     <>
                         <TouchableOpacity style={[styles.button, { backgroundColor: 'green' }]} onPress={() => {
-                            if(place.created_by != userId){
+                            if (place.created_by != userId) {
                                 if (place.is_private) {
                                     if (place.subscription_plans.length === 0) {
-                                      Alert.alert('The owner still not published any subscription plan. Try again later.');
+                                        Alert.alert('The owner still not published any subscription plan. Try again later.');
                                     } else {
-                                      setSubscriptionPlansModalVisible(true);
+                                        setSubscriptionPlansModalVisible(true);
                                     }
                                 } else {
                                     Alert.alert("Are you sure you want to join this place?", "", [{ text: "Cancel", style: "cancel" }, { text: "Join", onPress: onJoinLeavePlace }]);

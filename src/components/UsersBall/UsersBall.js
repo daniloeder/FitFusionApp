@@ -92,7 +92,7 @@ const UsersBall = ({ user, onPress, name='name', size = 1, nameColor = "#FFF" })
                 }
 
                 <View style={styles.userCardIcons}>
-                    {user.favorite_sports.slice(0, 3).map((sport, index) => {
+                    {user.favorite_sports && user.favorite_sports.slice(0, 3).map((sport, index) => {
                         return (
                             <View key={sport} style={[styles.favoriteSportIcon, index === 1 ? styles.favoriteSportIconSpecial : {}]}>
                                 <Icons name={iconNamesByIndex[(sport - 1)]} size={width * 0.05 * size} />

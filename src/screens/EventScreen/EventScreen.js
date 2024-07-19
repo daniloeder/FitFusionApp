@@ -7,9 +7,9 @@ import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansMo
 import { ShowOnMap } from '../../components/GoogleMaps/GoogleMaps.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import PaymentCard from '../../components/Management/PaimentCard.js';
+import UsersBall from '../../components/UsersBall/UsersBall.js';
 import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
-import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -23,6 +23,7 @@ const EventScreen = ({ route, navigation }) => {
   const [isVideoModalVisible, setVideoModalVisible] = useState(false);
 
   const [userImages, setUserImages] = useState([]);
+  const [owner, setOwner] = useState(null);
 
   const [preview, setPreview] = useState(route.params.eventPreview);
 
@@ -44,6 +45,12 @@ const EventScreen = ({ route, navigation }) => {
   useEffect(() => {
     setEvent(preview);
   }, [preview]);
+
+  useEffect(() => {
+    if(userImages.length > 0){
+      setOwner(userImages.find(item => item.user_id === event.creator));
+    }
+  }, [userImages]);
 
   useEffect(() => {
     setPreview(route.params.eventPreview);
@@ -84,7 +91,7 @@ const EventScreen = ({ route, navigation }) => {
         setEvent(data);
         setJoined(data.joined);
         setParticipants(data.participants || []);
-        fetchUserProfileImages(data.participants);
+        fetchUserProfileImages([...data.participants, data.creator]);
       } else {
         Alert.alert(response.status === 404 ? 'Event not Found.' : 'Unknown error on fetching event.');
       }
@@ -207,7 +214,11 @@ const EventScreen = ({ route, navigation }) => {
           >
             <Icons name="Settings" size={width * 0.08} />
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Manage Event</Text>
-          </Pressable> : ''
+          </Pressable> :
+          owner ? <View style={{ alignItems: 'center', justifyContent: 'center', marginLeft: 'auto', zIndex: 1, marginBottom: -10 }}>
+            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.03 }}>Event Owner</Text>
+            <UsersBall key={event.creator} user={owner} onPress={()=>navigation.navigate('User Profile', { id: event.creator })} size={0.6} />
+          </View> : ''
         }
 
         <View style={styles.infoBlock}>
