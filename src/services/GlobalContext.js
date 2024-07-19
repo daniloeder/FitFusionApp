@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { AppState, Alert } from 'react-native';
 import { deleteAuthToken } from '../store/store';
 import { useChat } from '../utils/chats';
@@ -95,9 +95,12 @@ export const GlobalProvider = ({
       const message = JSON.parse(e.data);
 
       if (message.type === "online_status") {
-        if (message.online_users !== onlineUsers) {
-          setOnlineUsers(message.online_users);
-        }
+        setOnlineUsers(prevOnlineUsers => {
+          if (JSON.stringify(prevOnlineUsers) !== JSON.stringify(message.online_users)) {
+            return message.online_users;
+          }
+          return prevOnlineUsers;
+        });
       } else if (message.type === "chat_message") {
         const chatId = message.chat_room;
         handleNewMessage(userId, chatId, message);
@@ -206,28 +209,47 @@ export const GlobalProvider = ({
     };
   }, [connectNotificationsWebSocket, connectChatWebSocket]);
 
+  const contextValue = useMemo(() => ({
+    userId,
+    active,
+    userToken,
+    showOnline,
+    chatId,
+    setChatId,
+    onlineUsers,
+    notifications,
+    setNotifications,
+    userSubscriptionPlan,
+    setUserSubscriptionPlan,
+    sendMessage,
+    sendNotificationsMessage,
+    handleLogout,
+    showNotifications,
+    setShowNotifications,
+    showOnline,
+    setShowOnline,
+    checkConnectionError,
+  }), [
+    userId,
+    active,
+    userToken,
+    showOnline,
+    chatId,
+    onlineUsers,
+    notifications,
+    setNotifications,
+    userSubscriptionPlan,
+    setUserSubscriptionPlan,
+    sendMessage,
+    sendNotificationsMessage,
+    handleLogout,
+    showNotifications,
+    setShowNotifications,
+    setShowOnline,
+  ]);
+
   return (
-    <GlobalContext.Provider value={{
-      userId,
-      active,
-      userToken,
-      showOnline,
-      chatId,
-      setChatId,
-      onlineUsers,
-      notifications,
-      setNotifications,
-      userSubscriptionPlan,
-      setUserSubscriptionPlan,
-      sendMessage,
-      sendNotificationsMessage,
-      handleLogout,
-      showNotifications,
-      setShowNotifications,
-      showOnline,
-      setShowOnline,
-      checkConnectionError,
-    }}>
+    <GlobalContext.Provider value={contextValue}>
       {children}
     </GlobalContext.Provider>
   );
