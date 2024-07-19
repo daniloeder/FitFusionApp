@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Linking, Alert } from 'react-native';
 import * as Location from 'expo-location';
-import { storeData } from '../../store/store';
+import { storeData, fetchData } from '../../store/store';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
@@ -34,7 +34,8 @@ async function updateCoordinates(userToken, location) {
     }
 }
 
-function GetUserCoordinates({ active, userToken, userLocation, setUserLocation }) {
+function GetUserCoordinates({ active, userId, userToken, userLocation, setUserLocation }) {
+    const [newLocation, setNewLocation] = React.useState(null);
 
     const requestLocationPermission = async () => {
         if (!active) {
@@ -45,10 +46,10 @@ function GetUserCoordinates({ active, userToken, userLocation, setUserLocation }
         if (status === 'granted') {
             try {
                 let location = await Location.getCurrentPositionAsync({});
-                setUserLocation({
+                setNewLocation({
                     latitude: 52.5090663,//location.coords.latitude,
                     longitude: 13.4005972,//location.coords.longitude,
-                });
+                })
                 Alert.alert('Location Updated Based on Your Current Location!');
             } catch (error) {
                 Alert.alert('Error fetching user location:', error);
@@ -59,11 +60,18 @@ function GetUserCoordinates({ active, userToken, userLocation, setUserLocation }
         }
     };
     useEffect(() => {
-        if (userLocation) {
-            storeData(userLocation, '@userLocation');
-            updateCoordinates(userToken, userLocation);
+        if (newLocation) {
+            storeData(newLocation, `${userId}_location`);
+            setUserLocation(newLocation);
+            updateCoordinates(userToken, newLocation);
+        } else {
+            fetchData(`${userId}_location`).then((location) => {
+                if (location) {
+                    setUserLocation(location);
+                }
+            });
         }
-    }, [userLocation]);
+    }, [newLocation]);
 
     return (
         <View style={styles.container}>

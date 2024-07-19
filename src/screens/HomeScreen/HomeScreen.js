@@ -113,7 +113,7 @@ const HomeScreen = ({ route, navigation }) => {
             const updatedCloserUsers = [...prevCloserUsers];
             for (const member of data) {
               const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
-              updatedCloserUsers[index].profile_image = member.profile_image;
+              if(updatedCloserUsers[index]) updatedCloserUsers[index].profile_image = member.profile_image;
             }
             return updatedCloserUsers;
           });
@@ -215,12 +215,12 @@ const HomeScreen = ({ route, navigation }) => {
   }, [closerUsers]);
 
   useEffect(() => {
-    if (userLocation) {
+    if (userLocation && userToken) {
       fetchNearbyUsers(userToken, userLocation);
       fetchNearbyPlaces(userToken, userLocation);
       fetchNearbyEvents(userToken, userLocation);
     }
-  }, [userLocation]);
+  }, [userLocation, userToken]);
 
   useEffect(() => {
     if (data) {
