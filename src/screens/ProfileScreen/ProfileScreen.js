@@ -561,7 +561,7 @@ const ProfileScreen = ({ route }) => {
             <TouchableOpacity style={styles.editButton} onPress={() => !checkConnectionError() && setEditProfile(true)}>
               <Text style={styles.editButtonText}>Edit Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => navigation.navigate('Settings')}>
+            <TouchableOpacity style={[styles.editButton, { marginBottom: width * 0.1 }]} onPress={() => navigation.navigate('Settings', { show_online: { online: profile.show_online }, show_notifications: { notifications: profile.show_notifications } })}>
               <Text style={styles.editButtonText}>Settings</Text>
             </TouchableOpacity>
           </>
