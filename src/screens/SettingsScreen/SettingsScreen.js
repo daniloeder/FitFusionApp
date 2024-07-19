@@ -47,7 +47,7 @@ const SettingsScreen = ({ route, navigation }) => {
         if (data.show_notifications) {
           setShowNotifications(data.show_notifications);
         } else if (data.hasOwnProperty('show_online')) {
-          sendMessage({type: 'is_online', online_track: updates.show_online });
+          sendMessage({ type: 'is_online', online_track: updates.show_online });
           setShowOnline(data.show_online);
         }
       } else if (response.status === 400) {
@@ -61,7 +61,9 @@ const SettingsScreen = ({ route, navigation }) => {
   }
 
   useEffect(() => {
-    setShowNotifications(show_notifications.notifications);
+    if (show_notifications && show_notifications.notifications !== showNotifications) {
+      setShowNotifications(show_notifications.notifications);
+    }
   }, [show_notifications]);
 
   useEffect(() => {
@@ -85,25 +87,25 @@ const SettingsScreen = ({ route, navigation }) => {
         overScrollMode="never"
       >
         {updating && <ActivityIndicator size="large" color="#FFF" />}
-        <View style={styles.settingRow}>
+        {showNotifications != undefined && <View style={styles.settingRow}>
           <Text style={styles.settingText}>Notifications</Text>
           <Switch
             value={showNotifications.all}
             onValueChange={() => {
-              if(checkConnectionError()) return;
+              if (checkConnectionError()) return;
               updateSettings({ show_notifications: { ...showNotifications, all: !showNotifications.all } })
             }}
             thumbColor={showNotifications.all ? "#007bff" : "#ccc"}
             trackColor={{ false: "#767577", true: "#81b0ff" }}
           />
-        </View>
+        </View>}
 
-        <View style={styles.settingRow}>
+        {showOnline != undefined && <View style={styles.settingRow}>
           <Text style={styles.settingText}>Show Online</Text>
           <Switch
             value={showOnline}
             onValueChange={() => {
-              if(checkConnectionError()) return;
+              if (checkConnectionError()) return;
               if (showOnline) {
                 Alert.alert('Disable Show Online?', 'Are you sure you want to disable Show Online? You will not be able to see online users.', [
                   { text: 'Cancel', onPress: () => { }, style: 'cancel' }, { text: 'OK', onPress: () => updateSettings({ show_online: false }), style: 'destructive' },
@@ -115,7 +117,7 @@ const SettingsScreen = ({ route, navigation }) => {
             thumbColor={showOnline ? "#007bff" : "#ccc"}
             trackColor={{ false: "#767577", true: "#81b0ff" }}
           />
-        </View>
+        </View>}
 
         <TouchableOpacity style={styles.settingRow} onPress={() => {/* Navigate to Language Selection Screen */ }}>
           <Text style={styles.settingText}>Language</Text>
@@ -131,7 +133,7 @@ const SettingsScreen = ({ route, navigation }) => {
           marginTop: 10,
         }}
           onPress={() => {
-            if(checkConnectionError()) return;
+            if (checkConnectionError()) return;
             Alert.alert('Create Personal Trainer Account', 'Are you a professional personal trainer?', [
               {
                 text: 'Yes',
