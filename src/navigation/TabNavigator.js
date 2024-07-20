@@ -26,8 +26,12 @@ import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
 import FitnessScreen from '../screens/FitnessScreen/FitnessScreen';
 
+import AdvertisementModal from '../components/Advertisement/AdvertisementModal';
+import SubscriptionPlansModal from '../components/Payment/SubscriptionPlansModal';
+
 import { GlobalProvider } from '../services/GlobalContext';
 import { useChat } from '../utils/chats';
+import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 
@@ -160,6 +164,20 @@ const TabNavigator = () => {
       }
     }
   });
+  const [advertisementAnswer, setAdvertisementAnswer] = useState(null);
+  const [ads, setAds] = useState(null);
+
+  useEffect(() => {
+    if (advertisementAnswer) {
+      setAds(null);
+      if (advertisementAnswer.navigate) {
+        navigation.navigate(advertisementAnswer.navigate.screen, advertisement.navigate.params);
+      }
+      if (advertisementAnswer.alert) {
+        Alert.alert(advertisementAnswer.alert.title, advertisementAnswer.alert.message);
+      }
+    }
+  }, [advertisementAnswer]);
 
   const fetchSubscriptionPlans = async (token) => {
     try {
@@ -176,6 +194,9 @@ const TabNavigator = () => {
       }
       if (data.show_notifications) {
         setShowNotifications(data.show_notifications);
+      }
+      if (data.ads) {
+        setAds(data.ads);
       }
     } catch (error) {
       console.error('There was an error:', error);
@@ -244,25 +265,25 @@ const TabNavigator = () => {
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#FF231F7C',
     });
-  
+
     // Add notification listeners
     const notificationReceivedSubscription = Notifications.addNotificationReceivedListener(notification => {
       // Handle notification received
     });
-  
+
     const notificationResponseSubscription = Notifications.addNotificationResponseReceivedListener(notification => {
       const data = notification.notification.request.content.data;
-  
+
       if (data.type === 'chat_message') {
         navigation.navigate('Tabs', { screen: 'Chat', params: { chatId: data.chat_id, chatName: data.name, chatImage: data.profile_image } });
       }
     });
-  
+
     return () => {
       notificationReceivedSubscription.remove();
       notificationResponseSubscription.remove();
     };
-  }, [chatId]);  
+  }, [chatId]);
 
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
@@ -281,6 +302,13 @@ const TabNavigator = () => {
       showNotifications={showNotifications}
       setShowNotifications={setShowNotifications}
     >
+      {ads &&
+        <View style={{ position: 'absolute' }}>
+          {ads.app && <SubscriptionPlansModal userToken={userToken}
+            subscriptionTexts={{ button_text: "Update Plan" }} object={{ mode: 'app' }} patternMode='subscription' confirmedSubscription={setUserSubscriptionPlan}
+          />
+            || ads.modal && <AdvertisementModal advertisement={ads.modal} setAdvertisementAnswer={setAdvertisementAnswer} />
+          }</View>}
       <Tab.Navigator
         initialRouteName="Home"
         screenOptions={{
