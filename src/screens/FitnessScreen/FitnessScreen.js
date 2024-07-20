@@ -3747,7 +3747,7 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const removeTrainingPlan = (planId) => {
-        if (online) {
+        if (active) {
             deleteTrainingPlan(planId);
         } else {
             setPlans(prevPlans => prevPlans.filter(plan => plan.id !== planId));
