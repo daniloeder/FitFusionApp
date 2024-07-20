@@ -7,15 +7,13 @@ import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const SearchScreen = ({ navigation }) => {
+export const SearchComponent = ({ setResults, setSearched, params='' }) => {
   const { checkConnectionError } = useGlobalContext();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState({ events: [], places: [], users: [] });
-  const [searched, setSearched] = useState(false);
 
   const onSearch = async () => {
     try {
-      const url = BASE_URL + `/api/common/search/?q=${encodeURIComponent(query)}`;
+      const url = BASE_URL + `/api/common/search/?q=${encodeURIComponent(query)}${params}`;
       const response = await fetch(url);
       const data = await response.json();
       setResults(data);
@@ -24,26 +22,37 @@ const SearchScreen = ({ navigation }) => {
     }
   };
 
+  return (
+    <View style={styles.searchBarContainer}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search..."
+        value={query}
+        onChangeText={setQuery}
+      />
+      <TouchableOpacity style={styles.searchButton} onPress={() => {
+        if (checkConnectionError()) return;
+        onSearch();
+        setSearched && setSearched(true);
+      }}>
+        <Text style={styles.searchButtonText}>Search</Text>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
+const SearchScreen = ({ navigation }) => {
+  const [results, setResults] = useState({ events: [], places: [], users: [] });
+  const [searched, setSearched] = useState(false);
+
   const truncateText = (text, limit) => text.length > limit ? text.substring(0, limit) + '...' : text;
 
   return (
     <View style={styles.gradientContainer}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
 
-      <View style={styles.searchBarContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search..."
-          value={query}
-          onChangeText={setQuery}
-        />
-        <TouchableOpacity style={styles.searchButton} onPress={() => {
-          if(checkConnectionError()) return;
-          onSearch();
-          setSearched(true);
-        }}>
-          <Text style={styles.searchButtonText}>Search</Text>
-        </TouchableOpacity>
+      <View style={{marginHorizontal: 15}}>
+      <SearchComponent setResults={setResults} setSearched={setSearched} />
       </View>
 
       <ScrollView
@@ -103,15 +112,12 @@ const SearchScreen = ({ navigation }) => {
             <Text style={styles.resultDescription}>{truncateText(place.description, 100)}</Text>
           </TouchableOpacity>
         ))}
-        {results.users.length === 0 && searched && (
-          <Text style={styles.notFound}>No users found</Text>
-        )}
-        {results.events.length === 0 && searched && (
-          <Text style={styles.notFound}>No events found</Text>
-        )}
-        {results.places.length === 0 && searched && (
-          <Text style={styles.notFound}>No places found</Text>
-        )}
+
+        {searched && (<>
+          {results.users.length === 0 && <Text style={styles.notFound}>No users found</Text>}
+          {results.events.length === 0 && <Text style={styles.notFound}>No events found</Text>}
+          {results.places.length === 0 && <Text style={styles.notFound}>No places found</Text>}
+        </>)}
       </ScrollView>
     </View>
   );
@@ -124,7 +130,6 @@ styles = StyleSheet.create({
   searchBarContainer: {
     flexDirection: 'row',
     marginBottom: width * 0.02,
-    marginHorizontal: width * 0.02,
     marginTop: width * 0.05,
   },
   searchInput: {

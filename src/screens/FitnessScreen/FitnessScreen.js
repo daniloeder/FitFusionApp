@@ -11,6 +11,7 @@ import SelectBox from '../../components/Tools/SelectBox';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import DatePicker from '../../components/Forms/DatePicker';
 import PaymentCard from '../../components/Management/PaimentCard.js';
+import { SearchComponent } from '../SearchScreen/SearchScreen';
 import { checkAvailableFeature } from '../../utils/helpers';
 
 const width = Dimensions.get('window').width;
@@ -1532,6 +1533,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     const [userRequests, setUserRequests] = useState(null);
     const [selectedUserRequest, setSelectedUserRequest] = useState(null);
     const [newUserRequest, setNewUserRequest] = useState(null);
+    const [searchedTrainers, setSearchedTrainers] = useState(null);
 
     const [evaluationMode, setEvaluationMode] = useState(null);
     const [evaluations, setEvaluations] = useState(null);
@@ -1562,7 +1564,15 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                     setMembers(prevMembers => {
                         const updatedMembers = { ...prevMembers };
                         data.forEach(user => {
+                            if (!updatedMembers[user.user_id]) {
+                                // add this user
+                                updatedMembers[user.user_id] = {
+                                    id: user.user_id,
+                                    username: user.username,
+                                };
+                            }
                             updatedMembers[user.user_id].profile_image = user.profile_image;
+                            updatedMembers[user.user_id].name = user.name;
                             updatedMembers[user.user_id].checked = true;
                         });
                         return updatedMembers;
@@ -1765,6 +1775,13 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
             setManage(null);
         }
     }, [manage]);
+
+    useEffect(() => {
+        if (searchedTrainers && searchedTrainers.users.length > 0) {
+            const selected_trainers_users_ids = searchedTrainers.users.map(user => user.id);
+            fetchUserProfileImages(selected_trainers_users_ids);
+        }
+    }, [searchedTrainers]);
 
     const styles = StyleSheet.create({
         title: {
@@ -2603,7 +2620,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                 <ScrollView>
                     {userMode === "trainers" ?
                         <View>
-                            <View style={{ maxHeight: width * 0.65 }}>
+                            <View style={{}}>
                                 {generalData.tabs && generalData.tabs.user && generalData.tabs.user.nearby_trainers.length > 0 && <>
                                     <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
                                         Nearby Trainers:
@@ -2656,69 +2673,97 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                     </>
                                     : <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>No Trainers Found</Text>
                                 }
-                            </View>
-                            {selectedTrainer && <View style={{ width: '100%', padding: 5, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.15)' }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
-                                    <UsersBall user={members[selectedTrainer.id]} name="none" size={0.5} nameColor="#EEE" />
-                                    <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
-                                </View>
-                                {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
-                                    {selectedTrainer.address}
-                                </Text>}
 
-                                {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
-
-                                {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
-                                    : selectedTrainer.rooms && selectedTrainer.rooms.length > 0 && (
-                                        <View style={{ width: '100%' }}>
-                                            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                                {selectedTrainer.rooms.map((room, index) => {
-                                                    return <Tabs
-                                                        key={index}
-                                                        index={index}
-                                                        name={room.name}
-                                                        setSelectedTab={() => {
-                                                            setSelectedTrainerRoomId(room.id);
-                                                            setSelectedTrainerRoom(room);
-                                                        }}
-                                                        isSelected={room.id === selectedTrainerRoomId}
-                                                        len={selectedTrainer.rooms.length}
-                                                        TabSize={width * 0.89 / selectedTrainer.rooms.length * 0.9}
-                                                        textColor='#222'
-                                                        selectedColor='#FFF'
-                                                        unselectedColor='#DDD'
-                                                    />
-                                                }
-                                                )}
-                                            </View>
-                                            {selectedTrainerRoom && <>
-                                                <View>
-                                                    <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
-                                                        <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerRoom.description}</Text>
-                                                    </View>
-                                                </View>
-
-                                                {selectedTrainerRoom.subscription_plans.length > 0 &&
-                                                    <View style={{ width: '100%', marginTop: 10 }}>
-                                                        <SubscriptionPlansModal
-                                                            userToken={userToken}
-                                                            subscriptionTexts={{ button_text: "Request to Join Room", alert_title: "Joining Room", alert_message: "Are you sure you want to join this room?" }}
-                                                            object={{
-                                                                get_key: 'plans_ids',
-                                                                get_id: selectedTrainerRoom.subscription_plans.map(plan => plan.id),
-                                                                plans_in: selectedTrainerRoom.subscription_plans,
-                                                            }}
-                                                            patternMode='see'
-                                                            setNewUserRequest={setNewUserRequest}
-                                                        />
-                                                    </View>
-                                                }
-                                            </>
-                                            }
+                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold', marginVertical: 5, top: 5 }}>
+                                    Searched Trainers:
+                                </Text>
+                                {searchedTrainers && searchedTrainers.users.length > 0 && <>
+                                    <ScrollView horizontal>
+                                        <View style={styles.usersContainer}>
+                                            {searchedTrainers.users.map(trainer => {
+                                                if (!members[trainer.id]) return;
+                                                return <UsersBall key={trainer.id} user={members[trainer.id]}
+                                                    onPress={() => {
+                                                        setSelectedTrainer({
+                                                            ...trainer,
+                                                            id: trainer.id,
+                                                            name: trainer.name,
+                                                            loading: true,
+                                                            rooms: [],
+                                                        });
+                                                        fetchPersonalRoomData(trainer.trainer_id, false);
+                                                    }} size={0.8} nameColor="#EEE" />
+                                            })}
                                         </View>
-                                    )
-                                }
-                            </View>}
+                                    </ScrollView>
+                                </>}
+                                <SearchComponent setResults={setSearchedTrainers} params="&personal_trainer=true" />
+                            </View>
+
+                            {selectedTrainer &&
+                                <View style={{ width: '100%', padding: 5, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.15)' }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
+                                        <UsersBall user={members[selectedTrainer.id]} name="none" size={0.5} nameColor="#EEE" />
+                                        <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
+                                    </View>
+                                    {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
+                                        {selectedTrainer.address}
+                                    </Text>}
+
+                                    {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
+
+                                    {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
+                                        : selectedTrainer.rooms && selectedTrainer.rooms.length > 0 && (
+                                            <View style={{ width: '100%' }}>
+                                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                    {selectedTrainer.rooms.map((room, index) => {
+                                                        return <Tabs
+                                                            key={index}
+                                                            index={index}
+                                                            name={room.name}
+                                                            setSelectedTab={() => {
+                                                                setSelectedTrainerRoomId(room.id);
+                                                                setSelectedTrainerRoom(room);
+                                                            }}
+                                                            isSelected={room.id === selectedTrainerRoomId}
+                                                            len={selectedTrainer.rooms.length}
+                                                            TabSize={width * 0.89 / selectedTrainer.rooms.length * 0.9}
+                                                            textColor='#222'
+                                                            selectedColor='#FFF'
+                                                            unselectedColor='#DDD'
+                                                        />
+                                                    }
+                                                    )}
+                                                </View>
+                                                {selectedTrainerRoom && <>
+                                                    <View>
+                                                        <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
+                                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerRoom.description}</Text>
+                                                        </View>
+                                                    </View>
+
+                                                    {selectedTrainerRoom.subscription_plans.length > 0 &&
+                                                        <View style={{ width: '100%', marginTop: 10 }}>
+                                                            <SubscriptionPlansModal
+                                                                userToken={userToken}
+                                                                subscriptionTexts={{ button_text: "Request to Join Room", alert_title: "Joining Room", alert_message: "Are you sure you want to join this room?" }}
+                                                                object={{
+                                                                    get_key: 'plans_ids',
+                                                                    get_id: selectedTrainerRoom.subscription_plans.map(plan => plan.id),
+                                                                    plans_in: selectedTrainerRoom.subscription_plans,
+                                                                }}
+                                                                patternMode='see'
+                                                                setNewUserRequest={setNewUserRequest}
+                                                            />
+                                                        </View>
+                                                    }
+                                                </>
+                                                }
+                                            </View>
+                                        )
+                                    }
+                                </View>
+                            }
                         </View>
                         : userMode === "my_data" ?
                             <View>
@@ -3934,10 +3979,10 @@ const FitnessScreen = ({ route, navigation }) => {
             <GradientBackground firstColor="#1A202C" secondColor={personal ? "#1A202C" : managerData ? "#888" : "#991B1B"} thirdColor="#1A202C" />
 
             {loadingExercises &&
-            <View style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 100, backgroundColor: 'rgba(0,0,0,0.65)'}}>
-                <ActivityIndicator size="large" color="#FFF" />
-                <Text style={{color: '#FFF', fontWeight: 'bold', fontSize: 16, marginTop: 10}}>Loading data...</Text>
-            </View>
+                <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', zIndex: 100, backgroundColor: 'rgba(0,0,0,0.65)' }}>
+                    <ActivityIndicator size="large" color="#FFF" />
+                    <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 16, marginTop: 10 }}>Loading data...</Text>
+                </View>
             }
 
             <NewTrainingModal plan={plan} newTrainingModal={newTrainingModal} setNewTrainingModal={setNewTrainingModal} GenerateWeekWorkoutPlan={GenerateWeekWorkoutPlan} GenerateWeekDietPlan={GenerateWeekDietPlan} userSubscriptionPlan={userSubscriptionPlan} setUpdatePlanModal={setUpdatePlanModal} plansLength={plans[plan] ? plans[plan].length : 0} room={managerData && managerData.room} mode={managerData ? 'personal_trainer' : 'user'} checkConnectionError={checkConnectionError} />
