@@ -7,12 +7,13 @@ import ShowMedia from '../../components/ShowMedia/ShowMedia';
 import Icons from '../../components/Icons/Icons';
 import { SportsNames } from '../../utils/sports';
 import { BASE_URL } from '@env';
+import Complaint from '../../components/Complaints/Complaints';
 
 const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
     let { userToken, id } = route.params;
-    const { setChatId } = useGlobalContext();
+    const { userId, setChatId } = useGlobalContext();
 
     const [profile, setProfile] = useState({});
     const [isLoading, setIsLoading] = useState(true);
@@ -89,6 +90,7 @@ const ProfileScreen = ({ route }) => {
                 {profile.id == id ?
                     <>
                         <View style={styles.profileHeader}>
+                            <Complaint target_id={id} target_type="user" blocker_id={userId} blocker_type={"user"} userToken={userToken} already_blocked={profile.is_blocked || false} />
                             {profile.profile_image ?
                                 <Image
                                     style={styles.avatar}

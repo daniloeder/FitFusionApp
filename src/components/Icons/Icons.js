@@ -35,6 +35,7 @@ import Google from './../../../assets/icons/google.svg';
 import Facebook from './../../../assets/icons/Facebook.svg';
 import TikTok from './../../../assets/icons/tiktok.svg';
 import Edit from './../../../assets/icons/edit.svg';
+import ExclamationButton from './../../../assets/icons/exclamation-button.svg';
 
 import BodyBuilding from './../../../assets/icons/sports/BodyBuilding.svg';
 import AmericanFootball from './../../../assets/icons/sports/American_Football.svg';
@@ -134,6 +135,7 @@ const Icons = ({
     Facebook: Facebook,
     TikTok: TikTok,
     Edit: Edit,
+    ExclamationButton: ExclamationButton,
     
     BodyBuilding: BodyBuilding,
     AmericanFootball: AmericanFootball,
