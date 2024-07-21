@@ -31,7 +31,6 @@ import SubscriptionPlansModal from '../components/Payment/SubscriptionPlansModal
 
 import { GlobalProvider } from '../services/GlobalContext';
 import { useChat } from '../utils/chats';
-import { set } from 'firebase/database';
 
 const width = Dimensions.get('window').width;
 

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Modal, Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { BASE_URL } from '@env';
-import { update } from 'firebase/database';
 
 const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentData, setUpdatePlanModal, setUsePayPal }) => {
     const [showWebView, setShowWebView] = useState(true);
