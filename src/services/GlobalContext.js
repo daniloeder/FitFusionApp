@@ -179,6 +179,7 @@ export const GlobalProvider = ({
     chatSocket.onclose = (e) => {
       setActive(false);
       console.log('Chat WebSocket Disconnected:', e.reason);
+      setChatWebSocket(null);
       setTimeout(connectChatWebSocket, reconnectDelay);
     };
 
