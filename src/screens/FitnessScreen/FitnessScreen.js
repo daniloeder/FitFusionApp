@@ -1520,7 +1520,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
     const [generalData, setGeneralData] = useState(null);
     const [mode, setMode] = useState('user');
-    const [userMode, setUserMode] = useState(redirectedPersonal && redirectedPersonal && !generalData ? 'my_data' : 'trainers');
+    const [userMode, setUserMode] = useState('trainers');
     const [personalMode, setPersonalMode] = useState('rooms_clients');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
@@ -2641,7 +2641,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                     })}
                 </View>
                 <ScrollView>
-                    {userMode === "trainers" ?
+                    {userMode === "trainers" && generalData ?
                         <View>
                             <View style={{}}>
                                 {generalData.tabs && generalData.tabs.user && generalData.tabs.user.nearby_trainers.length > 0 && <>
@@ -2651,6 +2651,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                     <ScrollView horizontal>
                                         <View style={styles.usersContainer}>
                                             {generalData.tabs.user.nearby_trainers.map(trainer => {
+                                                if (!members[trainer.user.id]) return;
                                                 return (
                                                     <View key={trainer.id}>
                                                         {trainer.distance && <View style={{ position: 'absolute', flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3, backgroundColor: '#0000FF', borderRadius: 5, zIndex: 1 }}>
