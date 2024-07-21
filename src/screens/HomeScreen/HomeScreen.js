@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import { deleteAuthToken } from '../../store/store';
 import { useGlobalContext } from './../../services/GlobalContext';
 import GetUserCoordinates from '../../components/GetUserCoordinates/GetUserCoordinates.js';
 import SportsItems from '../../components/SportsItems/SportsItems.js';
 import UsersBall from '../../components/UsersBall/UsersBall.js';
+import CustomModal from '../../components/CustomComponents/CustomModal.js';
 import Icons from '../../components/Icons/Icons.js';
 import { BASE_URL } from '@env';
 
 const width = Dimensions.get('window').width;
 
-const PlaceList = ({ places, navigation, checkConnectionError }) =>
+const PlaceList = ({ places, navigation, checkConnectionError, setPlaceModalVisible }) =>
   places.map((place) => (
     <View key={place.id.toString()} style={styles.placeItem}>
       <Text style={styles.placeTitle}>{place.name}</Text>
@@ -22,6 +23,7 @@ const PlaceList = ({ places, navigation, checkConnectionError }) =>
             style={styles.eventButton}
             onPress={() => {
               if (checkConnectionError()) return;
+              console.log(setPlaceModalVisible)
               navigation.navigate('Event', { eventId: event.id });
             }}
           >
@@ -35,6 +37,7 @@ const PlaceList = ({ places, navigation, checkConnectionError }) =>
         style={styles.viewPlaceButton}
         onPress={() => {
           if (checkConnectionError()) return;
+          setPlaceModalVisible && setPlaceModalVisible(false);
           navigation.navigate('Place', { placeId: place.id });
         }}
       >
@@ -43,7 +46,7 @@ const PlaceList = ({ places, navigation, checkConnectionError }) =>
     </View>
   ))
 
-const EventList = ({ events, navigation, checkConnectionError }) =>
+const EventList = ({ events, navigation, checkConnectionError, setEventModalVisible }) =>
   events.map((event) => (
     <View key={event.id.toString()} style={styles.placeItem}>
       <Text style={styles.placeTitle}>{event.title}</Text>
@@ -57,6 +60,7 @@ const EventList = ({ events, navigation, checkConnectionError }) =>
         style={styles.viewPlaceButton}
         onPress={() => {
           if (checkConnectionError()) return;
+          setEventModalVisible && setEventModalVisible(false);
           navigation.navigate('Event', { eventId: event.id });
         }}
       >
@@ -78,6 +82,7 @@ const HomeScreen = ({ navigation }) => {
   const [closerEvents, setCloserEvents] = useState(null);
 
   const [placeModalVisible, setPlaceModalVisible] = useState(false);
+  const [eventModalVisible, setEventModalVisible] = useState(false);
 
   const [clickedUser, setClickedUser] = useState(null);
 
@@ -264,29 +269,25 @@ const HomeScreen = ({ navigation }) => {
           : ''
         }
 
-        {(places.length || joinedEvents.length) ?
+        {(places.length > 0 || joinedEvents.length > 0) ?
           <>
-            {places.length ? <Text style={styles.subtitle}>My Places:</Text> : ''}
-            <PlaceList places={places.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
-            {places.length > 3 ?
-              <TouchableOpacity
-                style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
-                onPress={() => { setPlaceModalVisible(true); }}>
-                <Text style={styles.buttonText}>All My Places</Text>
-              </TouchableOpacity> : ''}
-
-            <Modal
-              animationType="slide"
-              visible={placeModalVisible}
-              transparent={true}
-              onRequestClose={() => setPlaceModalVisible(false)}
-            >
-              <View style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                <ScrollView style={{ padding: 10, width: width * 0.9, borderRadius: 20, marginLeft: width * 0.05, marginTop: 50, marginBottom: 50, borderRadius: 20, backgroundColor: '#991B1B', borderWidth: 5, borderColor: '#111' }}>
-                  <PlaceList places={places} navigation={navigation} />
-                </ScrollView>
-              </View>
-            </Modal>
+            {places.length > 0 && <>
+              <Text style={styles.subtitle}>My Places:</Text>
+              <PlaceList places={places.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
+              {places.length > 3 && (
+                placeModalVisible ?
+                  <CustomModal backgroundColor={'rgba(0,0,0,0.8)'} onClose={() => { setPlaceModalVisible(false); }} width={'90%'} height={'80%'} title="All My Places">
+                    <PlaceList places={places} navigation={navigation} checkConnectionError={checkConnectionError} setPlaceModalVisible={setPlaceModalVisible} />
+                  </CustomModal>
+                  :
+                  <TouchableOpacity
+                    style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
+                    onPress={() => { setPlaceModalVisible(true); }}>
+                    <Text style={styles.buttonText}>All My Places</Text>
+                  </TouchableOpacity>
+              )}
+            </>
+            }
 
             {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
             {joinedEvents.map((event) => {
@@ -344,13 +345,23 @@ const HomeScreen = ({ navigation }) => {
             })}
           </> : ''
         }
-        {(events.length || places.length) ? <>
-          {events.length ? <>
-            <Text style={styles.subtitle}>My Events:</Text>
-            <EventList events={events.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
-          </> : ''}
-        </> : ''
 
+        {events.length > 0 && <>
+          <Text style={styles.subtitle}>My Events:</Text>
+          <EventList events={events.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
+          {events.length > 3 && (
+            eventModalVisible ?
+              <CustomModal backgroundColor={'rgba(0,0,0,0.8)'} onClose={() => { setEventModalVisible(false); }} width={'90%'} height={'80%'} title="All My Events" >
+                <EventList events={events} navigation={navigation} checkConnectionError={checkConnectionError} setEventModalVisible={setEventModalVisible} />
+              </CustomModal>
+              :
+              <TouchableOpacity
+                style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
+                onPress={() => { setEventModalVisible(true); }}>
+                <Text style={styles.buttonText}>All My Events</Text>
+              </TouchableOpacity>
+          )}
+        </>
         }
 
         {closerPlaces && closerPlaces.length ?
