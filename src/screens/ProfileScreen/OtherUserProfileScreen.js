@@ -50,7 +50,7 @@ const ProfileScreen = ({ route }) => {
 
             if (response.ok) {
                 const data = await response.json();
-                
+
                 if (data.error) {
                     console.error('Error starting chat:', data.error);
                 } else {
@@ -97,11 +97,12 @@ const ProfileScreen = ({ route }) => {
                                     source={{ uri: BASE_URL + profile.profile_image.image }}
                                 />
                                 :
-                                <View style={{padding:width*0.04,borderRadius:width*0.3,backgroundColor:'rgba(255,255,255,0.4)'}}>
+                                <View style={{ padding: width * 0.04, borderRadius: width * 0.3, backgroundColor: 'rgba(255,255,255,0.4)' }}>
                                     <Icons name="Profile" size={width * 0.4} fill={"#1C274C"} />
                                 </View>
 
                             }
+                            {profile.personal_trainer && <Text style={[styles.name, { color: '#99AAEE', top: -20 }]}>Personal Trainer</Text>}
                             <Text style={styles.username}>@{profile.username}</Text>
                             <Text style={styles.name}>{profile.name}</Text>
 
@@ -125,6 +126,14 @@ const ProfileScreen = ({ route }) => {
                                 </View>
                                 <Text style={styles.sendMessageText}>Chat</Text>
                             </TouchableOpacity>
+
+                            {profile.personal_trainer && <View style={{ padding: 5, }}>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, marginBottom: 20 }}>
+                                    <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: "#7a50e2", paddingHorizontal: 50, paddingVertical: 10, borderRadius: 5 }} onPress={() => navigation.navigate('Fitness', { search_personal: profile.personal_trainer.id })}>
+                                        <Text style={{ color: '#FFF', fontSize: width * 0.04, fontWeight: 'bold' }}>Check Personal Trainer</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>}
 
                             {profile.favorite_sports && profile.favorite_sports.length ?
                                 <View style={styles.infoItem}>

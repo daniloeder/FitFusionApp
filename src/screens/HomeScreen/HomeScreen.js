@@ -236,6 +236,7 @@ const HomeScreen = ({ route, navigation }) => {
       if(checkConnectionError()) return;
       navigation.navigate('User Profile', { id: clickedUser });
     }
+    setClickedUser(null);
   }, [clickedUser]);
 
   return (

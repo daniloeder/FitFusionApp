@@ -8,6 +8,7 @@ import Icons from '../../components/Icons/Icons';
 import { BASE_URL } from '@env';
 import { TextInput } from 'react-native-gesture-handler';
 import SelectBox from '../../components/Tools/SelectBox';
+import CustomModal from '../../components/CustomComponents/CustomModal.js';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import DatePicker from '../../components/Forms/DatePicker';
 import PaymentCard from '../../components/Management/PaimentCard.js';
@@ -1496,7 +1497,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal, setManagerData }) => {
+const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal, setManagerData, redirectedPersonal }) => {
 
     if (!personal) {
         return (
@@ -1518,8 +1519,8 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     }
 
     const [generalData, setGeneralData] = useState(null);
-    const [mode, setMode] = useState(null);
-    const [userMode, setUserMode] = useState('trainers');
+    const [mode, setMode] = useState('user');
+    const [userMode, setUserMode] = useState(redirectedPersonal && redirectedPersonal && !generalData ? 'my_data' : 'trainers');
     const [personalMode, setPersonalMode] = useState('rooms_clients');
     const [members, setMembers] = useState([]);
     const [personalRooms, setPersonalRooms] = useState([]);
@@ -1528,6 +1529,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     const [selectedRequestId, setSelectedRequestId] = useState(null);
     const [manage, setManage] = useState(false);
     const [selectedTrainer, setSelectedTrainer] = useState(null);
+    const [trainerLoading, setTrainerLoading] = useState(false);
     const [manageRoomPlans, setManageRoomPlans] = useState(true);
     const [manageRoomModal, setManageRoomModal] = useState('none');
     const [userRequests, setUserRequests] = useState(null);
@@ -1585,7 +1587,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     };
 
     const fetchGeneralData = async () => {
-        const response = await fetch(BASE_URL + '/api/exercises/user-general-data/', {
+        const response = await fetch(BASE_URL + `/api/exercises/user-general-data/${redirectedPersonal ? `?include_personal=${redirectedPersonal}` : ''}`, {
             method: 'GET',
             headers: {
                 'Authorization': 'Token ' + userToken,
@@ -1597,31 +1599,36 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     };
 
     const fetchPersonalRoomData = async (personal_id, owner) => {
-        const response = await fetch(BASE_URL + `/api/exercises/personal-data/?personal_id=${personal_id}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Token ' + userToken,
-                'Content-Type': 'application/json'
-            },
-        });
-
-        const data = await response.json();
-        if (owner) {
-            setPersonalRooms(data.personal_rooms);
-            setEvaluations(data.evaluations);
-            setEvaluationMode(data.evaluations.schedules && data.evaluations.schedules.length > 0 ? 'schedules' : 'plans');
-            if (selectedTrainerPersonalRoom) {
-                setSelectedTrainerPersonalRoom(data.personal_rooms.find(room => room.id === selectedTrainerPersonalRoom.id));
-            }
-        } else {
-            setSelectedTrainer(prevData => {
-                const updatedData = { ...prevData };
-                updatedData['rooms'] = data.personal_rooms;
-                updatedData['evaluations'] = data.evaluations;
-                updatedData['loading'] = false;
-                return updatedData;
+        setTrainerLoading(true);
+        try {
+            const response = await fetch(BASE_URL + `/api/exercises/personal-data/?personal_id=${personal_id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Token ' + userToken,
+                    'Content-Type': 'application/json'
+                },
             });
+
+            const data = await response.json();
+            if (owner) {
+                setPersonalRooms(data.personal_rooms);
+                setEvaluations(data.evaluations);
+                setEvaluationMode(data.evaluations.schedules && data.evaluations.schedules.length > 0 ? 'schedules' : 'plans');
+                if (selectedTrainerPersonalRoom) {
+                    setSelectedTrainerPersonalRoom(data.personal_rooms.find(room => room.id === selectedTrainerPersonalRoom.id));
+                }
+            } else {
+                setSelectedTrainer(prevData => {
+                    const updatedData = { ...prevData };
+                    updatedData['rooms'] = data.personal_rooms;
+                    updatedData['evaluations'] = data.evaluations;
+                    return updatedData;
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching personal data:', error);
         }
+        setTrainerLoading(false);
     }
 
     const manageRoomUser = async (user_id, room_id, request_id, action) => {
@@ -1664,8 +1671,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
             if (generalData.tabs.personal && !personalRooms.length) {
                 fetchPersonalRoomData(generalData.tabs.personal.id, true);
             }
-
-            if (Object.keys(generalData.tabs).length > 1) {
+            if (Object.keys(generalData.tabs).length > 1 && !redirectedPersonal) {
                 setMode('personal');
             } else {
                 setMode('user');
@@ -2579,6 +2585,23 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     ...(generalData && generalData.tabs && generalData.tabs.user.evaluations ? [{ 'mode': "evaluations", 'name': "Evaluations" }] : [])
     ]
 
+    useEffect(() => {
+        if (redirectedPersonal && mode === 'user' && generalData) {
+            if (generalData.tabs.user.included_personal_trainer && userMode === 'trainers') {
+                const redirectedTrainer = generalData.tabs.user.global_trainers.find(trainer => trainer.id === redirectedPersonal);
+                if(redirectedTrainer){
+                    setSelectedTrainer(redirectedTrainer);
+                    fetchUserProfileImages([redirectedTrainer.user.id]);
+                    fetchPersonalRoomData(redirectedTrainer.id, false);
+                } else {
+                    fetchGeneralData();
+                }
+            } else {
+                setUserMode('trainers');
+            }
+        }
+    }, [redirectedPersonal, mode, generalData, userMode]);
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Paste Workout</Text>
@@ -2638,7 +2661,6 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                                 ...trainer,
                                                                 id: trainer.user.id,
                                                                 name: trainer.name,
-                                                                loading: true,
                                                                 rooms: [],
                                                             });
                                                             fetchPersonalRoomData(trainer.id, false);
@@ -2656,13 +2678,13 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                         </Text>
                                         <ScrollView horizontal>
                                             <View style={styles.usersContainer}>
-                                                {generalData.tabs.user.global_trainers.map(trainer => {
-                                                    return <UsersBall key={trainer.id} user={members[trainer.user.id]} onPress={() => {
+                                                {generalData.tabs.user.global_trainers.map((trainer, index) => {
+                                                    if (!members[trainer.user.id]) return;
+                                                    return <UsersBall key={index} user={members[trainer.user.id]} onPress={() => {
                                                         setSelectedTrainer({
                                                             ...trainer,
                                                             id: trainer.user.id,
                                                             name: trainer.name,
-                                                            loading: true,
                                                             rooms: [],
                                                         });
                                                         fetchPersonalRoomData(trainer.id, false);
@@ -2685,10 +2707,9 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                                 return <UsersBall key={trainer.id} user={members[trainer.id]}
                                                     onPress={() => {
                                                         setSelectedTrainer({
-                                                            ...trainer,
+                                                            user: trainer,
                                                             id: trainer.id,
                                                             name: trainer.name,
-                                                            loading: true,
                                                             rooms: [],
                                                         });
                                                         fetchPersonalRoomData(trainer.trainer_id, false);
@@ -2699,70 +2720,75 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                 </>}
                                 <SearchComponent setResults={setSearchedTrainers} params="&personal_trainer=true" />
                             </View>
-
                             {selectedTrainer &&
-                                <View style={{ width: '100%', padding: 5, borderRadius: 5, backgroundColor: 'rgba(255,255,255,0.15)' }}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
-                                        <UsersBall user={members[selectedTrainer.id]} name="none" size={0.5} nameColor="#EEE" />
-                                        <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
-                                    </View>
-                                    {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
-                                        {selectedTrainer.address}
-                                    </Text>}
+                                <CustomModal title="Personal Trainer" borderColor='rgba(0,0,0,0.65)' backgroundColor={"#1A202C"} width='90%' height='50%'
+                                    closeButton
+                                    onUpdate={selectedTrainer}
+                                    onClose={() => { }}
+                                >
+                                    <View style={{ width: '100%', padding: 5, borderRadius: 5 }}>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
+                                            {members && members[selectedTrainer.user.id] && <UsersBall user={members[selectedTrainer.user.id]} name="none" size={0.5} nameColor="#EEE" />}
+                                            <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#FFF', marginLeft: 5 }}>{selectedTrainer.name}</Text>
+                                        </View>
+                                        {selectedTrainer.address && <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>
+                                            {selectedTrainer.address}
+                                        </Text>}
 
-                                    {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
+                                        {selectedTrainer.evaluations && <EvaluationList evaluations={selectedTrainer.evaluations.plans} />}
 
-                                    {selectedTrainer.loading ? <ActivityIndicator size="large" color="#fff" />
-                                        : selectedTrainer.rooms && selectedTrainer.rooms.length > 0 && (
-                                            <View style={{ width: '100%' }}>
-                                                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                                                    {selectedTrainer.rooms.map((room, index) => {
-                                                        return <Tabs
-                                                            key={index}
-                                                            index={index}
-                                                            name={room.name}
-                                                            setSelectedTab={() => {
-                                                                setSelectedTrainerRoomId(room.id);
-                                                                setSelectedTrainerRoom(room);
-                                                            }}
-                                                            isSelected={room.id === selectedTrainerRoomId}
-                                                            len={selectedTrainer.rooms.length}
-                                                            TabSize={width * 0.89 / selectedTrainer.rooms.length * 0.9}
-                                                            textColor='#222'
-                                                            selectedColor='#FFF'
-                                                            unselectedColor='#DDD'
-                                                        />
-                                                    }
-                                                    )}
-                                                </View>
-                                                {selectedTrainerRoom && <>
-                                                    <View>
-                                                        <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
-                                                            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerRoom.description}</Text>
-                                                        </View>
-                                                    </View>
-
-                                                    {selectedTrainerRoom.subscription_plans.length > 0 &&
-                                                        <View style={{ width: '100%', marginTop: 10 }}>
-                                                            <SubscriptionPlansModal
-                                                                userToken={userToken}
-                                                                subscriptionTexts={{ button_text: "Request to Join Room", alert_title: "Joining Room", alert_message: "Are you sure you want to join this room?" }}
-                                                                object={{
-                                                                    get_key: 'plans_ids',
-                                                                    get_id: selectedTrainerRoom.subscription_plans.map(plan => plan.id),
-                                                                    plans_in: selectedTrainerRoom.subscription_plans,
+                                        {trainerLoading ? <ActivityIndicator size="large" color="#fff" />
+                                            : selectedTrainer.rooms && selectedTrainer.rooms.length > 0 && (
+                                                <View style={{ width: '100%', marginTop: 15 }}>
+                                                    <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                                                        {selectedTrainer.rooms.map((room, index) => {
+                                                            return <Tabs
+                                                                key={index}
+                                                                index={index}
+                                                                name={room.name}
+                                                                setSelectedTab={() => {
+                                                                    setSelectedTrainerRoomId(room.id);
+                                                                    setSelectedTrainerRoom(room);
                                                                 }}
-                                                                patternMode='see'
-                                                                setNewUserRequest={setNewUserRequest}
+                                                                isSelected={room.id === selectedTrainerRoomId}
+                                                                len={selectedTrainer.rooms.length}
+                                                                TabSize={width * 0.89 / selectedTrainer.rooms.length * 0.9}
+                                                                textColor='#222'
+                                                                selectedColor='#FFF'
+                                                                unselectedColor='#DDD'
                                                             />
+                                                        }
+                                                        )}
+                                                    </View>
+                                                    {selectedTrainerRoom && <>
+                                                        <View>
+                                                            <View style={{ width: '100%', backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 6, padding: 5 }}>
+                                                                <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: 12 }}>{selectedTrainerRoom.description}</Text>
+                                                            </View>
                                                         </View>
+
+                                                        {selectedTrainerRoom.subscription_plans.length > 0 &&
+                                                            <View style={{ width: '100%', marginTop: 10 }}>
+                                                                <SubscriptionPlansModal
+                                                                    userToken={userToken}
+                                                                    subscriptionTexts={{ button_text: "Request to Join Room", alert_title: "Joining Room", alert_message: "Are you sure you want to join this room?" }}
+                                                                    object={{
+                                                                        get_key: 'plans_ids',
+                                                                        get_id: selectedTrainerRoom.subscription_plans.map(plan => plan.id),
+                                                                        plans_in: selectedTrainerRoom.subscription_plans,
+                                                                    }}
+                                                                    patternMode='see'
+                                                                    setNewUserRequest={setNewUserRequest}
+                                                                />
+                                                            </View>
+                                                        }
+                                                    </>
                                                     }
-                                                </>
-                                                }
-                                            </View>
-                                        )
-                                    }
-                                </View>
+                                                </View>
+                                            )
+                                        }
+                                    </View>
+                                </CustomModal>
                             }
                         </View>
                         : userMode === "my_data" ?
@@ -3853,9 +3879,11 @@ const FitnessScreen = ({ route, navigation }) => {
         if (!managerData) {
             fetchPlans();
         }
-
         if (!personal) {
             setPersonal(route.params && route.params.personalTrainer);
+        }
+        if (route.params && route.params.search_personal) {
+            setPersonal(true);
         }
     }, [route]);
 
@@ -4035,7 +4063,7 @@ const FitnessScreen = ({ route, navigation }) => {
 
                     {personal ?
                         active ?
-                            <PersonalManagementPaste navigation={navigation} userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} />
+                            <PersonalManagementPaste navigation={navigation} userToken={userToken} personal={personal} setPersonal={setPersonal} setManagerData={setManagerData} redirectedPersonal={route && route.params && route.params.search_personal} />
                             : <Text style={{ color: 'red', fontWeight: 'bold', zIndex: 1 }}>You are offline. Please connect to the internet to access this feature.</Text>
                         : <>
 
