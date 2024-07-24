@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "FitFusionApp",
-    "slug": "FitFusionApp",
+    "name": "FitFusion App",
+    "slug": "fitfusionapp",
     "scheme": "fitfusionapp",
     "version": "1.0.0",
     "orientation": "portrait",
