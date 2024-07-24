@@ -23,6 +23,7 @@
       "bundleIdentifier": "com.daniloeder.FitFusionApp"
     },
     "android": {
+      "icon": "./assets/fit_fusion_icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/fit_fusion_icon.png",
         "backgroundColor": "#ffffff"
