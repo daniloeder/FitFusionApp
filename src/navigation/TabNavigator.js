@@ -39,12 +39,12 @@ const GradientHeader = () => (
   <Svg style={StyleSheet.absoluteFill}>
     <Defs>
       <LinearGradient id="verticalGrad" x1="0" y1="0" x2="0" y2="1">
-        <Stop offset="0.3" stopColor="#1A202C" stopOpacity="1" />
+        <Stop offset="0" stopColor="#1A202C" stopOpacity="1" />
         <Stop offset="0.8" stopColor="#991B1B" stopOpacity="1" />
-        <Stop offset="0.9" stopColor="#1A202C" stopOpacity="1" />
+        <Stop offset="1" stopColor="#1A202C" stopOpacity="1" />
       </LinearGradient>
       <LinearGradient id="horizontalGrad" x1="0" y1="0" x2="1" y2="0">
-        <Stop offset="0.2" stopColor="transparent" stopOpacity="0.08" />
+        <Stop offset="0" stopColor="transparent" stopOpacity="0.08" />
         <Stop offset="1" stopColor="#1A202C" stopOpacity="1" />
       </LinearGradient>
     </Defs>
@@ -57,11 +57,9 @@ const NavGradientBackground = () => {
   return (
     <Svg style={StyleSheet.absoluteFill}>
       <Defs>
-        <LinearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id="navGrad" x1="0" y1="0" x2="0" y2="1.4">
           <Stop offset="0" stopColor="#1A202C" stopOpacity="1" />
           <Stop offset="0.3" stopColor="#991B1B" stopOpacity="1" />
-          <Stop offset="0.9" stopColor="#991B1B" stopOpacity="1" />
-          <Stop offset="1" stopColor="#000" stopOpacity="1" />
         </LinearGradient>
       </Defs>
       <Rect x="0" y="0" width="100%" height={width * 0.18} fill="url(#navGrad)" />
@@ -312,7 +310,7 @@ const TabNavigator = () => {
         initialRouteName="Home"
         screenOptions={{
           headerStyle: {
-            height: width * 0.2,
+            height: width * 0.18,
             backgroundColor: 'transparent',
             elevation: 0,
             shadowOpacity: 0,

@@ -36,7 +36,7 @@ function ForgotPasswordScreen() {
 
     return (
         <ScrollView style={styles.gradientContainer}>
-            <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
+            <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" full />
             <View style={styles.container}>
                 <Text style={styles.title}>Forgot Password</Text>
                 <CustomInput
