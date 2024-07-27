@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { AppState, Alert } from 'react-native';
 import { deleteAuthToken } from '../store/store';
 import { useChat } from '../utils/chats';
+import { SOCKET_URL } from '@env';
 
 const GlobalContext = createContext(null);
 
@@ -137,7 +138,7 @@ export const GlobalProvider = ({
       return;
     }
 
-    const notificationsSocket = new WebSocket(`ws://192.168.0.118:8000/ws/notifications/?token=${latestUserToken.current}`);
+    const notificationsSocket = new WebSocket(`${SOCKET_URL}/ws/notifications/?token=${latestUserToken.current}`);
 
     notificationsSocket.onopen = () => {
       console.log('Notifications WebSocket Connected');
@@ -164,7 +165,7 @@ export const GlobalProvider = ({
       return;
     }
 
-    const chatSocket = new WebSocket(`ws://192.168.0.118:8000/ws/chat/?token=${latestUserToken.current}`);
+    const chatSocket = new WebSocket(`${SOCKET_URL}/ws/chat/?token=${latestUserToken.current}`);
 
     chatSocket.onopen = () => {
       console.log('Chat WebSocket Connected');
