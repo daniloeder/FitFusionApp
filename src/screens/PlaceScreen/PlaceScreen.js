@@ -17,7 +17,7 @@ const width = Dimensions.get('window').width;
 const PlaceScreen = ({ route, navigation }) => {
     const { userToken, userId, placeId } = route.params;
     const [place, setPlace] = useState(null);
-    const [joined, setJoined] = useState('none');
+    const [joined, setJoined] = useState(false);
     const [clients, setClients] = useState([]);
     const [subscriptionPlansModalVisible, setSubscriptionPlansModalVisible] = useState(false);
     const [clientsModalVisible, setClientsModalVisible] = useState(false);
@@ -92,7 +92,7 @@ const PlaceScreen = ({ route, navigation }) => {
             return
         }
         try {
-            const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined ? 'leave' : 'error'}/`, {
+            const response = await fetch(BASE_URL + `/api/places/${placeId}/${joined ? 'leave' : 'join'}/`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Token ${userToken}`,

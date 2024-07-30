@@ -105,6 +105,7 @@ const EventScreen = ({ route, navigation }) => {
       setJoined(!joined)
       return
     }
+    setJoined(!joined);
     try {
       const response = await fetch(BASE_URL + `/api/events/${eventId}/${joined ? 'leave' : 'join'}/`, {
         method: 'POST',
@@ -116,10 +117,9 @@ const EventScreen = ({ route, navigation }) => {
       const data = await response.json();
 
       if (response.status === 200) {
-        setJoined(!joined);
       } else if (response.status === 400) {
-        setJoined(!joined);
       } else {
+        setJoined(!joined);
         console.error('Failed to join the event.');
       }
     } catch (error) {
