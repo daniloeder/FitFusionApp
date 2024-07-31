@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Alert, StyleSheet, Pressable, Text, Dimensions, Modal, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Alert, StyleSheet, Pressable, Text, Dimensions, Modal, ScrollView, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import GradientBackground from './../../components/GradientBackground/GradientBackground';
 import CustomInput from '../../components/Forms/CustomInput';
 import DatePicker from '../../components/Forms/DatePicker';
 import SocialAuthButton from '../../components/AuthButtons/AuthButtons';
 import { storeAuthToken, storeData } from '../../store/store';
-import { BASE_URL } from '@env';
+import { BASE_URL, DOMAIN_URL } from '@env';
 
 const { width, height } = Dimensions.get('window');
 
@@ -218,6 +218,13 @@ function RegisterScreen({ route, navigation }) {
 
                 {loading && <ActivityIndicator size="large" color="#fff" style />}
 
+                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                    <Text style={{ color: '#FFF', marginRight: 3 }}>
+                        By Registering you agree to our
+                    </Text>
+                    <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
+                </View>
+
                 {successRegistration ? <>
                     <Text style={styles.successRegistrationText}>{"Registered successfully!\nNow you need just complete missing info!"}</Text>
 
@@ -248,6 +255,10 @@ function RegisterScreen({ route, navigation }) {
                             {gender ? `Selected: ${gender == "M" ? "Male" : gender == "F" ? "Female" : "Other"}` : 'Select Gender'}
                         </Text>
                     </Pressable>
+
+                    <Text style={{ color: '#FFF', marginTop: 10 }}>
+                        By clicking "Complete Registration" you agree to our <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
+                    </Text>
 
                     <Pressable style={({ pressed }) => [
                         styles.registerButton,
