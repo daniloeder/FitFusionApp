@@ -1050,7 +1050,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             }
                         </View>
                         : <><TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
-                            {userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
+                            {mode === 'user' && userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
                                 You can have {userSubscriptionPlan.current_data.settings[plan].max[1]} plans with "{userSubscriptionPlan.current_data.name}" subscription.
                             </Text>
                                 <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
@@ -1180,7 +1180,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     }
                                 }}
                             >
-                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].use_ai < 6 ? ` (${userSubscriptionPlan.current_data.settings[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
+                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (mode === 'user' && userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].use_ai < 6 ? ` (${userSubscriptionPlan.current_data.settings[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
                             </TouchableOpacity>
 
                             {!useAI && <TouchableOpacity
