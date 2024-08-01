@@ -329,18 +329,7 @@ const EventScreen = ({ route, navigation }) => {
             : ''
           }
         </View>
-
-        {event.creator ?
-          <Pressable
-            onPress={{}}
-            style={[styles.createEventButton, { marginTop: width * 0.03, minWidth: width * 0.6 }]}
-          >
-            <Icons name="ParticipantRequest" size={width * 0.08} />
-            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: width * 0.035, marginLeft: '3%' }}>Participant Requests</Text>
-          </Pressable>
-          : ''
-        }
-
+        
         <ManagerSubscriptionPlansModal />
 
         <ClientManagerModal />
