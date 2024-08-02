@@ -296,7 +296,11 @@ const ProfileScreen = ({ route }) => {
           subscriptionTexts={{ button_text: "Update Plan" }}
           object={{ mode: 'app' }}
           patternMode='subscription'
-          confirmedSubscription={setUserSubscriptionPlan}
+          confirmedSubscription={data => {
+            setUserSubscriptionPlan(data);
+            setUpdatePlanModal(false);
+            fetchProfile();
+          }}
         />
       </Modal>
     );
