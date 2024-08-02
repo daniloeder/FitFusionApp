@@ -178,7 +178,7 @@ const TabNavigator = () => {
 
   const fetchSubscriptionPlans = async (token) => {
     try {
-      const response = await fetch(BASE_URL + '/api/users/get-subscrisption-data/?v=0.0.1', {
+      const response = await fetch(BASE_URL + '/api/users/get-subscrisption-data/?v=1.0.0', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
