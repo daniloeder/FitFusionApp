@@ -34,6 +34,7 @@ import Images from './../../../assets/icons/Images.svg';
 import Google from './../../../assets/icons/google.svg';
 import Facebook from './../../../assets/icons/Facebook.svg';
 import TikTok from './../../../assets/icons/tiktok.svg';
+import Twitter from './../../../assets/icons/twitter.svg';
 import Edit from './../../../assets/icons/edit.svg';
 import ExclamationButton from './../../../assets/icons/exclamation-button.svg';
 
@@ -134,6 +135,7 @@ const Icons = ({
     Google: Google,
     Facebook: Facebook,
     TikTok: TikTok,
+    Twitter: Twitter,
     Edit: Edit,
     ExclamationButton: ExclamationButton,
     

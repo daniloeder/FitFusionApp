@@ -67,6 +67,22 @@ const TiktokButton = ({ promptAsync, title = "Sign In with TikTok" }) => (
   </SafeAreaView>
 );
 
+const TwitterButton = ({ promptAsync, title = "Sign In with X / Twitter" }) => (
+  <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '3%', marginTop: 0 }}>
+    <TouchableOpacity
+      style={{ backgroundColor: "#1DA1F2", width: "100%", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
+      onPress={promptAsync}
+    >
+      <View style={{ padding: 8, backgroundColor: "#FFF", borderRadius: 20, marginRight: '5%' }}>
+        <Icons name="Twitter" />
+      </View>
+      <Text style={{ fontWeight: "bold", color: "white", fontSize: 17 }}>
+        {title}
+      </Text>
+    </TouchableOpacity>
+  </SafeAreaView>
+);
+
 const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken }) => {
   useWarmUpBrowser();
 
@@ -93,6 +109,8 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken }) => {
     return <FacebookButton promptAsync={onPress} title={title} />;
   } else if (strategy === "oauth_tiktok") {
     return <TiktokButton promptAsync={onPress} title={title} />;
+  } else if (strategy === "oauth_x") {
+    return <TwitterButton promptAsync={onPress} title={title} />;
   } else {
     return null;
   }
