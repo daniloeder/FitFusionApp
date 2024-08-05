@@ -14,7 +14,9 @@ function LoginScreen() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    const [authType, setAuthType] = useState('email');
     const [socialToken, setSocialToken] = useState(null);
+    const [socialTokenSecret, setSocialTokenSecret] = useState(null);
     const [loading, setLoading] = useState(false);
 
     function GoToHome(token) {
@@ -38,7 +40,7 @@ function LoginScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(socialToken ? { token: socialToken } : { username: email, password })
+                body: JSON.stringify(socialToken ? { token: socialToken, secret: socialTokenSecret, authType } : { username: email, password, authType })
             });
 
             const responseData = await response.json();
@@ -51,6 +53,7 @@ function LoginScreen() {
                     .then(() => {
                         if (responseData.new) {
                             navigation.navigate('RegisterScreen', {
+                                user_id: responseData.user_data.user_id,
                                 name: responseData.user_data.name,
                                 username: responseData.user_data.username,
                                 userToken: token,
@@ -109,9 +112,9 @@ function LoginScreen() {
 
                 {loading && <ActivityIndicator size="large" color="#fff" style />}
 
-                <SocialAuthButton strategy={"oauth_google"} title="Log In with Google" setLoading={setLoading} setSocialToken={setSocialToken} />
-                <SocialAuthButton strategy={"oauth_facebook"} title="Log In with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} />
-                <SocialAuthButton strategy={"oauth_tiktok"} title="Log In with TikTok" setLoading={setLoading} setSocialToken={setSocialToken} />
+                <SocialAuthButton strategy={"google"} title="Log In with Google" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+                <SocialAuthButton strategy={"facebook"} title="Log In with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+                <SocialAuthButton strategy={"twitter"} title="Log In with X / Twitter" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
 
                 <View style={{marginTop: 30}}>
                     <CustomInput

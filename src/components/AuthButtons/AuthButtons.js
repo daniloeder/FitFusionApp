@@ -1,23 +1,11 @@
 import React, { useCallback } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
-import { createStackNavigator } from '@react-navigation/stack';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { useOAuth, useClerk } from '@clerk/clerk-expo';
+import * as AuthSession from 'expo-auth-session';
 import Icons from "../Icons/Icons";
+import { BASE_URL, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '@env';
 
 WebBrowser.maybeCompleteAuthSession();
-
-const Stack = createStackNavigator();
-
-const useWarmUpBrowser = () => {
-  React.useEffect(() => {
-    void WebBrowser.warmUpAsync();
-    return () => {
-      void WebBrowser.coolDownAsync();
-    };
-  }, []);
-};
 
 const GoogleButton = ({ promptAsync, title = "Sign In with Google" }) => (
   <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '3%' }}>
@@ -51,22 +39,6 @@ const FacebookButton = ({ promptAsync, title = "Sign In with Facebook" }) => (
   </SafeAreaView>
 );
 
-const TiktokButton = ({ promptAsync, title = "Sign In with TikTok" }) => (
-  <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '3%', marginTop: 0 }}>
-    <TouchableOpacity
-      style={{ backgroundColor: "#000", width: "100%", padding: 10, borderRadius: 5, flexDirection: "row", alignItems: "center", justifyContent: "center" }}
-      onPress={promptAsync}
-    >
-      <View style={{ padding: 8, backgroundColor: "#FFF", borderRadius: 20, marginRight: '5%' }}>
-        <Icons name="TikTok" size={18} />
-      </View>
-      <Text style={{ fontWeight: "bold", color: "white", fontSize: 17 }}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  </SafeAreaView>
-);
-
 const TwitterButton = ({ promptAsync, title = "Sign In with X / Twitter" }) => (
   <SafeAreaView style={{ alignItems: "center", justifyContent: "center", marginVertical: '3%', marginTop: 0 }}>
     <TouchableOpacity
@@ -83,37 +55,62 @@ const TwitterButton = ({ promptAsync, title = "Sign In with X / Twitter" }) => (
   </SafeAreaView>
 );
 
-const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken }) => {
-  useWarmUpBrowser();
-
-  const { startOAuthFlow } = useOAuth({ strategy: strategy });
-  const { signOut } = useClerk();
-
-  const onPress = useCallback(async () => {
+const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuthType }) => {
+  const handleGoogleSignIn = useCallback(async () => {
     setLoading(true);
-    const { createdSessionId } = await startOAuthFlow({
-      redirectUrl: Linking.createURL("/", { scheme: "fitfusionapp" })
-    });
-
-    if (createdSessionId) {
-      setSocialToken(createdSessionId);
-      setTimeout(() => {
-        signOut();
-      }, 10000);
+    const redirectUrl = AuthSession.makeRedirectUri({ useProxy: true });
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&response_type=token&scope=openid%20profile%20email`;
+    const response = await AuthSession.startAsync({ authUrl });
+    if (response.type === 'success' && response.params.access_token) {
+      setAuthType("google");
+      setSocialToken(response.params.access_token);
     }
-  }, [startOAuthFlow]);
+    setLoading(false);
+  }, []);
 
-  if (strategy === "oauth_google") {
-    return <GoogleButton promptAsync={onPress} title={title} />;
-  } else if (strategy === "oauth_facebook") {
-    return <FacebookButton promptAsync={onPress} title={title} />;
-  } else if (strategy === "oauth_tiktok") {
-    return <TiktokButton promptAsync={onPress} title={title} />;
-  } else if (strategy === "oauth_x") {
-    return <TwitterButton promptAsync={onPress} title={title} />;
+  const handleFacebookSignIn = useCallback(async () => {
+    setLoading(true);
+    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email,public_profile`;
+    const response = await AuthSession.startAsync({ authUrl });
+    if (response.type === 'success' && response.params.access_token) {
+      setAuthType("facebook");
+      setSocialToken(response.params.access_token);
+    }
+    setLoading(false);
+  }, []);
+
+  const handleTwitterSignIn = useCallback(async () => {
+    setLoading(true);
+    try {
+      const requestTokenUrl = `${BASE_URL}/api/users/auth/twitter/request_token`;
+      const response = await fetch(requestTokenUrl);
+      const { oauth_token } = await response.json();
+
+      const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`;
+      const result = await AuthSession.startAsync({ authUrl });
+
+      if (result.type === 'success' && result.params.oauth_token && result.params.oauth_verifier) {
+        setAuthType("twitter");
+        setSocialToken(`oauth_token=${result.params.oauth_token}&oauth_verifier=${result.params.oauth_verifier}`);
+      }
+    } catch (error) {
+      console.error('Error during Twitter login', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+
+  if (strategy === "google") {
+    return <GoogleButton promptAsync={handleGoogleSignIn} title={title} />;
+  } else if (strategy === "facebook") {
+    return <FacebookButton promptAsync={handleFacebookSignIn} title={title} />;
+  } else if (strategy === "twitter") {
+    return <TwitterButton promptAsync={handleTwitterSignIn} title={title} />;
   } else {
     return null;
   }
-}
+};
 
 export default SocialAuthButton;

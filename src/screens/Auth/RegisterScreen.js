@@ -11,8 +11,10 @@ const { width, height } = Dimensions.get('window');
 
 function RegisterScreen({ route, navigation }) {
 
+    const [authType, setAuthType] = useState('email');
     const [accessToken, setAccessToken] = useState(null);
     const [socialToken, setSocialToken] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [username, setUsername] = useState('');
     const [name, setName] = useState('');
     const [gender, setGender] = useState('');
@@ -27,8 +29,9 @@ function RegisterScreen({ route, navigation }) {
 
     useEffect(() => {
         if (route.params) {
-            const { userToken, new_, name, username } = route.params;
+            const { userToken, new_, user_id, name, username } = route.params;
             setName(name || "");
+            setUserId(user_id);
             setAccessToken(userToken);
             setSuccessRegistration(new_);
             // wait 2 seconds
@@ -71,12 +74,12 @@ function RegisterScreen({ route, navigation }) {
     };
 
     const handleUpdateProfile = async () => {
-        setLoading(true);
         try {
             if (!dateOfBirth || !gender) {
                 Alert.alert('Input Error', 'Please fill out all fields.');
                 return;
             }
+            setLoading(true);
 
             const response = await fetch(BASE_URL + `/api/users/update/`, {
                 method: 'PATCH',
@@ -121,8 +124,7 @@ function RegisterScreen({ route, navigation }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-
-                body: JSON.stringify({ token: socialToken })
+                body: JSON.stringify({ token: socialToken, authType })
             });
 
             const responseData = await response.json();
@@ -134,14 +136,16 @@ function RegisterScreen({ route, navigation }) {
                             navigation.navigate('Tabs', { screen: 'Home' });
                         })
                     return;
+                } else if (responseData.new){
+                    setUserId(responseData.user_data.user_id);
+                    setName(responseData.user_data.name || '');
+                    setAccessToken(responseData.user_data.token);
+                    setSuccessRegistration(true);
+                    setTimeout(() => {
+                        setUsername(responseData.user_data.username || '');
+                    }, 2000);
+                    Alert.alert('Success', 'Registered successfully!');
                 }
-                setName(responseData.name || '');
-                setAccessToken(responseData.token);
-                setSuccessRegistration(true);
-                setTimeout(() => {
-                    setUsername(responseData.username || '');
-                }, 2000);
-                Alert.alert('Success', 'Registered successfully!');
             } else {
                 let errorMessage = '';
 
@@ -165,7 +169,7 @@ function RegisterScreen({ route, navigation }) {
     };
     const checkUsername = async () => {
         try {
-            const url = BASE_URL + `/api/users/check-username/?username=${encodeURIComponent(username)}`;
+            const url = BASE_URL + `/api/users/check-username/?username=${encodeURIComponent(username)}${userId ? `&user_id=${userId}` : ''}`;
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
@@ -218,13 +222,6 @@ function RegisterScreen({ route, navigation }) {
 
                 {loading && <ActivityIndicator size="large" color="#fff" style />}
 
-                <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-                    <Text style={{ color: '#FFF', marginRight: 3 }}>
-                        By Registering you agree to our
-                    </Text>
-                    <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
-                </View>
-
                 {successRegistration ? <>
                     <Text style={styles.successRegistrationText}>{"Registered successfully!\nNow you need just complete missing info!"}</Text>
 
@@ -268,9 +265,16 @@ function RegisterScreen({ route, navigation }) {
                     </Pressable>
 
                 </> : <>
-                    <SocialAuthButton strategy={"oauth_google"} title="Register with Google" setLoading={setLoading} setSocialToken={setSocialToken} />
-                    <SocialAuthButton strategy={"oauth_facebook"} title="Register with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} />
-                    <SocialAuthButton strategy={"oauth_tiktok"} title="Register with TikTok" setLoading={setLoading} setSocialToken={setSocialToken} />
+                    <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+                        <Text style={{ color: '#FFF', marginRight: 3 }}>
+                            By Registering you agree to our
+                        </Text>
+                        <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
+                    </View>
+
+                    <SocialAuthButton strategy={"google"} title="Register with Google" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+                    <SocialAuthButton strategy={"facebook"} title="Register with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+                    <SocialAuthButton strategy={"twitter"} title="Log In with X / Twitter" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
                 </>}
 
                 <Modal
