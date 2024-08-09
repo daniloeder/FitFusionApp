@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image } from 'react-native';
+import { StyleSheet, View, Text, Dimensions, Switch, Pressable, Image, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Callout, Circle } from 'react-native-maps';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -87,11 +87,8 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
   const [places, setPlaces] = useState([]);
   const [events, setEvents] = useState([]);
   const [users, setUsers] = useState({});
+  const [locals, setLocals] = useState([]);
   const mapRef = useRef();
-
-  const [isPlacesEnabled, setIsPlacesEnabled] = useState(true);
-  const [isEventEnabled, setIsEventEnabled] = useState(true);
-  const [isUserEnabled, setIsUserEnabled] = useState(true);
 
   const [currentPosition, setCurrentPosition] = useState(null);
   const [coodinatesList, setCoordinatesList] = useState([{ lat: 0, lng: 0 }]);
@@ -105,6 +102,25 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
       checkConnectionError();
     }, [])
   );
+
+  const fetchLocals = async () => {
+    try {
+      const response = await fetch(BASE_URL + '/api/common/locals/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Token ${userToken}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setLocals(data);
+      } else {
+        throw new Error('Failed to fetch locals');
+      }
+    } catch (error) {
+      console.error('Error fetching locals:', error);
+    }
+  }
 
   const fetchUserProfileImages = async (userIds) => {
     if (!active) return null;
@@ -222,8 +238,6 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
         return;
       }
 
-      //let location = await Location.getCurrentPositionAsync({});
-
       const locationData = {
         latitude: 52.5200,//location.coords.latitude,
         longitude: 13.4050,//location.coords.longitude,
@@ -236,8 +250,8 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
     };
 
     fetchAndSetUserLocation();
+    fetchLocals();
   }, []);
-
 
   useEffect(() => {
     if (currentPosition && currentPosition.latitudeDelta < MAX_ZOOM_LATITUDE_DELTA * 1.5) {
@@ -316,7 +330,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
         zoomEnabled={ZOOM_ENABLED}
         customMapStyle={mapStyle}
       >
-        {isPlacesEnabled && places.map((place) => {
+        {places.map((place) => {
 
           const coordinatesArray = place.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
@@ -351,7 +365,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
             </Marker>
           );
         })}
-        {isEventEnabled && events.map((event) => {
+        {events.map((event) => {
           const coordinatesArray = event.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
           return (
@@ -386,7 +400,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
             </Marker>
           );
         })}
-        {isUserEnabled && Object.values(users).map((user, index) => {
+        {Object.values(users).map((user, index) => {
           const coordinatesArray = user.coordinates.match(/-?\d+\.\d+/g);
           const [longitude, latitude] = coordinatesArray.map(Number);
           return (
@@ -438,25 +452,11 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
             </Marker>
           );
         })}
-
-        {false && coodinatesList.map((coordinates, index) =>
-          <DoubleCircleOverlay key={index}
-            centerCoordinates={{ latitude: coordinates.lat, longitude: coordinates.lng }}
-            radius={MAX_DISTANCE_METERS}
-          />
-        )}
       </MapView>
       <View style={styles.inputContainer}>
         <GoogleAutocompletePicker setCoordinates={setPickerCoordinates} />
       </View>
-      {/*}
-      <View style={styles.toggleButtonContainer}>
-        <OnOffButton icon="Gym" isLocalEnabled={isPlacesEnabled} setIsLocalEnabled={setIsPlacesEnabled} />
-        <OnOffButton icon="Events" isLocalEnabled={isEventEnabled} setIsLocalEnabled={setIsEventEnabled} />
-        <OnOffButton icon="Profile" isLocalEnabled={isUserEnabled} setIsLocalEnabled={setIsUserEnabled} />
-      </View>
-        {*/}
-
+      
       <Pressable onPress={() => {
         navigation.navigate('Tabs', { screen: 'Home', params: { userToken: userToken } });
       }}
@@ -465,6 +465,31 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
         <Icons name="Home" size={width * 0.08} fill='#1C274C' />
         <Text style={styles.homeButtonText}>Home</Text>
       </Pressable>
+
+      <View style={{
+          position: 'absolute',
+          width: '30%',
+          bottom: '5%',
+          right: '5%',
+        }}>
+          {locals.map((local, index) => 
+            <TouchableOpacity key={index} style={{
+              width: '100%',
+              padding: 5,
+              maxHeight: 50,
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              borderRadius: 5,
+              justifyContent: 'center',
+              marginBottom: 10,
+            }}
+              onPress={() => {
+                setPickerCoordinates(local.coordinates);
+              }}
+            >
+              <Text style={{fontWeight: 'bold', color: '#FFF'}}>Check {local.name}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
     </View>
   );
 }
