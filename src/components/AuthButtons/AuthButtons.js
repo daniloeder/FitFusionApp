@@ -1,7 +1,6 @@
-import React, { useCallback } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { SafeAreaView, Text, TouchableOpacity, View, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
-import * as AuthSession from 'expo-auth-session';
 import Icons from "../Icons/Icons";
 import { BASE_URL, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '@env';
 
@@ -55,28 +54,57 @@ const TwitterButton = ({ promptAsync, title = "Sign In with X / Twitter" }) => (
   </SafeAreaView>
 );
 
+function parseQueryParams(url) {
+  const queryParams = {};
+  const queryString = url.split('?')[1] || url;
+  if (queryString) {
+    const pairs = queryString.split('&');
+    pairs.forEach(pair => {
+      const [key, value] = pair.split('=');
+      queryParams[decodeURIComponent(key)] = decodeURIComponent(value);
+    });
+  }
+  return queryParams;
+}
+
+
 const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuthType }) => {
+  useEffect(() => {
+    const handleOpenURL = (event) => {
+      const url = event.url;
+      if (url) {
+        const queryParams = parseQueryParams(url);
+        if (queryParams.provider === "google") {
+          setSocialToken(queryParams.access_token);
+        } else if (queryParams.provider === "facebook") {
+          setSocialToken(queryParams.access_token);
+        } else if (queryParams.provider === "twitter") {
+          setSocialToken(`oauth_token=${queryParams.oauth_token}&oauth_verifier=${queryParams.oauth_verifier}`);
+        }
+        setAuthType(null);
+      }
+    };
+    Linking.addEventListener('url', handleOpenURL);
+    return () => {
+      Linking.removeEventListener('url', handleOpenURL);
+    };
+  }, []);
+
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true);
-    const redirectUrl = AuthSession.makeRedirectUri({ useProxy: true });
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&response_type=token&scope=openid%20profile%20email`;
-    const response = await AuthSession.startAsync({ authUrl });
-    if (response.type === 'success' && response.params.access_token) {
-      setAuthType("google");
-      setSocialToken(response.params.access_token);
-    }
+    const redirectUri = 'https://fitfusionapp.live/redirect/?provider=google';
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20profile%20email`;
+    const response = await WebBrowser.openBrowserAsync(authUrl);
+    setAuthType("google");
     setLoading(false);
   }, []);
 
   const handleFacebookSignIn = useCallback(async () => {
     setLoading(true);
-    const redirectUri = AuthSession.makeRedirectUri({ useProxy: true });
+    const redirectUri = 'https://fitfusionapp.live/redirect/?provider=facebook';
     const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email,public_profile`;
-    const response = await AuthSession.startAsync({ authUrl });
-    if (response.type === 'success' && response.params.access_token) {
-      setAuthType("facebook");
-      setSocialToken(response.params.access_token);
-    }
+    const result = await WebBrowser.openBrowserAsync(authUrl);
+    setAuthType("facebook");
     setLoading(false);
   }, []);
 
@@ -85,22 +113,21 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
     try {
       const requestTokenUrl = `${BASE_URL}/api/users/auth/twitter/request_token`;
       const response = await fetch(requestTokenUrl);
-      const { oauth_token } = await response.json();
-
-      const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`;
-      const result = await AuthSession.startAsync({ authUrl });
-
-      if (result.type === 'success' && result.params.oauth_token && result.params.oauth_verifier) {
-        setAuthType("twitter");
-        setSocialToken(`oauth_token=${result.params.oauth_token}&oauth_verifier=${result.params.oauth_verifier}`);
+      if(response.ok) {
+        const { oauth_token } = await response.json();
+        if (oauth_token) {
+          const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`;
+    
+          const result = await WebBrowser.openBrowserAsync(authUrl);
+          setAuthType("twitter");
+        }
       }
+
     } catch (error) {
       console.error('Error during Twitter login', error);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   }, []);
-
 
   if (strategy === "google") {
     return <GoogleButton promptAsync={handleGoogleSignIn} title={title} />;

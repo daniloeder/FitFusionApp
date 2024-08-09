@@ -13,7 +13,6 @@ function LoginScreen() {
     const navigation = useNavigation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
     const [authType, setAuthType] = useState('email');
     const [socialToken, setSocialToken] = useState(null);
     const [socialTokenSecret, setSocialTokenSecret] = useState(null);
@@ -29,7 +28,6 @@ function LoginScreen() {
     const handleLogin = async () => {
         setLoading(true);
         try {
-            // Check if fields are not empty
             if (!socialToken && (!email || !password)) {
                 Alert.alert('Input Error', 'Please enter both email and password.');
                 return;
@@ -84,7 +82,7 @@ function LoginScreen() {
         if (socialToken) {
             handleLogin();
         }
-    }, [socialToken])
+    }, [socialToken]);
 
     useEffect(() => {
         fetchData('user_id')
@@ -102,21 +100,22 @@ function LoginScreen() {
             .catch((error) => {
                 console.error('Error fetching user token:', error);
             });
-    }, [])
+    }, []);
 
     return (
         <ScrollView style={styles.gradientContainer}>
             <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" full />
             <View style={styles.container}>
+
                 <Text style={styles.title}>Login</Text>
 
                 {loading && <ActivityIndicator size="large" color="#fff" style />}
 
-                <SocialAuthButton strategy={"google"} title="Log In with Google" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
-                <SocialAuthButton strategy={"facebook"} title="Log In with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
-                <SocialAuthButton strategy={"twitter"} title="Log In with X / Twitter" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+                <SocialAuthButton strategy={"google"} title="Log In with Google" setLoading={setLoading} setSocialToken={setSocialToken} authType={authType} setAuthType={setAuthType} />
+                <SocialAuthButton strategy={"facebook"} title="Log In with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} authType={authType} setAuthType={setAuthType} />
+                <SocialAuthButton strategy={"twitter"} title="Log In with X / Twitter" setLoading={setLoading} setSocialToken={setSocialToken} authType={authType} setAuthType={setAuthType} />
 
-                <View style={{marginTop: 30}}>
+                <View style={{ marginTop: 30 }}>
                     <CustomInput
                         placeholder="Email or Username"
                         placeholderTextColor="#656565"
