@@ -2,7 +2,7 @@ import React, { useCallback, useEffect } from 'react';
 import { SafeAreaView, Text, TouchableOpacity, View, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Icons from "../Icons/Icons";
-import { BASE_URL, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '@env';
+import { BASE_URL, REDIRECT_URL, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '@env';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -92,7 +92,7 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
 
   const handleGoogleSignIn = useCallback(async () => {
     setLoading(true);
-    const redirectUri = 'https://fitfusionapp.live/redirect/?provider=google';
+    const redirectUri = `${REDIRECT_URL}?provider=google`;
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20profile%20email`;
     const response = await WebBrowser.openBrowserAsync(authUrl);
     setAuthType("google");
@@ -101,7 +101,7 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
 
   const handleFacebookSignIn = useCallback(async () => {
     setLoading(true);
-    const redirectUri = 'https://fitfusionapp.live/redirect/?provider=facebook';
+    const redirectUri = `${REDIRECT_URL}?provider=facebook`;
     const authUrl = `https://www.facebook.com/v10.0/dialog/oauth?client_id=${FACEBOOK_APP_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=email,public_profile`;
     const result = await WebBrowser.openBrowserAsync(authUrl);
     setAuthType("facebook");
