@@ -117,7 +117,10 @@ const HomeScreen = ({ navigation }) => {
             const updatedCloserUsers = [...prevCloserUsers];
             for (const member of data) {
               const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
-              if (updatedCloserUsers[index]) updatedCloserUsers[index].profile_image = member.profile_image;
+              if (updatedCloserUsers[index]){
+                updatedCloserUsers[index].checked = true;
+                updatedCloserUsers[index].profile_image = member.profile_image
+              };
             }
             return updatedCloserUsers;
           });
@@ -203,7 +206,7 @@ const HomeScreen = ({ navigation }) => {
   useEffect(() => {
     if (closerUsers.length > 0) {
       const closerUsers_without_image = closerUsers.filter(member => {
-        return member.profile_image === undefined
+        return member.profile_image === undefined && !member.checked
       }).map(member => {
         return member.id
       })
