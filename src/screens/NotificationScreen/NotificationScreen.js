@@ -72,9 +72,9 @@ const Notifications = ({ navigation }) => {
                 } else if (item.type === 'PaymentDayEventComming') {
                   navigation.navigate('Event', { eventId: item.item_id, paymentCardVisibel: true });
                 } else if (item.type === 'NewNearPlace') {
-                  navigation.navigate('Event', { eventId: item.item_id });
-                } else if (item.type === 'NewNearEvent') {
                   navigation.navigate('Place', { placeId: item.item_id });
+                } else if (item.type === 'NewNearEvent') {
+                  navigation.navigate('Event', { eventId: item.item_id });
                 } else if (item.type === 'EventComming') {
                   navigation.navigate('Event', { eventId: item.item_id });
                 } else if (item.type === 'NewNearUser') {
