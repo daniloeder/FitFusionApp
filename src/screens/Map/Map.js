@@ -263,7 +263,7 @@ function Map({ route, MAX_ZOOM_LATITUDE_DELTA = 0.01, PATTERN_ZOOM_LATITUDE_DELT
 
   const handleRegionChange = (newRegion) => {
     setCurrentPosition(newRegion)
-    if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA) {
+    if (newRegion.latitudeDelta > MAX_ZOOM_LATITUDE_DELTA*1.01) {
       mapRef.current.animateToRegion({
         ...newRegion,
         latitudeDelta: MAX_ZOOM_LATITUDE_DELTA,
