@@ -2374,7 +2374,18 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
 
         if (mode === 'user') {
             if (!evaluationModal && userMode !== 'evaluations') {
-                return <TouchableOpacity
+                return <><TouchableOpacity
+                style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#007bff', padding: 7, marginBottom: 8 }}
+                onPress={() => {
+                    setSelectedTrainer(null);
+                    navigation.navigate('User Profile', { id: selectedTrainer.user.id })
+                }}
+            >
+                <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
+                    Chat {selectedTrainer.name}
+                </Text>
+            </TouchableOpacity>
+                <TouchableOpacity
                     style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4CAF50', padding: 7 }}
                     onPress={() => setEvaluationModal(true)}
                 >
@@ -2382,6 +2393,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                         Schedule Evaluation
                     </Text>
                 </TouchableOpacity>
+                </>
             } else if (userMode === 'evaluations') {
                 return <ListBody />
             }
