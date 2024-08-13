@@ -1790,11 +1790,6 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
     }, [searchedTrainers]);
 
     const styles = StyleSheet.create({
-        title: {
-            fontSize: 18,
-            fontWeight: 'bold',
-            color: '#FFF',
-        },
         usersContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
@@ -2375,24 +2370,24 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
         if (mode === 'user') {
             if (!evaluationModal && userMode !== 'evaluations') {
                 return <><TouchableOpacity
-                style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#007bff', padding: 7, marginBottom: 8 }}
-                onPress={() => {
-                    setSelectedTrainer(null);
-                    navigation.navigate('User Profile', { id: selectedTrainer.user.id })
-                }}
-            >
-                <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
-                    Chat {selectedTrainer.name}
-                </Text>
-            </TouchableOpacity>
-                <TouchableOpacity
-                    style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4CAF50', padding: 7 }}
-                    onPress={() => setEvaluationModal(true)}
+                    style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#007bff', padding: 7, marginBottom: 8 }}
+                    onPress={() => {
+                        setSelectedTrainer(null);
+                        navigation.navigate('User Profile', { id: selectedTrainer.user.id })
+                    }}
                 >
                     <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
-                        Schedule Evaluation
+                        Chat {selectedTrainer.name}
                     </Text>
                 </TouchableOpacity>
+                    <TouchableOpacity
+                        style={{ borderRadius: 6, justifyContent: 'center', alignItems: 'center', backgroundColor: '#4CAF50', padding: 7 }}
+                        onPress={() => setEvaluationModal(true)}
+                    >
+                        <Text style={{ color: '#FFF', fontSize: 13, fontWeight: 'bold' }}>
+                            Schedule Evaluation
+                        </Text>
+                    </TouchableOpacity>
                 </>
             } else if (userMode === 'evaluations') {
                 return <ListBody />
@@ -2601,7 +2596,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
         if (redirectedPersonal && mode === 'user' && generalData) {
             if (generalData.tabs.user.included_personal_trainer && userMode === 'trainers') {
                 const redirectedTrainer = generalData.tabs.user.global_trainers.find(trainer => trainer.id === redirectedPersonal);
-                if(redirectedTrainer){
+                if (redirectedTrainer) {
                     setSelectedTrainer(redirectedTrainer);
                     fetchUserProfileImages([redirectedTrainer.user.id]);
                     fetchPersonalRoomData(redirectedTrainer.id, false);
@@ -2612,29 +2607,30 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                 setUserMode('trainers');
             }
         }
-    }, [redirectedPersonal, mode, generalData, userMode]);
+    }, [redirectedPersonal, generalData]);
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Paste Workout</Text>
-            <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
-                {generalData && Object.keys(generalData.tabs).map((tab, index) => {
-                    const len = Object.keys(generalData.tabs).length;
-                    return <Tabs
-                        key={index}
-                        index={index}
-                        name={generalData.tabs[tab].name}
-                        setSelectedTab={() => setMode(tab)}
-                        isSelected={tab === mode}
-                        len={len}
-                        TabSize={width * 0.89 / len * 0.8}
-                        textColor='#222'
-                        selectedColor='#FFF'
-                        unselectedColor='#DDD'
-                    />
-                })
-                }
-            </View>
+            {generalData && Object.keys(generalData.tabs).length > 1 &&
+                <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
+                    {Object.keys(generalData.tabs).map((tab, index) => {
+                        const len = Object.keys(generalData.tabs).length;
+                        return <Tabs
+                            key={index}
+                            index={index}
+                            name={generalData.tabs[tab].name}
+                            setSelectedTab={() => setMode(tab)}
+                            isSelected={tab === mode}
+                            len={len}
+                            TabSize={width * 0.89 / len * 0.8}
+                            textColor='#222'
+                            selectedColor='#FFF'
+                            unselectedColor='#DDD'
+                        />
+                    })
+                    }
+                </View>
+            }
             {mode === 'user' ? <>
                 <View style={{ flexDirection: 'row', marginVertical: 8, minHeight: 40, alignItems: 'flex-start', width: '100%' }}>
                     {user_tabs.map((tab, index) => {
@@ -2737,7 +2733,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
                                 <CustomModal title="Personal Trainer" borderColor='rgba(0,0,0,0.65)' backgroundColor={"#1A202C"} width='90%' height='50%'
                                     closeButton
                                     onUpdate={selectedTrainer}
-                                    onClose={() => { }}
+                                    onClose={() => setSelectedTrainer(null)}
                                 >
                                     <View style={{ width: '100%', padding: 5, borderRadius: 5 }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', height: width * 0.12 }}>
