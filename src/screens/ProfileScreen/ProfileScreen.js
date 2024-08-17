@@ -11,10 +11,8 @@ import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import CustomPicker from '../../components/CustomPicker/CustomPicker';
-import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import * as DocumentPicker from 'expo-document-picker';
 import QRGenerator from '../../components/QRScanner/QRGenerator';
-import PaymentCard from '../../components/Management/PaimentCard.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
 
@@ -22,7 +20,7 @@ const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
 
-  const { userId, active, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError } = useGlobalContext();
+  const { userId, active, userToken, userSubscriptionPlan, checkConnectionError } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -284,33 +282,9 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  const ManagerSubscriptionPlansModal = () => {
-    return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={updatePlanModal}
-        onRequestClose={() => { setUpdatePlanModal(false); }}
-      >
-        <SubscriptionPlansModal userToken={userToken}
-          subscriptionTexts={{ button_text: "Update Plan" }}
-          object={{ mode: 'app' }}
-          patternMode='subscription'
-          confirmedSubscription={data => {
-            setUserSubscriptionPlan(data);
-            setUpdatePlanModal(false);
-            fetchProfile();
-          }}
-        />
-      </Modal>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-
-      <ManagerSubscriptionPlansModal />
 
       <ScrollView
         style={styles.contentContainer}
@@ -552,15 +526,6 @@ const ProfileScreen = ({ route }) => {
                 Fitness Screen
               </Text>
             </TouchableOpacity>
-
-            {profile.subscription && profile.subscription.user_subscription && (
-              <View style={{ marginTop: 15, width: '90%', marginLeft: '5%' }}>
-                <PaymentCard
-                  subscriptionData={profile.subscription.user_subscription}
-                  setSubscriptionPlansModalVisible={setUpdatePlanModal}
-                />
-              </View>
-            )}
 
             <TouchableOpacity style={styles.editButton} onPress={() => !checkConnectionError() && setEditProfile(true)}>
               <Text style={styles.editButtonText}>Edit Profile</Text>

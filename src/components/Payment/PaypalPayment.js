@@ -47,11 +47,15 @@ const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentD
                     'Accept': 'application/json',
                     Authorization: `Token ${userToken}`,
                 },
-                body: JSON.stringify({ provider: 'paypal', amount, currency, item }),
+                body: JSON.stringify({ provider: 'none', amount, currency, item }),
             });
             const data = await response.json();
+            
             if (response.ok) {
                 setLoading(false);
+                setUpdatePlanModal(false);
+                Alert.alert('Your Payment Intent has been created.', 'For a while, we are not able to process your payment, then you need to pay locally or directly to the owner.\nContact the owner for more information.');
+                return;
                 setPaymentId(data.payment_id);
                 setOrderData(data);
             } else {

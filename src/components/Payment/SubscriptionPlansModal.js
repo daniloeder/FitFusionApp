@@ -583,7 +583,7 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                         }
                                     }
                                 }}>
-                                    <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Pay Now"}</Text>
+                                    <Text style={styles.confirmButtonText}>{mode === 'manager' ? "Edit Plans" : "Confirm"}</Text>
                                 </TouchableOpacity>}
 
                                 {mode === 'see' &&

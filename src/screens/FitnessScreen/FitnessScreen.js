@@ -4244,15 +4244,7 @@ const FitnessScreen = ({ route, navigation }) => {
                                         <Text style={{ color: '#FFF', fontWeight: 'bold' }}>Exit Manager Mode</Text>
                                     </TouchableOpacity>
                                 </>
-                            ) :
-                                active && (
-                                    updatePlanModal ? <ManagerSubscriptionPlansModal /> : <SubscriptionPlansModal userToken={userToken}
-                                        subscriptionTexts={{ button_text: "Update Plan" }}
-                                        object={{ mode: 'app' }}
-                                        patternMode='none'
-                                        confirmedSubscription={setConfirmedSubscription}
-                                    />
-                                )
+                            ) : ''
                             }
                         </>}
 
