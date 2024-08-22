@@ -1,28 +1,24 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
     ext {
-        buildToolsVersion = findProperty('android.buildToolsVersion') ?: '33.0.0'
-        minSdkVersion = Integer.parseInt(findProperty('android.minSdkVersion') ?: '21')
-        compileSdkVersion = Integer.parseInt(findProperty('android.compileSdkVersion') ?: '33')
-        targetSdkVersion = Integer.parseInt(findProperty('android.targetSdkVersion') ?: '33')
-        if (findProperty('android.kotlinVersion')) {
-            kotlinVersion = findProperty('android.kotlinVersion')
-        }
-        frescoVersion = findProperty('expo.frescoVersion') ?: '2.5.0'
-
-        // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
-        ndkVersion = "23.1.7779620"
+        buildToolsVersion = "34.0.0"
+        minSdkVersion = 23
+        compileSdkVersion = 34
+        targetSdkVersion = 34
+        ndkVersion = "26.1.10909125"
+        kotlinVersion = "1.9.24"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath('com.android.tools.build:gradle:7.4.1')
-        classpath('com.facebook.react:react-native-gradle-plugin')
+        classpath("com.android.tools.build:gradle")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
+
+apply plugin: "com.facebook.react.rootproject"
 
 allprojects {
     repositories {
@@ -46,4 +42,7 @@ allprojects {
             url "$rootDir/../node_modules/expo-camera/android/maven"
         }
     }
-}
+}// @generated begin expo-camera-import - expo prebuild (DO NOT MODIFY) sync-f244f4f3d8bf7229102e8f992b525b8602c74770
+def expoCameraMavenPath = new File(["node", "--print", "require.resolve('expo-camera/package.json')"].execute(null, rootDir).text.trim(), "../android/maven")
+allprojects { repositories { maven { url(expoCameraMavenPath) } } }
+// @generated end expo-camera-import
