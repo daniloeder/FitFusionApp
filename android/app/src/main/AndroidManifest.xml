@@ -2,7 +2,7 @@
   <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-  <uses-permission android:name="android.permission.CAMERA"/>
+  <!-- <uses-permission android:name="android.permission.CAMERA"/> -->
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
   <uses-permission android:name="android.permission.INTERNET"/>
@@ -12,6 +12,7 @@
   <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -33,10 +34,9 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="fitfusionapp"/>
-        <data android:scheme="com.daniloeder.FitFusionApp"/>
         <data android:scheme="exp+fitfusionapp"/>
       </intent-filter>
-      <intent-filter data-generated="true">
+      <intent-filter>
         <action android:name="android.intent.action.VIEW"/>
         <data android:scheme="fitfusionapp" android:host="redirect"/>
         <category android:name="android.intent.category.BROWSABLE"/>

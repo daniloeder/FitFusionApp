@@ -69,6 +69,13 @@
           "locationAlwaysAndWhenInUsePermission": "Allow App to use your location",
           "isAndroidBackgroundLocationEnabled": "Allow App to use your location in the background"
         }
+      ],
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "",
+          "enableGooglePay": true
+        }
       ]
     ]
   }
