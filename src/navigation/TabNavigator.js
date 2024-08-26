@@ -7,7 +7,9 @@ import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { fetchAuthToken, deleteAuthToken, fetchData } from '../store/store';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
-import { BASE_URL } from '@env';
+import { BannerAd, BannerAdSize, InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
+
+import { APP_VERSION, BASE_URL, GOOGLE_ADS_UNIT_ID, GOOGLE_INTERSTITIAL_AD_UNIT_ID } from '@env';
 
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
@@ -132,6 +134,9 @@ const TabNavigator = () => {
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState({ all: false, chat: false, event: false, place: false });
 
+  const [interstitialAd, setInterstitialAd] = useState(null);
+  const [adLoaded, setAdLoaded] = useState(false);
+
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
     type: 'free',
     name: 'Free Plan',
@@ -178,7 +183,7 @@ const TabNavigator = () => {
 
   const fetchSubscriptionPlans = async (token) => {
     try {
-      const response = await fetch(BASE_URL + '/api/users/get-subscrisption-data/?v=1.0.0', {
+      const response = await fetch(BASE_URL + `/api/users/get-subscrisption-data/?v=${APP_VERSION}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -195,6 +200,7 @@ const TabNavigator = () => {
       if (data.ads) {
         setAds(data.ads);
       }
+
     } catch (error) {
       console.error('There was an error:', error);
     }
@@ -281,6 +287,46 @@ const TabNavigator = () => {
       notificationResponseSubscription.remove();
     };
   }, [chatId]);
+
+  useEffect(() => {
+    // Create an instance of InterstitialAd
+    const ad = InterstitialAd.createForAdRequest(GOOGLE_INTERSTITIAL_AD_UNIT_ID);
+    setInterstitialAd(ad);
+
+    // Add event listeners for ad events
+    const unsubscribeOnAdLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
+      setAdLoaded(true); // Set state to indicate ad is ready
+    });
+    const unsubscribeOnAdFailedToLoad = ad.addAdEventListener(AdEventType.ERROR, (error) => {
+      setAdLoaded(false); // Set state to indicate ad failed to load
+    });
+    const unsubscribeOnAdClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+      // Reload the ad if needed
+      setAdLoaded(false);
+      ad.load();
+    });
+
+    ad.load();
+
+    // Clean up listeners on unmount
+    return () => {
+      unsubscribeOnAdLoaded();
+      unsubscribeOnAdFailedToLoad();
+      unsubscribeOnAdClosed();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (ads) {
+      if (ads.interstitial) {
+        if (adLoaded && interstitialAd) {
+          interstitialAd.show();
+        } else {
+          console.log('Ad not loaded yet or ad instance is null');
+        }
+      }
+    }
+  }, [ads]);
 
   const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
@@ -513,6 +559,10 @@ const TabNavigator = () => {
           }}
         />
       </Tab.Navigator>
+      {ads && ads.banner && <BannerAd
+        unitId={GOOGLE_ADS_UNIT_ID}
+        size={BannerAdSize.FULL_BANNER}
+      />}
     </GlobalProvider>
   )
 };
