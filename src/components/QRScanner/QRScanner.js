@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Linking, View, Text, StyleSheet, Button, TouchableOpacity, Dimensions } from 'react-native';
-import { Camera } from 'expo-camera';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { Linking, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Camera, CameraType } from 'expo-camera/legacy';  // Import Camera and CameraType from legacy
 import Icons from '../../components/Icons/Icons.js';
 
 const { width } = Dimensions.get('window');
@@ -10,6 +9,7 @@ const QRScanner = ({ setScannedUserData }) => {
     const [hasPermission, setHasPermission] = useState(null);
     const [scanned, setScanned] = useState(false);
     const [scannedData, setScannedData] = useState('');
+    const [type, setType] = useState(CameraType.back);  // Set initial camera type to back
 
     useEffect(() => {
         (async () => {
@@ -19,13 +19,17 @@ const QRScanner = ({ setScannedUserData }) => {
     }, []);
 
     const handleBarCodeScanned = ({ type, data }) => {
-        try {
-            const parsedData = JSON.parse(data);
-            if (parsedData.type === "fit_fusion_user") {
-                setScannedUserData(parsedData);
-                setScanned(true);
+        // check if the scanned data is a valid JSON object and not a text
+        if (data.includes('{') && data.includes('}')) {
+            try {
+                const parsedData = JSON.parse(data);
+                if (parsedData.type === "fit_fusion_user") {
+                    setScannedUserData(parsedData);
+                    setScanned(true);
+                }
+            } catch (error) {
+                console.error('Error parsing QR code data:', error);
             }
-        } catch (error) {
         }
     };
 
@@ -65,14 +69,9 @@ const QRScanner = ({ setScannedUserData }) => {
         <View style={styles.container}>
             <Camera
                 style={styles.camera}
-                type={Camera.Constants.Type.back}
-                barCodeScannerSettings={{
-                    barCodeTypes: [BarCodeScanner.Constants.BarCodeType.qr],
-                }}
-                onBarCodeScanned={scanned ? () => {
-                    setScanned(null);
-                } : handleBarCodeScanned}>
-            </Camera>
+                type={type}  // Use the state `type` here
+                onBarCodeScanned={scanned ? () => setScanned(false) : handleBarCodeScanned}
+            />
             {scanned ? <Text style={styles.scannedText}>Scanned Data: {scannedData}</Text> : null}
         </View>
     );
@@ -86,13 +85,7 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     camera: {
-        flex: 1,
-    },
-    buttonContainer: {
-        flex: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        padding: 20,
+        flex: 1
     },
     scannedText: {
         fontSize: 18,
