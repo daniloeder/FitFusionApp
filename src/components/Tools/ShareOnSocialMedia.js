@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, Linking, Platform, Alert, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Linking, Platform, Alert, TouchableOpacity, StyleSheet } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
@@ -40,7 +40,7 @@ const ShareOnSocialMedia = () => {
     const Share = async () => {
         const base64Image = await fetchImage();
 
-        if (!copied){
+        if (!copied) {
             Alert.alert('Reminder', 'Please copy the @fitfusion.app tag, you need to tag us in your instagram story.');
             return;
         }
@@ -95,7 +95,7 @@ const ShareOnSocialMedia = () => {
         <Text style={styles.copyButtonText}>Unlock Features for Free</Text>
     </TouchableOpacity>;
 
-return (
+    return (
         <CustomModal
             title="Share on Instagram"
             titlecolor="#555"
