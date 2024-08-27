@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 
-const CustomModal = ({ children, title, width = undefined, height = undefined, backgroundColor = undefined, borderColor = "rgba(0,0,0,0.7)", closeButton, onUpdate = undefined, onClose = undefined }) => {
+const CustomModal = ({ children, title, titlecolor="#FFF", width = undefined, height = undefined, backgroundColor = undefined, borderColor = "rgba(0,0,0,0.7)", closeButton, onUpdate = undefined, onClose = undefined }) => {
     const [modalVisible, setModalVisible] = useState(true);
 
     const handleClose = () => {
@@ -37,7 +37,7 @@ const CustomModal = ({ children, title, width = undefined, height = undefined, b
             borderColor: '#555',
         },
         title: {
-            color: '#FFF',
+            color: titlecolor,
             fontSize: 16,
             fontWeight: 'bold',
             textAlign: 'center',
