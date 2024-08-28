@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View, Linking, Alert } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View, Linking } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Icons from "../Icons/Icons";
 import { BASE_URL, REDIRECT_URL, GOOGLE_CLIENT_ID, FACEBOOK_APP_ID } from '@env';
@@ -132,11 +132,7 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
   if (strategy === "google") {
     return <GoogleButton promptAsync={handleGoogleSignIn} title={title} />;
   } else if (strategy === "facebook") {
-    return <FacebookButton promptAsync={()=>{
-      Alert.alert('Facebook Login', 'Facebook login will be available soon. Please use Google or Twitter login.', [
-        { text: 'OK', style: 'cancel' },
-      ])
-    }} title={title} />;
+    return <FacebookButton promptAsync={handleFacebookSignIn} title={title} />;
   } else if (strategy === "twitter") {
     return <TwitterButton promptAsync={handleTwitterSignIn} title={title} />;
   } else {

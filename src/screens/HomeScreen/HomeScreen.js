@@ -117,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
             const updatedCloserUsers = [...prevCloserUsers];
             for (const member of data) {
               const index = updatedCloserUsers.map(user => user.id).indexOf(parseInt(member.user_id));
-              if (updatedCloserUsers[index]){
+              if (updatedCloserUsers[index]) {
                 updatedCloserUsers[index].checked = true;
                 updatedCloserUsers[index].profile_image = member.profile_image
               };
@@ -468,6 +468,31 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
 
       </ScrollView>
+      <TouchableOpacity
+        style={{
+          width: '90%',
+          marginLeft: '5%',
+          justifyContent: 'center',
+          backgroundColor: '#2196F3',
+          padding: 10,
+          borderRadius: 5,
+          alignItems: 'center',
+          marginTop: 10,
+          marginBottom: 100
+        }}
+        onPress={() => {
+          if (checkConnectionError()) return;
+          navigation.navigate('Profile', { upgrade: true });
+        }}
+      >
+        <Text style={{
+          color: '#fff',
+          fontSize: 16,
+          fontWeight: 'bold',
+        }}>
+          Upgrade to Premium
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
