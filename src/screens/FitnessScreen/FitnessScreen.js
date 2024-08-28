@@ -12,6 +12,7 @@ import CustomModal from '../../components/CustomComponents/CustomModal.js';
 import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import DatePicker from '../../components/Forms/DatePicker';
 import PaymentCard from '../../components/Management/PaimentCard.js';
+import ShareOnSocialMedia from '../../components/Tools/ShareOnSocialMedia.js';
 import { SearchComponent } from '../SearchScreen/SearchScreen';
 import { checkAvailableFeature } from '../../utils/helpers';
 
@@ -1182,6 +1183,9 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             >
                                 <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (mode === 'user' && userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].use_ai < 6 ? ` (${userSubscriptionPlan.current_data.settings[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
                             </TouchableOpacity>
+
+                            {parseInt(userSubscriptionPlan.amount) === 0 && userSubscriptionPlan.current_data.settings[plan].use_ai === 0 && userSubscriptionPlan.current_data.code && userSubscriptionPlan.current_data.code !== 'free_share' &&
+                                <ShareOnSocialMedia buttonText="Win one more AI plan. (GPT)" goal="free_share" />}
 
                             {!useAI && <TouchableOpacity
                                 style={[styles.workoutButton, { backgroundColor: '#4CAF50' }]}

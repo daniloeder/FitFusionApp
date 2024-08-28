@@ -4,9 +4,11 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Clipboard from 'expo-clipboard';
 import CustomModal from '../CustomComponents/CustomModal';
+import { useGlobalContext } from '../../services/GlobalContext';
 import { BASE_URL } from '@env';
 
-const ShareOnSocialMedia = () => {
+const ShareOnSocialMedia = ({ buttonText = "Unlock Features for Free", goal }) => {
+    const { userToken } = useGlobalContext();
     const [showModal, setShowModal] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -79,6 +81,12 @@ const ShareOnSocialMedia = () => {
             } else {
                 await Sharing.shareAsync(localUri);
             }
+            updatePlan();
+            
+            // wait 30 seconds and alert user to refresh the app
+            setTimeout(() => {
+                Alert.alert('Success', 'You have unlocked the features. Please refresh the app to see the changes.');
+            }, 30000);
         } catch (error) {
             console.error('Error sharing image:', error);
             Alert.alert('Error', 'Failed to share the image.');
@@ -91,8 +99,24 @@ const ShareOnSocialMedia = () => {
         Alert.alert('Copied!', '@fitfusion.app tag has been copied to your clipboard.');
     };
 
-    if (!showModal) return <TouchableOpacity style={[styles.copyButton, { backgroundColor: '#2196F3' }]} onPress={() => setShowModal(true)}>
-        <Text style={styles.copyButtonText}>Unlock Features for Free</Text>
+    const updatePlan = async () => {
+        try {
+            const request = await fetch(`${BASE_URL}/api/payments/share_upgrade/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Token ${userToken}`,
+                },
+                body: JSON.stringify({ goal: goal }),
+            });
+
+        } catch (error) {
+            console.error('Error updating plan:', error);
+        }
+    }
+
+    if (!showModal) return <TouchableOpacity style={[styles.button, { backgroundColor: '#2196F3' }]} onPress={() => setShowModal(true)}>
+        <Text style={styles.copyButtonText}>{buttonText}</Text>
     </TouchableOpacity>;
 
     return (
@@ -154,6 +178,15 @@ const styles = StyleSheet.create({
         color: '#333',
         marginVertical: 15,
         textAlign: 'center',
+    },
+    button: {
+        flex: 0,
+        padding: 12,
+        borderRadius: 5,
+        marginHorizontal: '5%',
+        marginTop: 5,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     copyButton: {
         backgroundColor: '#4CAF50',
