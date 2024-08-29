@@ -467,32 +467,32 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.viewProfileButtonText}>View Profile</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={{
+            width: '90%',
+            marginLeft: '5%',
+            justifyContent: 'center',
+            backgroundColor: '#2196F3',
+            padding: 10,
+            borderRadius: 5,
+            alignItems: 'center',
+            marginTop: 10,
+            marginBottom: 100
+          }}
+          onPress={() => {
+            if (checkConnectionError()) return;
+            navigation.navigate('Profile', { upgrade: true });
+          }}
+        >
+          <Text style={{
+            color: '#fff',
+            fontSize: 16,
+            fontWeight: 'bold',
+          }}>
+            Upgrade to Premium
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
-      <TouchableOpacity
-        style={{
-          width: '90%',
-          marginLeft: '5%',
-          justifyContent: 'center',
-          backgroundColor: '#2196F3',
-          padding: 10,
-          borderRadius: 5,
-          alignItems: 'center',
-          marginTop: 10,
-          marginBottom: 100
-        }}
-        onPress={() => {
-          if (checkConnectionError()) return;
-          navigation.navigate('Profile', { upgrade: true });
-        }}
-      >
-        <Text style={{
-          color: '#fff',
-          fontSize: 16,
-          fontWeight: 'bold',
-        }}>
-          Upgrade to Premium
-        </Text>
-      </TouchableOpacity>
     </View>
   );
 };
