@@ -84,9 +84,9 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
         setAuthType(null);
       }
     };
-    Linking.addEventListener('url', handleOpenURL);
+    const subscription = Linking.addListener('url', handleOpenURL);
     return () => {
-      Linking.removeEventListener('url', handleOpenURL);
+      subscription.remove();
     };
   }, []);
 
