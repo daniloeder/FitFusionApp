@@ -84,9 +84,12 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
         setAuthType(null);
       }
     };
-    Linking.addEventListener('url', handleOpenURL);
+
+    const subscription = Linking.addListener('url', handleOpenURL);
+
+    // Cleanup
     return () => {
-      Linking.removeEventListener('url', handleOpenURL);
+      subscription.remove();
     };
   }, []);
 
@@ -113,11 +116,11 @@ const SocialAuthButton = ({ strategy, title, setLoading, setSocialToken, setAuth
     try {
       const requestTokenUrl = `${BASE_URL}/api/users/auth/twitter/request_token`;
       const response = await fetch(requestTokenUrl);
-      if(response.ok) {
+      if (response.ok) {
         const { oauth_token } = await response.json();
         if (oauth_token) {
           const authUrl = `https://api.twitter.com/oauth/authenticate?oauth_token=${oauth_token}`;
-    
+
           const result = await WebBrowser.openBrowserAsync(authUrl);
           setAuthType("twitter");
         }
