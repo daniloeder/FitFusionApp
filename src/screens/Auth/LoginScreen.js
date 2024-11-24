@@ -38,7 +38,7 @@ function LoginScreen() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(socialToken ? { token: socialToken, secret: socialTokenSecret, authType } : { username: email, password, authType })
+                body: JSON.stringify(socialToken ? { token: socialToken, secret: socialTokenSecret, authType } : { username: email, password })
             });
 
             const responseData = await response.json();
@@ -131,7 +131,10 @@ function LoginScreen() {
                         value={password}
                     />
 
-                    <TouchableOpacity style={styles.button} onPress={handleLogin}>
+                    <TouchableOpacity style={styles.button} onPress={()=>{
+                        setSocialToken(null);
+                        handleLogin();
+                    }}>
                         <Text style={styles.buttonText}>Login</Text>
                     </TouchableOpacity>
 
