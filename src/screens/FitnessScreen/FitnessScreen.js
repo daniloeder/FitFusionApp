@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { View, ScrollView, Text, Image, StyleSheet, TouchableOpacity, Modal, Dimensions, Pressable, Alert, ActivityIndicator } from 'react-native';
 import GradientBackground from '../../components/GradientBackground/GradientBackground';
 import { useGlobalContext } from '../../services/GlobalContext';
@@ -1501,7 +1501,7 @@ const SettingsModal = ({ planId, plan, plans, settings, setSettings, removeTrain
     )
 }
 
-const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal, setManagerData, redirectedPersonal }) => {
+const PersonalManagementPaste = memo(({ navigation, userToken, personal, setPersonal, setManagerData, redirectedPersonal }) => {
 
     if (!personal) {
         return (
@@ -3144,7 +3144,7 @@ const PersonalManagementPaste = ({ navigation, userToken, personal, setPersonal,
             }
         </View>
     )
-}
+});
 
 const FitnessScreen = ({ route, navigation }) => {
 
