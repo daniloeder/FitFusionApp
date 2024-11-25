@@ -16,7 +16,12 @@ function RegisterScreen({ route, navigation }) {
     const [socialToken, setSocialToken] = useState(null);
     const [userId, setUserId] = useState(null);
     const [username, setUsername] = useState('');
+
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+
     const [gender, setGender] = useState('');
     const [dateOfBirth, setDateOfBirth] = useState(null);
 
@@ -113,18 +118,22 @@ function RegisterScreen({ route, navigation }) {
     };
 
     const handleRegister = async () => {
+        if (!name || !email || !password || !confirmPassword) {
+            Alert.alert('Input Error', 'Please fill out all fields.');
+            return;
+        }
+        if (password !== confirmPassword) {
+            Alert.alert('Password Error', 'Passwords do not match.');
+            return;
+        }
         setLoading(true);
         try {
-            if (!socialToken) {
-                Alert.alert('Error', 'Please login with Google or Facebook to continue.');
-                return;
-            }
             const response = await fetch(BASE_URL + '/api/users/register/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ token: socialToken, authType })
+                body: JSON.stringify(socialToken ? { token: socialToken, authType } : { name, email, password })
             });
 
             const responseData = await response.json();
@@ -136,7 +145,7 @@ function RegisterScreen({ route, navigation }) {
                             navigation.navigate('Tabs', { screen: 'Home' });
                         })
                     return;
-                } else if (responseData.new){
+                } else if (responseData.new) {
                     setUserId(responseData.user_data.user_id);
                     setName(responseData.user_data.name || '');
                     setAccessToken(responseData.user_data.token);
@@ -167,6 +176,7 @@ function RegisterScreen({ route, navigation }) {
         }
         setLoading(false);
     };
+
     const checkUsername = async () => {
         try {
             const url = BASE_URL + `/api/users/check-username/?username=${encodeURIComponent(username)}${userId ? `&user_id=${userId}` : ''}`;
@@ -225,12 +235,6 @@ function RegisterScreen({ route, navigation }) {
                 {successRegistration ? <>
                     <Text style={styles.successRegistrationText}>{"Registered successfully!\nNow you need just complete missing info!"}</Text>
 
-                    <CustomInput
-                        placeholder="Your Name"
-                        placeholderTextColor="#656565"
-                        onChangeText={setName}
-                        value={name}
-                    />
                     {username.length ?
                         validusername ?
                             <Text style={{ color: 'green', fontWeight: 'bold' }}>This is a valid username</Text>
@@ -253,17 +257,12 @@ function RegisterScreen({ route, navigation }) {
                         </Text>
                     </Pressable>
 
-                    <Text style={{ color: '#FFF', marginTop: 10 }}>
-                        By clicking "Complete Registration" you agree to our <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
-                    </Text>
-
                     <Pressable style={({ pressed }) => [
                         styles.registerButton,
                         pressed ? styles.buttonPressed : null
                     ]} onPress={handleUpdateProfile}>
                         <Text style={styles.registerButtonText}>{"Complete Registration"}</Text>
                     </Pressable>
-
                 </> : <>
                     <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                         <Text style={{ color: '#FFF', marginRight: 3 }}>
@@ -275,6 +274,48 @@ function RegisterScreen({ route, navigation }) {
                     <SocialAuthButton strategy={"google"} title="Register with Google" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
                     <SocialAuthButton strategy={"facebook"} title="Register with Facebook" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
                     <SocialAuthButton strategy={"twitter"} title="Log In with X / Twitter" setLoading={setLoading} setSocialToken={setSocialToken} setAuthType={setAuthType} />
+
+                    <View style={{ marginTop: 30 }}>
+                        <Text style={{ color: '#FFF', marginBottom: 10, fontWeight: 'bold' }}>Or Register with Email</Text>
+                        <CustomInput
+                            placeholder="Your Name"
+                            placeholderTextColor="#656565"
+                            onChangeText={setName}
+                            value={name}
+                        />
+                        <CustomInput
+                            placeholder="Your Email"
+                            placeholderTextColor="#656565"
+                            onChangeText={setEmail}
+                            value={email}
+                        />
+                        <CustomInput
+                            secret
+                            placeholder="Password"
+                            placeholderTextColor="#656565"
+                            onChangeText={setPassword}
+                            value={password}
+                        />
+                        <CustomInput
+                            secret
+                            placeholder="Confirm Password"
+                            placeholderTextColor="#656565"
+                            onChangeText={setConfirmPassword}
+                            value={confirmPassword}
+                        />
+
+                        <Text style={{ color: '#FFF', marginTop: 10 }}>
+                            By clicking "Register" you agree to our <TouchableOpacity onPress={() => Linking.openURL(`${DOMAIN_URL}/terms`)}><Text style={{ color: '#FFD700' }}>Terms and Conditions</Text></TouchableOpacity>
+                        </Text>
+
+                        <Pressable style={({ pressed }) => [
+                            styles.registerButton,
+                            pressed ? styles.buttonPressed : null
+                        ]} onPress={handleRegister}>
+                            <Text style={styles.registerButtonText}>Register</Text>
+                        </Pressable>
+
+                    </View>
                 </>}
 
                 <Modal
