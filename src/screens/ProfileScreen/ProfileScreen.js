@@ -255,11 +255,11 @@ const ProfileScreen = ({ route }) => {
         copyToCacheDirectory: true,
       });
 
-      if (result.type === 'success') {
+      if (result && result.assets && result.assets.length) {
         updateSelectedProfileImage({
-          uri: result.uri,
-          name: result.name,
-          mimeType: result.type,
+          uri: result.assets[0].uri,
+          name: result.assets[0].name,
+          mimeType: result.assets[0].type,
         });
       }
     } catch (error) {

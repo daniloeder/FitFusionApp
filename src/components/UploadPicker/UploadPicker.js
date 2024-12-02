@@ -38,14 +38,14 @@ const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages
 
     const pickImage = async () => {
         let result = await DocumentPicker.getDocumentAsync({ type: `${type}/*` });
-        if (result.type === 'success') {
-            onImageSelect(result);
+        if (result && result.assets && result.assets.length) {
+            onImageSelect(result.assets[0]);
         }
     };
     const editImage = async (index) => {
         let result = await DocumentPicker.getDocumentAsync({ type: `${type}/*` });
-        if (result.type === 'success') {
-            onEditImage(result, index);
+        if (result && result.assets && result.assets.length) {
+            onEditImage(result.assets[0], index);
         }
     };
     const swapLeft = (index) => {
@@ -59,7 +59,6 @@ const UploadPicker = ({ selectedImages, setSelectedImages, upload, setEditImages
             onSwapRight(index);
         }
     };
-    if (type != "image" && type != "video") return;
 
     return (
         <View style={styles.container}>
