@@ -70,19 +70,17 @@ const TrainDetails = ({ online, dayName, muscleGroup, allExercises, exercise, sh
     }, [imageData]);
 
     useEffect(() => {
-        if (rightToSee || online) {
-            fetchData("exercise_image_" + exercise.execution_images[0].image_url.split('/').pop())
-                .then(data => {
-                    if (data) {
-                        setImageData(data);
-                    } else {
-                        setImageUrl(BASE_URL + exercise.execution_images[0].image_url);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching data:', error);
-                })
-        }
+        fetchData("exercise_image_" + exercise.execution_images[0].image_url.split('/').pop())
+            .then(data => {
+                if (data) {
+                    setImageData(data);
+                } else {
+                    setImageUrl(BASE_URL + exercise.execution_images[0].image_url);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+            })
     }, [exercise]);
 
     const muscle_groups_data = { 'neck': 'Neck', 'trapezius': 'Trapezius', 'shoulders': 'Shoulders', 'chest': 'Chest', 'back': 'Back', 'erector_spinae': 'Erector Spinae', 'biceps': 'Biceps', 'triceps': 'Triceps', 'forearm': 'Forearm', 'abs': 'Abs', 'leg': 'Leg', 'calf': 'Calf', 'hip': 'Hip', 'cardio': 'Cardio', 'full_body': 'Full Body' }
@@ -1675,7 +1673,6 @@ const FitnessScreen = ({ route, navigation }) => {
             });
             const data = await response.json();
             for (const exercise of data) {
-                continue
                 await new Promise(resolve => setTimeout(resolve, 100));
                 storeData(exercise.image, "exercise_image_" + exercise.image_name);
             }
@@ -1700,7 +1697,6 @@ const FitnessScreen = ({ route, navigation }) => {
 
             let missing_exercises_images = [];
             for (const exercise of Object.keys(data)) {
-                continue
                 if (!data[exercise].execution_images[0].image_name) {
                     missing_exercises_images.push(exercise)
                 }
@@ -2298,6 +2294,7 @@ const FitnessScreen = ({ route, navigation }) => {
                             if (!allItems[plan] || !allItems[plan][exercise]) {
                                 try {
                                     const exercise_data = await fetchData("exercise_" + exercise);
+                                    console.log(exercise_data);
                                     if (exercise_data) {
                                         setAllItems(prevItems => ({ ...prevItems, [plan]: { ...prevItems[plan], [exercise]: exercise_data } }));
                                         if (exercise_data.execution_images && exercise_data.execution_images.length > 0) {
