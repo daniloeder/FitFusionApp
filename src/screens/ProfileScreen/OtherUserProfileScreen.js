@@ -120,13 +120,6 @@ const ProfileScreen = ({ route }) => {
 
                             </View>
 
-                            <TouchableOpacity style={styles.sendMessageButton} onPress={() => startChat(profile.id)}>
-                                <View style={styles.sendMessageIconContainer}>
-                                    <Icons name="SendMessage" size={width * 0.06} />
-                                </View>
-                                <Text style={styles.sendMessageText}>Chat</Text>
-                            </TouchableOpacity>
-
                             {profile.personal_trainer && <View style={{ padding: 5, }}>
                                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2, marginBottom: 20 }}>
                                     <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: "#7a50e2", paddingHorizontal: 50, paddingVertical: 10, borderRadius: 5 }} onPress={() => navigation.navigate('Fitness', { search_personal: profile.personal_trainer.id })}>
@@ -230,35 +223,6 @@ const styles = StyleSheet.create({
         fontSize: width * 0.04,
         fontWeight: 'bold',
         color: '#B83030',
-    },
-    sendMessageButton: {
-        paddingHorizontal: width * 0.08,
-        paddingVertical: width * 0.02,
-        borderRadius: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#4a90e2',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 5,
-        alignSelf: 'center',
-        marginBottom: 20,
-    },
-    sendMessageIconContainer: {
-        padding: 10,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.5)',
-        marginRight: 10,
-    },
-    sendMessageText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     favoriteSports: {
         flexDirection: 'row',

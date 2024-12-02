@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Modal, Alert, ActivityIndicator, Dimensions, TextInput } from 'react-native';
-import StripePayment from './StripePayment';
 import PayPalPayment from './PaypalPayment';
 import SelectBox from '../Tools/SelectBox';
 import Icons from '../Icons/Icons';
@@ -609,7 +608,6 @@ const SubscriptionPlansModal = ({ userToken, currentPlanId, object, subscription
                                 }
 
                                 {subscriptionPlan && !completedPaymentData && <>
-                                    {useCreditCard && <StripePayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} />}
                                     {usePayPal && <PayPalPayment userToken={userToken} amount={subscriptionPlan.price} currency={subscriptionPlan.currency} item={{ type: "plan", id: subscriptionPlan.id, extra: object && object.extra }} setCompletedPaymentData={setCompletedPaymentData} setUpdatePlanModal={setUpdatePlanModal} setUsePayPal={setUsePayPal} />}
                                 </>}
                             </View>

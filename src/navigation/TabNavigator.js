@@ -12,15 +12,6 @@ import { BASE_URL } from '@env';
 import HomeScreen from '../screens/HomeScreen/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
 import OtherUserProfileScreen from '../screens/ProfileScreen/OtherUserProfileScreen';
-import PlaceScreen from '../screens/PlaceScreen/PlaceScreen';
-import ManagePlace from '../screens/PlaceScreen/ManagePlace'
-import CreatePlaceScreen from '../screens/CreatePlaceScreen/CreatePlaceScreen';
-import EventScreen from '../screens/EventScreen/EventScreen';
-import ManageEvent from '../screens/EventScreen/ManageEvent';
-import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
-import Map from '../screens/Map/Map';
-import ChatListScreen from '../screens/ChatScreen/ChatListScreen';
-import ChatScreen from '../screens/ChatScreen/ChatScreen';
 import NotificationsScreen from '../screens/NotificationScreen/NotificationScreen';
 import SettingsScreen from '../screens/SettingsScreen/SettingsScreen';
 import SearchScreen from '../screens/SearchScreen/SearchScreen';
@@ -30,7 +21,6 @@ import AdvertisementModal from '../components/Advertisement/AdvertisementModal';
 import SubscriptionPlansModal from '../components/Payment/SubscriptionPlansModal';
 
 import { GlobalProvider } from '../services/GlobalContext';
-import { useChat } from '../utils/chats';
 
 const width = Dimensions.get('window').width;
 
@@ -124,7 +114,6 @@ async function registerForPushNotificationsAsync(userToken) {
 }
 
 const TabNavigator = () => {
-  const { chats } = useChat();
   const navigation = useNavigation();
   const [userId, setUserId] = useState(null);
   const [userToken, setUserToken] = useState(null);
@@ -282,7 +271,6 @@ const TabNavigator = () => {
     };
   }, [chatId]);
 
-  const unreadMessagesNumber = Object.values(chats).reduce((acc, chat) => acc + chat.unread, 0);
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
   return (
@@ -354,98 +342,16 @@ const TabNavigator = () => {
             },
           })}
         />
-
         <Tab.Screen
-          name="Place"
-          component={PlaceScreen}
+          name="Fitness"
           initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
+          component={FitnessScreen}
+          options={({ navigation }) => ({
+            tabBarIcon: ({ focused }) => <Icons name="Fitness" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
+            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '400', fontSize: width * 0.023, color: '#CCC' }}>Fitness</Text>,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Manage Place"
-          component={ManagePlace}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Create Place"
-          component={CreatePlaceScreen}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Event"
-          component={EventScreen}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Manage Event"
-          component={ManageEvent}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Create Event"
-          component={CreateEventScreen}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Chat List"
-          component={ChatListScreen}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarIcon: ({ focused }) =>
-              <>
-                <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />
-                {unreadMessagesNumber > 0 && <View style={{ paddingHorizontal: 2, borderRadius: 4, backgroundColor: 'red', position: 'absolute', top: -4, right: 8 }}>
-                  <Text style={{ color: '#FFF', fontSize: 10, fontWeight: 'bold' }}>{unreadMessagesNumber}</Text>
-                </View>}
-              </>,
-            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '400', fontSize: width * 0.023, color: '#CCC' }}>Chat</Text>,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          }}
-        />
-        <Tab.Screen
-          name="Chat"
-          component={ChatScreen}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarButton: () => null,
-            tabBarIcon: ({ focused }) => <Icons name="Chat" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.navigate('Chat List')} />,
-            tabBarStyle: { display: 'none' },
-          }}
-        />
-        <Tab.Screen
-          name="Map"
-          component={Map}
-          initialParams={{ userId, userToken }}
-          options={{
-            tabBarIcon: () => <Icons name="Map" size={width * 0.085} fill="#CCC" />,
-            headerShown: false,
-            tabBarLabel: () => <Text style={{ fontSize: width * 0.025, color: '#CCC' }}>Map</Text>,
-            tabBarStyle: { display: 'none' },
-          }}
+          })
+          }
         />
         <Tab.Screen
           name="Search"
@@ -480,17 +386,6 @@ const TabNavigator = () => {
             tabBarButton: () => null,
             headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
           }}
-        />
-        <Tab.Screen
-          name="Fitness"
-          initialParams={{ userId, userToken }}
-          component={FitnessScreen}
-          options={({ navigation }) => ({
-            tabBarIcon: ({ focused }) => <Icons name="Fitness" size={width * 0.085} fill={focused ? '#CCC' : '#1C274C'} />,
-            tabBarLabel: ({ focused }) => <Text style={focused ? { fontWeight: '600', fontSize: width * 0.025, color: '#FFF' } : { fontWeight: '400', fontSize: width * 0.023, color: '#CCC' }}>Fitness</Text>,
-            headerLeft: () => <HeaderIcon icon="Back" onPress={() => navigation.goBack()} />
-          })
-          }
         />
         <Tab.Screen
           name="Profile"

@@ -239,227 +239,39 @@ const HomeScreen = ({ navigation }) => {
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Welcome to Fit Fusion</Text>
 
-        {userLocation ?
-          <>
-            <Text style={styles.updatesMessageText}>
-              You Can Now See The Updates Around You:
-            </Text>
-            <TouchableOpacity
-              style={styles.mapButton}
-              onPress={() => navigation.navigate('Map')}
+        <Text style={[styles.initialMessageText, {marginTop: 50}]}>
+          Here you can manage your workouts.
+        </Text>
+        <Text style={[styles.initialMessageText, {marginTop: 50}]}>
+          A lot of new features are coming soon. Stay tuned!
+        </Text>
+        
+        <TouchableOpacity
+              style={{
+                width: '100%',
+                justifyContent: 'center',
+                backgroundColor: '#2196F3',
+                padding: 10,
+                borderRadius: 5,
+                alignItems: 'center',
+                marginTop: 50,
+              }}
+              onPress={() => {
+                navigation.navigate('Fitness')
+              }}
             >
-              <Text style={styles.mapButtonText}>Check on Map</Text>
-              <Icons name="Map" size={width * 0.06} />
+              <Text style={{
+                color: '#fff',
+                fontSize: 16,
+                fontWeight: 'bold',
+              }}>
+                Fitness Screen
+              </Text>
             </TouchableOpacity>
-          </>
-          :
-          <Text style={styles.initialMessageText}>
-            Let's start looking for sports places, events and partners near you:
-          </Text>
-        }
-        {userId && userToken && <GetUserCoordinates active={active} userId={userId} userToken={userToken} userLocation={userLocation} setUserLocation={setUserLocation} />}
 
-        {closerUsers ?
-          <>
-            {places.length ? <Text style={styles.subtitle}>Nearby Users:</Text> : ''}
-            <View style={{ width: '100%', flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-              {closerUsers.slice(0, 8).map(user => {
-                return <UsersBall key={user.id} user={user} onPress={setClickedUser} size={0.9} />
-              })}
-            </View>
-
-          </>
-          : ''
-        }
-
-        {(places.length > 0 || joinedEvents.length > 0) ?
-          <>
-            {places.length > 0 && <>
-              <Text style={styles.subtitle}>My Places:</Text>
-              <PlaceList places={places.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
-              {places.length > 3 && (
-                placeModalVisible ?
-                  <CustomModal backgroundColor={'rgba(0,0,0,0.8)'} onClose={() => { setPlaceModalVisible(false); }} width={'90%'} height={'80%'} title="All My Places">
-                    <PlaceList places={places} navigation={navigation} checkConnectionError={checkConnectionError} setPlaceModalVisible={setPlaceModalVisible} />
-                  </CustomModal>
-                  :
-                  <TouchableOpacity
-                    style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
-                    onPress={() => { setPlaceModalVisible(true); }}>
-                    <Text style={styles.buttonText}>All My Places</Text>
-                  </TouchableOpacity>
-              )}
-            </>
-            }
-
-            {joinedEvents.length ? <Text style={styles.subtitle}>Events I've Joined:</Text> : ''}
-            {joinedEvents.map((event) => {
-              return (
-                <View key={event.id} style={styles.joinedEventItem}>
-                  <TouchableOpacity
-                    style={styles.joinedEventButton}
-                    onPress={() => {
-                      if (checkConnectionError()) return;
-                      navigation.navigate('Event', { eventId: event.id });
-                    }}
-                  >
-                    <Text style={styles.joinedEventTitle}>{event.title}</Text>
-                    <Text style={styles.eventDate}>Date: {event.date}</Text>
-                    <Text style={styles.eventDate}>Time: {event.time}</Text>
-                    {event.sport_types && event.sport_types.length ?
-                      <View>
-                        <SportsItems size={width * 0.8}
-                          favoriteSports={event.sport_types}
-                        />
-                      </View> : ''}
-                    <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {event.location}</Text>
-                    {event.payments && event.payments.length && !event.payments.regular ? <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by {-event.payments.days_until_next} days</Text> : ''}
-                  </TouchableOpacity>
-                </View>
-              )
-            }
-            )}
-
-            {joinedPlaces.length ? <Text style={styles.subtitle}>Places I've Joined:</Text> : ''}
-            {joinedPlaces.map((place) => {
-              return (
-                <View key={place.id} style={styles.joinedEventItem}>
-                  <TouchableOpacity
-                    style={styles.joinedPlaceButton}
-                    onPress={() => {
-                      if (checkConnectionError()) return;
-                      navigation.navigate('Place', { placeId: place.id });
-                    }}
-                  >
-                    <Text style={styles.joinedEventTitle}>{place.name}</Text>
-
-                    {place.sport_types && place.sport_types.length ?
-                      <View>
-                        <SportsItems size={width * 0.8}
-                          favoriteSports={place.sport_types}
-                        />
-                      </View> : ''}
-
-                    <Text style={[styles.eventDate, { fontSize: width * 0.03 }]}>Location: {place.location}</Text>
-                    {place.payments && place.payments.length && !place.payments.regular && place.payments.days_until_next > -1 ? <Text style={[styles.eventDate, { fontWeight: 'bold', color: 'red' }]}>Late payment by ${-place.payments.days_until_next} days</Text> : ''}
-                  </TouchableOpacity>
-                </View>
-              )
-            })}
-          </> : ''
-        }
-
-        {events.length > 0 && <>
-          <Text style={styles.subtitle}>My Events:</Text>
-          <EventList events={events.slice(0, 3)} navigation={navigation} checkConnectionError={checkConnectionError} />
-          {events.length > 3 && (
-            eventModalVisible ?
-              <CustomModal backgroundColor={'rgba(0,0,0,0.8)'} onClose={() => { setEventModalVisible(false); }} width={'90%'} height={'80%'} title="All My Events" >
-                <EventList events={events} navigation={navigation} checkConnectionError={checkConnectionError} setEventModalVisible={setEventModalVisible} />
-              </CustomModal>
-              :
-              <TouchableOpacity
-                style={{ flex: 1, padding: width * 0.03, borderRadius: 5, alignItems: 'center', backgroundColor: 'rgba(255,0,0,0.7)' }}
-                onPress={() => { setEventModalVisible(true); }}>
-                <Text style={styles.buttonText}>All My Events</Text>
-              </TouchableOpacity>
-          )}
-        </>
-        }
-
-        {closerPlaces && closerPlaces.length ?
-          <>
-            <Text style={styles.subtitle}>Nearby Places:</Text>
-            <View style={styles.nearPlacesContainer}>
-              {closerPlaces.slice(0, 4).map((place, index) => {
-                return (
-                  <TouchableOpacity key={index}
-                    onPress={() => { if (checkConnectionError()) return; navigation.navigate('Place', { placeId: place.id }) }}
-                    style={styles.nearPlacesItem}
-                  >
-                    <Text style={styles.nearPlacesNameText}>
-                      {place.name}
-                    </Text>
-                    <Text style={styles.nearPlacesDescriptionText}>
-                      {place.description}
-                    </Text>
-                    <Text style={styles.nearPlacesLocationText}>
-                      Location: {place.location}
-                    </Text>
-                    {place.sport_types && place.sport_types.length ? (
-                      <View>
-                        <Text style={styles.nearPlacesSportTypesText}>
-                          Favorite Sports:
-                        </Text>
-                        <SportsItems
-                          favoriteSports={place.sport_types}
-                        />
-                      </View>
-                    ) : (
-                      ''
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </>
-          : ''}
-
-        {closerEvents && closerEvents.length ?
-          <>
-            <Text style={styles.subtitle}>Nearby Events:</Text>
-            <View style={styles.nearPlacesContainer}>
-              {closerEvents.slice(0, 4).map((event, index) => {
-                return (
-                  <View key={event.id}>
-                    <TouchableOpacity
-                      style={styles.eventButton}
-                      onPress={() => {
-                        if (checkConnectionError()) return;
-                        navigation.navigate('Event', { eventId: event.id });
-                      }}
-                    >
-                      <Text style={[styles.buttonText, { alignSelf: 'center', maxWidth: width * 0.7 }]}>{event.title}</Text>
-                      <Text style={styles.eventDate}>Date: {event.date}</Text>
-                      <Text style={styles.eventDate}>Time: {event.time}</Text>
-                      <Text style={styles.eventDate}>Location: {event.location}</Text>
-
-                      <View>
-                        <Text style={[styles.nearPlacesSportTypesText, { marginRight: 10 }]}>
-                          Sports:
-                        </Text>
-                        <SportsItems
-                          favoriteSports={event.sport_types}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </View>
-          </>
-          : ''}
 
         <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => {
-            if (checkConnectionError()) return;
-            navigation.navigate('Create Event');
-          }}
-        >
-          <Text style={styles.createButtonText}>Create Event</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.createButton}
-          onPress={() => {
-            if (checkConnectionError()) return;
-            navigation.navigate('Create Place');
-          }}
-        >
-          <Text style={styles.createButtonText}>Create Place</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.viewProfileButton}
+          style={[styles.viewProfileButton, { marginTop: 20 }]}
           onPress={() => {
             navigation.navigate('Profile');
           }}
@@ -467,31 +279,6 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.viewProfileButtonText}>View Profile</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={{
-            width: '90%',
-            marginLeft: '5%',
-            justifyContent: 'center',
-            backgroundColor: '#2196F3',
-            padding: 10,
-            borderRadius: 5,
-            alignItems: 'center',
-            marginTop: 10,
-            marginBottom: 100
-          }}
-          onPress={() => {
-            if (checkConnectionError()) return;
-            navigation.navigate('Profile', { upgrade: true });
-          }}
-        >
-          <Text style={{
-            color: '#fff',
-            fontSize: 16,
-            fontWeight: 'bold',
-          }}>
-            Upgrade to Premium
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );

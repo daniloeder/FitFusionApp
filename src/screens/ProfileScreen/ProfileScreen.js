@@ -11,10 +11,7 @@ import SportsItems from '../../components/SportsItems/SportsItems';
 import Icons from '../../components/Icons/Icons';
 import CustomInput from '../../components/Forms/CustomInput';
 import CustomPicker from '../../components/CustomPicker/CustomPicker';
-import SubscriptionPlansModal from '../../components/Payment/SubscriptionPlansModal';
 import * as DocumentPicker from 'expo-document-picker';
-import QRGenerator from '../../components/QRScanner/QRGenerator';
-import PaymentCard from '../../components/Management/PaimentCard.js';
 import { SportsNames, SportsTypes } from '../../utils/sports';
 import { BASE_URL } from '@env';
 
@@ -22,7 +19,7 @@ const width = Dimensions.get('window').width;
 
 const ProfileScreen = ({ route }) => {
 
-  const { userId, active, userToken, userSubscriptionPlan, setUserSubscriptionPlan, checkConnectionError } = useGlobalContext();
+  const { userId, active, userToken, userSubscriptionPlan, checkConnectionError } = useGlobalContext();
 
   const [profile, setProfile] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +41,6 @@ const ProfileScreen = ({ route }) => {
 
   const [selectedImages, setSelectedImages] = useState([]);
   const [editImages, setEditImages] = useState(false);
-  const [showQRCode, setShowQRCode] = useState(false);
 
   const [updatePlanModal, setUpdatePlanModal] = useState(false);
 
@@ -88,19 +84,6 @@ const ProfileScreen = ({ route }) => {
       }
     }, [userToken, profile])
   );
-
-  useFocusEffect(
-    useCallback(() => {
-      if (route.params.upgrade) {
-        setUpdatePlanModal(true);
-        navigation.setParams({ upgrade: false });
-      }
-    }, [route.params.upgrade])
-  );
-
-  useEffect(() => {
-    setUpdatePlanModal(false);
-  }, [userSubscriptionPlan]);
 
   useEffect(() => {
     if (selectedProfileImage.length) {
@@ -284,33 +267,9 @@ const ProfileScreen = ({ route }) => {
     }
   };
 
-  const ManagerSubscriptionPlansModal = () => {
-    return (
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={updatePlanModal}
-        onRequestClose={() => { setUpdatePlanModal(false); }}
-      >
-        <SubscriptionPlansModal userToken={userToken}
-          subscriptionTexts={{ button_text: "Update Plan" }}
-          object={{ mode: 'app' }}
-          patternMode='subscription'
-          confirmedSubscription={data => {
-            setUserSubscriptionPlan(data);
-            setUpdatePlanModal(false);
-            fetchProfile();
-          }}
-        />
-      </Modal>
-    );
-  };
-
   return (
     <View style={styles.container}>
       <GradientBackground firstColor="#1A202C" secondColor="#991B1B" thirdColor="#1A202C" />
-
-      <ManagerSubscriptionPlansModal />
 
       <ScrollView
         style={styles.contentContainer}
@@ -326,30 +285,6 @@ const ProfileScreen = ({ route }) => {
           <Icons name="Settings" size={width * 0.1} />
         </Pressable>
 
-        <Modal
-          animationType="fade"
-          transparent={true}
-          visible={showQRCode}
-          onRequestClose={() => setShowQRCode(false)}
-        >
-          <View style={styles.QRCodeModalContainer}>
-            <View style={styles.QRCodeModalContent}>
-              <Text style={styles.QRCodeModalTitle}>@{profile.username} QR Code</Text>
-
-              <QRGenerator object={{ type: 'fit_fusion_user', id: profile.id }} />
-
-              <TouchableOpacity
-                style={{ backgroundColor: '#CCC', marginTop: width * 0.1, width: width * 0.5, height: width * 0.1, alignItems: 'center', justifyContent: 'center' }}
-                onPress={() => {
-                  setShowQRCode(false);
-                }}
-              >
-                <Text style={styles.buttonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
         <View style={styles.profileHeader}>
           <View style={{ width: '100%', alignItems: 'center' }}>
             {currentImage ?
@@ -363,15 +298,6 @@ const ProfileScreen = ({ route }) => {
               </View>
 
             }
-            {!editProfile &&
-              <TouchableOpacity
-                style={styles.QRButton}
-                onPress={() => {
-                  setShowQRCode(true);
-                }}
-              >
-                <Icons name="QRCode" size={width * 0.15} />
-              </TouchableOpacity>}
           </View>
           {editProfile ? (
             <>
@@ -553,15 +479,6 @@ const ProfileScreen = ({ route }) => {
               </Text>
             </TouchableOpacity>
 
-            {profile.subscription && profile.subscription.user_subscription && (
-              <View style={{ marginTop: 15, width: '90%', marginLeft: '5%' }}>
-                <PaymentCard
-                  subscriptionData={profile.subscription.user_subscription}
-                  setSubscriptionPlansModalVisible={setUpdatePlanModal}
-                />
-              </View>
-            )}
-
             <TouchableOpacity style={styles.editButton} onPress={() => !checkConnectionError() && setEditProfile(true)}>
               <Text style={styles.editButtonText}>Edit Profile</Text>
             </TouchableOpacity>
@@ -626,17 +543,6 @@ const styles = StyleSheet.create({
     height: width * 0.4,
     borderRadius: width * 0.2,
     marginBottom: width * 0.08,
-  },
-  QRButton: {
-    width: width * 0.15,
-    height: width * 0.15,
-    borderRadius: 4,
-    backgroundColor: '#FFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    left: 0,
-    bottom: width * 0.08,
   },
   name: {
     fontSize: width * 0.06,
@@ -790,27 +696,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     textAlign: 'left',
-  },
-
-  //QR Modal
-  QRCodeModalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  QRCodeModalContent: {
-    width: '80%',
-    maxHeight: '90%',
-    backgroundColor: '#FFF',
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  QRCodeModalTitle: {
-    fontSize: width * 0.05,
-    fontWeight: 'bold',
-    marginBottom: 10,
   },
 });
 
