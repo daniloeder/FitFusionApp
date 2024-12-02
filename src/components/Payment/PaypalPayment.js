@@ -8,6 +8,8 @@ const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentD
     const [loading, setLoading] = useState(false);
     const [paymentId, setPaymentId] = useState(null);
     const [orderData, setOrderData] = useState({});
+    const [pAmount, setPAmount] = useState(amount);
+    const [pCurrency, setPCurrency] = useState(currency);
 
     const onClose = () => {
         setShowWebView(false);
@@ -52,6 +54,8 @@ const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentD
             const data = await response.json();
             if (response.ok) {
                 setLoading(false);
+                setPAmount(data.provider_payment_amount);
+                setPCurrency(data.provider_payment_currency);
                 setPaymentId(data.payment_id);
                 setOrderData(data);
             } else {
@@ -77,7 +81,7 @@ const PayPalPayment = ({ userToken, amount, currency, item, setCompletedPaymentD
                         <View style={{ width: '90%', minHeight: '90%', margin: '5%' }}>
                             <WebView
                                 originWhitelist={['*']}
-                                source={{ uri: `${BASE_URL}/api/payments/paypal-page/?currency=${currency}&amount=${amount}&payment_id=${paymentId}` }}
+                                source={{ uri: `${BASE_URL}/api/payments/paypal-page/?currency=${pCurrency}&amount=${pAmount}&payment_id=${paymentId}` }}
                                 style={{ marginTop: 20 }}
                                 onError={(syntheticEvent) => {
                                     const { nativeEvent } = syntheticEvent;
