@@ -2056,7 +2056,6 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
-        if (!checkAvailableFeature('max_items_per_group', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName, muscleGroup: muscleGroup }, managerData ? 'personal_trainer' : 'user')) return;
 
         setEdit(true);
 
@@ -2151,7 +2150,6 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addMuscleGroup = (dayName, muscleGroup) => {
-        if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName }, managerData ? 'personal_trainer' : 'user')) return;
 
         if (Object.keys(daysItems[plan][dayName].items).length === 0) {
             if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
@@ -2294,7 +2292,6 @@ const FitnessScreen = ({ route, navigation }) => {
                             if (!allItems[plan] || !allItems[plan][exercise]) {
                                 try {
                                     const exercise_data = await fetchData("exercise_" + exercise);
-                                    console.log(exercise_data);
                                     if (exercise_data) {
                                         setAllItems(prevItems => ({ ...prevItems, [plan]: { ...prevItems[plan], [exercise]: exercise_data } }));
                                         if (exercise_data.execution_images && exercise_data.execution_images.length > 0) {
