@@ -3710,7 +3710,6 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addExercise = (dayName, muscleGroup, exerciseId, newExercise) => {
-        if (!checkAvailableFeature('max_items_per_group', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName, muscleGroup: muscleGroup }, managerData ? 'personal_trainer' : 'user')) return;
 
         setEdit(true);
 
@@ -3805,7 +3804,6 @@ const FitnessScreen = ({ route, navigation }) => {
     };
 
     const addMuscleGroup = (dayName, muscleGroup) => {
-        if (!checkAvailableFeature('max_groups_per_day', { userSubscriptionPlan: userSubscriptionPlan, plan: plan, setUpdatePlanModal: setUpdatePlanModal, daysItems: daysItems, dayName: dayName }, managerData ? 'personal_trainer' : 'user')) return;
 
         if (Object.keys(daysItems[plan][dayName].items).length === 0) {
             if (!daysItems[plan][dayName] || !daysItems[plan][dayName].items) {
