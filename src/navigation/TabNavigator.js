@@ -120,6 +120,7 @@ const TabNavigator = () => {
   const [chatId, setChatId] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState({ all: false, chat: false, event: false, place: false });
+  const [block, setBlock] = useState(false);
 
   const [userSubscriptionPlan, setUserSubscriptionPlan] = useState({
     type: 'free',
@@ -167,6 +168,12 @@ const TabNavigator = () => {
         },
       });
       const data = await response.json();
+      if (data.app_update){
+        if (data.app_update.block){
+          setBlock(true);
+        }
+        Alert.alert("Important Alert", data.app_update.message);
+      }
       if (data.plan) {
         setUserSubscriptionPlan(data.plan);
       }
@@ -195,6 +202,7 @@ const TabNavigator = () => {
       console.error('There was an error:', error);
     }
   };
+
   useEffect(() => {
     if (userSubscriptionPlan.update) {
       updateUserSubscriptionPlan();
@@ -262,6 +270,8 @@ const TabNavigator = () => {
       notificationResponseSubscription.remove();
     };
   }, [chatId]);
+
+  if (block) return;
 
   const unreadNotificationsNumber = notifications.filter(notification => !notification.is_read).length;
 
