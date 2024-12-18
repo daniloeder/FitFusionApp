@@ -865,6 +865,10 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         }
     }, [workoutDays]);
 
+    const allExperienceOptions = ['nobie', 'beginner', 'intermediate', 'advanced'];
+    const allExperienceNames = { 'nobie': 'Nobie', 'beginner': 'Beginner', 'intermediate': 'Intermediate', 'advanced': 'Advanced' };
+    const [experience, setExperience] = useState(['beginner']);
+
     const allRestOptions = ['short', 'medium', 'long'];
     const allRestOptionsNames = { 'short': 'Short', 'medium': 'Medium', 'long': 'Long' }
     const [rest, setRest] = useState(['medium']);
@@ -895,6 +899,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         setFocus([]);
         setAvoid([]);
         setGoals([]);
+        setExperience(['beginner']);
         setDietGoals([]);
         setNewTrainingComment('');
         setNewTrainingModal(false);
@@ -1009,6 +1014,10 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                 alert('Please select a rest time')
                 return false
             }
+            if (experience.length === 0) {
+                alert('Please select an experience level')
+                return false
+            }
         }
         return true
     }
@@ -1018,6 +1027,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         setError(false);
         setUseAI(false);
     }, [newTrainingModal]);
+    const current_plan = userSubscriptionPlan.current_data.settings[plan]
 
     return (
 
@@ -1044,8 +1054,8 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                             }
                         </View>
                         : <><TextInput style={styles.newTrainingTitle} placeholder={plan === "workout" ? "Workout Name" : "Diet Name"} onChangeText={setTrainingName} />
-                            {mode === 'user' && userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
-                                You can have {userSubscriptionPlan.current_data.settings[plan].max[1]} plans with "{userSubscriptionPlan.current_data.name}" subscription.
+                            {mode === 'user' && userSubscriptionPlan && current_plan.max[0] && !useAI && <><Text style={{ marginLeft: 20, fontSize: width * 0.028, fontWeight: 'bold', color: '#FF0000' }}>
+                                You can have {current_plan.max[1]} plans with "{userSubscriptionPlan.current_data.name}" subscription.
                             </Text>
                                 <TouchableOpacity style={[styles.workoutButton, { backgroundColor: '#000', borderWidth: 0.4, borderColor: '#999' }]} onPress={() => {
                                     if (checkConnectionError()) return;
@@ -1059,8 +1069,8 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                 plan === "workout" ?
                                     <>
                                         <SelectBox
-                                            title={"Week Workout Days" + (userSubscriptionPlan.current_data.settings[plan].max_days < 7 ? ` (max ${userSubscriptionPlan.current_data.settings[plan].max_days} with your "${userSubscriptionPlan.current_data.name}" plan.)` : '')}
-                                            max={userSubscriptionPlan.current_data.settings[plan].max_days < 7 ? userSubscriptionPlan.current_data.settings[plan].max_days : undefined}
+                                            title={"Week Workout Days" + (current_plan.max_days < 7 ? ` (max ${current_plan.max_days} with your "${userSubscriptionPlan.current_data.name}" plan.)` : '')}
+                                            max={current_plan.max_days < 7 ? current_plan.max_days : undefined}
                                             allOptions={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']}
                                             allOptionsNames={allWorkoutDaysNames}
                                             selectedOptions={workoutDays}
@@ -1083,6 +1093,15 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                             allOptionsNames={allRestOptionsNames}
                                             selectedOptions={rest}
                                             setSelectedItem={setRest}
+                                            obligatory
+                                        />
+                                        <SelectBox
+                                            title="Experience Level"
+                                            max={1}
+                                            allOptions={allExperienceOptions}
+                                            allOptionsNames={allExperienceNames}
+                                            selectedOptions={experience}
+                                            setSelectedItem={setExperience}
                                             obligatory
                                         />
                                         <SelectBox
@@ -1144,6 +1163,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                                 GenerateWeekWorkoutPlan({
                                                     "name": trainingName,
                                                     "workout_days": workoutDays,
+                                                    "experience": experience[0],
                                                     "rest": rest,
                                                     "workout_type": workoutType[0],
                                                     "focus": focus,
@@ -1174,10 +1194,10 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                     }
                                 }}
                             >
-                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (mode === 'user' && userSubscriptionPlan && userSubscriptionPlan.current_data.settings[plan].use_ai < 6 ? ` (${userSubscriptionPlan.current_data.settings[plan].use_ai} left)` : "")) : "Automatic Generation"}</Text>
+                                <Text style={styles.workoutButtonText}>{plan === "workout" ? ("Generate with AI (GPT)" + (mode === 'user' && userSubscriptionPlan && current_plan.use_ai[0] ? ` (${ current_plan.use_ai[2] -  current_plan.use_ai[1]} left)` : "")) : "Automatic Generation"}</Text>
                             </TouchableOpacity>
 
-                            {parseInt(userSubscriptionPlan.amount) === 0 && userSubscriptionPlan.current_data.settings[plan].use_ai === 0 && userSubscriptionPlan.current_data.code && userSubscriptionPlan.current_data.code !== 'free_share' &&
+                            {parseInt(userSubscriptionPlan.amount) === 0 && current_plan.use_ai === 0 && userSubscriptionPlan.current_data.code && userSubscriptionPlan.current_data.code !== 'free_share' &&
                                 <ShareOnSocialMedia buttonText="Win one more AI plan. (GPT)" goal="free_share" />}
 
                             {!useAI && <TouchableOpacity
