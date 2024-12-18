@@ -872,6 +872,10 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         }
     }, [workoutDays]);
 
+    const allExperienceOptions = ['nobie', 'beginner', 'intermediate', 'advanced'];
+    const allExperienceNames = { 'nobie': 'Nobie', 'beginner': 'Beginner', 'intermediate': 'Intermediate', 'advanced': 'Advanced' };
+    const [experience, setExperience] = useState(['beginner']);
+
     const allRestOptions = ['short', 'medium', 'long'];
     const allRestOptionsNames = { 'short': 'Short', 'medium': 'Medium', 'long': 'Long' }
     const [rest, setRest] = useState(['medium']);
@@ -902,6 +906,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
         setFocus([]);
         setAvoid([]);
         setGoals([]);
+        setExperience(['beginner']);
         setDietGoals([]);
         setNewTrainingComment('');
         setNewTrainingModal(false);
@@ -1016,6 +1021,10 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                 alert('Please select a rest time')
                 return false
             }
+            if (experience.length === 0) {
+                alert('Please select an experience level')
+                return false
+            }
         }
         return true
     }
@@ -1093,6 +1102,15 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                             obligatory
                                         />
                                         <SelectBox
+                                            title="Experience Level"
+                                            max={1}
+                                            allOptions={allExperienceOptions}
+                                            allOptionsNames={allExperienceNames}
+                                            selectedOptions={experience}
+                                            setSelectedItem={setExperience}
+                                            obligatory
+                                        />
+                                        <SelectBox
                                             title="Goals"
                                             max={3}
                                             allOptions={allGoals}
@@ -1151,6 +1169,7 @@ const NewTrainingModal = ({ plan, newTrainingModal, setNewTrainingModal, Generat
                                                 GenerateWeekWorkoutPlan({
                                                     "name": trainingName,
                                                     "workout_days": workoutDays,
+                                                    "experience": experience[0],
                                                     "rest": rest,
                                                     "workout_type": workoutType[0],
                                                     "focus": focus,
